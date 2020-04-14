@@ -10,7 +10,7 @@ import {
 
 import '../css/widget.css';
 
-import decode from './mesh-decoder';
+import decoder from './mesh-decoder';
 import * as THREE from 'three';
 import * as OrbitControls_ from 'three-orbit-controls';
 import { IScene } from './interfaces';
@@ -218,39 +218,39 @@ export class SceneWidgetView extends DOMWidgetView {
     this.addMesh(drc.buffer, position, scale);
   }
 
-  addMesh(mesh: ArrayBuffer, position=[0, 0, 0], scale=1) {
+  addMesh(drc: ArrayBuffer, position=[0, 0, 0], scale=1) {
 
-    if (!(mesh instanceof ArrayBuffer) || !mesh.byteLength)
+    if (!(drc instanceof ArrayBuffer) || !drc.byteLength)
       return;
 
-    ((mesh, position, scale) => {
-      decode(mesh).then(geometry => {
+    decoder.decode({ drc, userData: { position, scale }}).then(result => {
 
-        geometry.computeVertexNormals();
+      const { geometry, userData: { position, scale } } = result;
 
-        const [x, y, z] = position;
-        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-          side: THREE.DoubleSide,
-          shadowSide: THREE.BackSide,
-          vertexColors: true,
-          roughness: 0.7
-        }));
-        mesh.scale.multiplyScalar(scale);
-        mesh.position.set(x, y, z);
-        mesh.rotation.x = -Math.PI / 2;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+      geometry.computeVertexNormals();
 
-        // TODO: dispose if we allow mesh removal
+      const [x, y, z] = position;
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+        side: THREE.DoubleSide,
+        shadowSide: THREE.BackSide,
+        vertexColors: true,
+        roughness: 0.7
+      }));
+      mesh.scale.multiplyScalar(scale);
+      mesh.position.set(x, y, z);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
 
-        this.scene.add(mesh);
-        this.renderer.render(this.scene, this.camera);
-        this.controls.update();
+      // TODO: dispose if we allow mesh removal
 
-      }).catch(err => {
-        console.log(err);
-      });
-    })(mesh, position, scale);
+      this.scene.add(mesh);
+      this.renderer.render(this.scene, this.camera);
+      this.controls.update();
+
+    }).catch(err => {
+      console.log(err);
+    });
 
   }
 
