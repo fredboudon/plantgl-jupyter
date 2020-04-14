@@ -54,7 +54,6 @@
     "@jupyter-widgets/base": "^3.0.0",
     "draco-mesh-web-decoder": "git+https://github.com/jvail/draco-mesh-web-decoder.git",
     "lit-html": "^1.2.1",
-    "log4js": "^6.1.2",
     "three": "^0.115.0",
     "three-orbit-controls": "^82.1.0"
   },
