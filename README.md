@@ -21,15 +21,25 @@ jupyter labextension install @jupyter-widgets/jupyterlab-manager
 ### dev
 
 ```bash
+npm run build
+```
+
+```bash
 pip install -e .
 ```
+
 jupyter notebook
 
 ```bash
 jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
+jupyter nbextension enable --sys-prefix --py pgljupyter
+jupyter notebook --browser=google-chrome
 ```
+
 jupyter lab
 
 ```bash
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
 jupyter labextension install .
+jupyter lab --browser=google-chrome
 ```

@@ -223,32 +223,35 @@ export class SceneWidgetView extends DOMWidgetView {
     if (!(mesh instanceof ArrayBuffer) || !mesh.byteLength)
       return;
 
-    decode(mesh).then(geometry => {
+    ((mesh, position, scale) => {
+      decode(mesh).then(geometry => {
 
-      geometry.computeVertexNormals();
+        geometry.computeVertexNormals();
 
-      const [x, y, z] = position;
-      const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-        side: THREE.DoubleSide,
-        shadowSide: THREE.BackSide,
-        vertexColors: true,
-        roughness: 0.7
-      }));
-      mesh.scale.multiplyScalar(scale);
-      mesh.position.set(x, y, z);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+        const [x, y, z] = position;
+        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+          side: THREE.DoubleSide,
+          shadowSide: THREE.BackSide,
+          vertexColors: true,
+          roughness: 0.7
+        }));
+        mesh.scale.multiplyScalar(scale);
+        mesh.position.set(x, y, z);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
 
-      // TODO: dispose if we allow mesh removal
+        // TODO: dispose if we allow mesh removal
 
-      this.scene.add(mesh);
-      this.renderer.render(this.scene, this.camera);
-      this.controls.update();
+        this.scene.add(mesh);
+        this.renderer.render(this.scene, this.camera);
+        this.controls.update();
 
-    }).catch(err => {
-      console.log(err);
-    });
+      }).catch(err => {
+        console.log(err);
+      });
+    })(mesh, position, scale);
+
   }
 
 }
