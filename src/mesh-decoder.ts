@@ -1,5 +1,3 @@
-// TODO: add worker pool that adds additional worker on high load
-
 import getWorker from 'draco-mesh-web-decoder';
 import * as THREE from 'three';
 import { IDecodingTask, ITaskData, ITaskResult } from './interfaces';
@@ -62,7 +60,8 @@ const getDecoder = () => {
         return worker;
     }
 
-}
+};
+
 class Decoder {
 
     decode = (task: ITaskData): Promise<ITaskResult> => {
