@@ -39,8 +39,8 @@ class SceneWidget(DOMWidget):
     }).tag(sync=True, to_json=scene_to_json)
     size_display = Tuple(Int(min=0), Int(min=0), default_value=(400, 400)).tag(sync=True)
     size_world = Tuple(Int(min=0), Int(min=0), Int(min=0), default_value=(10, 10, 10)).tag(sync=True)
-    helper_axis = Bool(False).tag(sync=True)
-    helper_light = Bool(False).tag(sync=True)
+    axes_helper = Bool(False).tag(sync=True)
+    light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
     mesh_compression = Int(10, min=0, max=10).tag(sync=True)
 

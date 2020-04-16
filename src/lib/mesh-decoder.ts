@@ -7,18 +7,25 @@ const decoders: Map<Worker, IDecodingTask[]> = new Map();
 const getDecoder = () => {
 
     const avg = Array.from(decoders.values()).reduce((s, v) => s + v.length / decoders.size, 0);
-    if ((!decoders.size || avg > 5) && decoders.size < MAX_WORKER) {
+
+    if ((!decoders.size || avg > 2) && decoders.size < MAX_WORKER) {
         const worker: Worker = getWorker();
         decoders.set(worker, []);
+        worker.onerror = function (evt) {
+            console.log(evt);
+        }
         worker.onmessage = function(this: Worker, evt) {
             const data = evt.data;
             if (data && 'initialized' in data) {
                 if (data.initialized) {
+                    // console.log('initialized');
                     this.postMessage(decoders.get(this)[0].drc);
                 } else {
+                    // console.log('terminate on error');
+                    const tasks = decoders.get(this);
                     worker.terminate();
-                    decoders.get(this)[0].reject();
                     decoders.delete(this);
+                    tasks.forEach(task => task.reject());
                 }
             } else {
                 if (data && data instanceof Object) {
@@ -32,14 +39,20 @@ const getDecoder = () => {
                     });
                     const { resolve, userData } = decoders.get(this).shift();
                     resolve({ geometry, userData });
+                    // console.log(Array.from(decoders.values()).map(v => v.length));
                 } else {
                     decoders.get(this).shift().reject();
                 }
                 if (decoders.get(this).length === 0) {
-                    if (decoders.size > 1) {
-                        decoders.delete(this);
-                        this.terminate();
-                    }
+                    setTimeout((self => (() => {
+                        if (decoders.get(self).length === 0) {
+                            decoders.delete(self);
+                            // console.log('terminated');
+                            self.terminate();
+                        } else {
+                            self.postMessage(decoders.get(self)[0].drc);
+                        }
+                    }))(this), 1000);
                 } else {
                     this.postMessage(decoders.get(this)[0].drc);
                 }
