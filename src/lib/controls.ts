@@ -2,9 +2,9 @@ import { render, html, directive } from 'lit-html';
 import '@material/mwc-checkbox';
 import '@material/mwc-formfield';
 import '@material/mwc-fab';
-import { SceneWidgetModel } from './widget';
 import { IControlState, IControlHandlers } from './interfaces';
-import { WidgetModel } from '@jupyter-widgets/base';
+
+// TODO refactor handlers
 
 const showDirective = directive((show) => (part) => { part.setValue(show ? 'block' : 'none') });
 
@@ -13,7 +13,6 @@ class Controls {
     headerEl;
     controlsEl
     state: IControlState;
-    model: WidgetModel;
     rootEl;
     evtHandlers: IControlHandlers;
 
@@ -39,8 +38,7 @@ class Controls {
         render(this.renderControls(this.state, this.evtHandlers), this.controlsEl);
     };
 
-    // <span @click=${() => state.showControls = !state.showControls }>&#9881;</span>
-    private renderHeader = (state, handlers) => {
+    private renderHeader = (state: IControlState, handlers: IControlHandlers) => {
         return html`<div class='pgl-jupyter-scene-widget-header unselectable' style='display: ${showDirective(state.showHeader || state.showControls)}'>
             <mwc-fab mini icon="&#9881;" @click=${() => state.showControls = !state.showControls}></mwc-fab>
         </div>`;
@@ -66,8 +64,5 @@ class Controls {
         </div>`;
     };
 }
-
-
-
 
 export default Controls;
