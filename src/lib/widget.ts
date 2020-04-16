@@ -206,20 +206,9 @@ export class SceneWidgetView extends DOMWidgetView {
         this.stateControls = new Controls(initialState, this.header, this.controls, {
             onFullscreenToggled: () => {
                 if (document.fullscreenElement === this.container) {
-                    document.exitFullscreen().then(() => {
-                        const [width, height] = this.sizeDisplay;
-                        this.resizeDisplay(width, height);
-                    });
-                } else {
-                    this.container.requestFullscreen().then(() => {
-                        this.resizeDisplay(window.outerWidth, window.outerHeight);
-                        this.container.onfullscreenchange = () => {
-                            if (document.fullscreenElement !== this.container) {
-                                const [width, height] = this.sizeDisplay;
-                                this.resizeDisplay(width, height);
-                            }
-                        }
-                    });
+                    document.exitFullscreen();
+                } else if (!document.fullscreenElement) {
+                    this.container.requestFullscreen();
                 }
             },
             onAutoRotateToggled: () => {
@@ -268,10 +257,6 @@ export class SceneWidgetView extends DOMWidgetView {
             this.state.showHeader = false;
         });
 
-        this.canvas.addEventListener('focusout', () => {
-            console.log('focus lost');
-        });
-
         this.scene_changed();
         this.listenTo(this.model, 'change:axis_helper', () => this.stateControls.evtHandlers.onAxesHelperToggled(
             this.model.get('axis_helper')
@@ -299,7 +284,15 @@ export class SceneWidgetView extends DOMWidgetView {
                 this.listenTo(this.model, `change:${key}`, ((key) => () => this.addScene(this.model.get(key)))(key));
             }
         });
-
+        this.container.onfullscreenchange = () => {
+            this.state.fullscreen = (document.fullscreenElement === this.container);
+            if (this.state.fullscreen) {
+                this.resizeDisplay(window.screen.width, window.screen.height);
+            } else {
+                const [width, height] = this.sizeDisplay;
+                this.resizeDisplay(width, height);
+            }
+        }
         // there wont be a change event for dynamically added attr after loading the notebook with saved widget state
         // if there are any we add them
         Object.keys(this.model.attributes).filter(key => key.startsWith('scene_')).forEach(key => {

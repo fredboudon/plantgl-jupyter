@@ -21,7 +21,7 @@
 
 .pgl-jupyter-scene-widget-header-container {
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100%;
     height: 40px;
@@ -34,27 +34,35 @@
     pointer-events: none;
 }
 
-.pgl-jupyter-scene-widget-header > * {
+.pgl-jupyter-scene-widget-header * {
     pointer-events: all;
+    --mdc-typography-body1-font-size: 12px;
+    --mdc-typography-body2-font-size: 12px;
+    margin: 10px 10px 10px 10px;
+    position: absolute;
+    right: 0px;
+    /* FIXME 5x */
+    bottom: 5px;
 }
 
 .pgl-jupyter-scene-widget-controls-container {
     position: absolute;
-    bottom: 4px;
     right: 0;
     width: 150px;
-    height: 100%;
     pointer-events: none;
 }
 
 .pgl-jupyter-scene-widget-controls {
     position: relative;
-    width: 100%;
-    height: 100%;
-    background-color: #00305312;
+    /* background-color: #00305312; */
     pointer-events: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
 }
 
-.pgl-jupyter-scene-widget-controls > * {
+.pgl-jupyter-scene-widget-controls * {
     pointer-events: all;
+    --mdc-typography-body1-font-size: 14px;
+    --mdc-typography-body2-font-size: 14px;
 }

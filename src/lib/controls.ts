@@ -5,6 +5,7 @@ import '@material/mwc-fab';
 import { IControlState, IControlHandlers } from './interfaces';
 
 // TODO refactor handlers
+// TODO clean div chaos
 
 const showDirective = directive((show) => (part) => { part.setValue(show ? 'block' : 'none') });
 
@@ -46,11 +47,11 @@ class Controls {
 
     private renderControls = (state: IControlState, handlers: IControlHandlers) => {
         return html`<div class='pgl-jupyter-scene-widget-controls' style='display: ${showDirective(state.showControls)}'>
+            <mwc-formfield label='fullscreen'>
+                <mwc-checkbox @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)} ?checked=${state.fullscreen}></mwc-checkbox>
+            </mwc-formfield>
             <mwc-formfield label='auto rotate'>
                 <mwc-checkbox @change=${(evt) => handlers.onAutoRotateToggled(evt.target.checked)} ?checked=${state.autoRotate}></mwc-checkbox>
-            </mwc-formfield>
-            <mwc-formfield label='fullscreen'>
-                <mwc-checkbox @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)}></mwc-checkbox>
             </mwc-formfield>
             <mwc-formfield label='plane'>
                 <mwc-checkbox @change=${(evt) => handlers.onPlaneToggled(evt.target.checked)} ?checked=${state.plane}></mwc-checkbox>
