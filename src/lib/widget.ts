@@ -29,7 +29,7 @@ export class SceneWidgetModel extends DOMWidgetModel {
             scene: null,
             size_display: [400, 400],
             size_world: [10, 10, 10],
-            axis_helper: false,
+            axes_helper: false,
             light_helper: false,
             plane: true
         };
@@ -63,10 +63,10 @@ export class SceneWidgetView extends DOMWidgetView {
     lightHelper: THREE.DirectionalLightHelper = null;
     cameraHelper: THREE.CameraHelper = null;
     orbitControl = null;
-    container: HTMLDivElement = null;
+    containerEl: HTMLDivElement = null;
     overlay: HTMLDivElement = null;
     header: HTMLDivElement = null;
-    controls: HTMLDivElement = null;
+    controlsEl: HTMLDivElement = null;
     canvas: HTMLCanvasElement= null;
 
     disposables: THREE.Object3D[] = [];
@@ -110,20 +110,14 @@ export class SceneWidgetView extends DOMWidgetView {
         }
 
         super.render();
-        this.container = document.createElement('div');
-        this.container.setAttribute('class', 'pgl-jupyter-scene-widget');
-        this.el.appendChild(this.container);
-        this.overlay = document.createElement('div');
-        this.overlay.setAttribute('class', 'pgl-jupyter-scene-widget-overlay');
-        this.container.appendChild(this.overlay);
-        this.controls = document.createElement('div');
-        this.controls.setAttribute('class', 'pgl-jupyter-scene-widget-controls-container');
-        this.overlay.appendChild(this.controls);
-        this.header = document.createElement('div');
-        this.header.setAttribute('class', 'pgl-jupyter-scene-widget-header-container');
-        this.overlay.appendChild(this.header);
+        this.containerEl = document.createElement('div');
+        this.containerEl.setAttribute('class', 'pgl-jupyter-scene-widget');
+        this.el.appendChild(this.containerEl);
+        this.controlsEl = document.createElement('div');
+        this.controlsEl.setAttribute('class', 'pgl-jupyter-scene-widget-controls');
+        this.containerEl.appendChild(this.controlsEl);
 
-        this.container.addEventListener('contextmenu', ev => {
+        this.containerEl.addEventListener('contextmenu', ev => {
             ev.preventDefault();
             ev.stopPropagation();
             return false;
@@ -189,7 +183,7 @@ export class SceneWidgetView extends DOMWidgetView {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.canvas = this.renderer.domElement;
-        this.overlay.appendChild(this.canvas);
+        this.containerEl.appendChild(this.canvas);
         camLight.position.copy(this.camera.position);
         this.renderer.render(this.scene, this.camera);
 
@@ -203,12 +197,12 @@ export class SceneWidgetView extends DOMWidgetView {
         this.orbitControl.target.set(0, 0, 0);
         this.orbitControl.update();
 
-        this.stateControls = new Controls(initialState, this.header, this.controls, {
+        this.stateControls = new Controls(initialState, this.header, this.controlsEl, {
             onFullscreenToggled: () => {
-                if (document.fullscreenElement === this.container) {
+                if (document.fullscreenElement === this.containerEl) {
                     document.exitFullscreen();
                 } else if (!document.fullscreenElement) {
-                    this.container.requestFullscreen();
+                    this.containerEl.requestFullscreen();
                 }
             },
             onAutoRotateToggled: () => {
@@ -250,16 +244,12 @@ export class SceneWidgetView extends DOMWidgetView {
         });
         this.state = this.stateControls.state;
 
-        this.container.addEventListener('mouseover', () => {
-            this.state.showHeader = true;
-        });
-        this.container.addEventListener('mouseout', () => {
-            this.state.showHeader = false;
-        });
+        this.containerEl.addEventListener('mouseover', () => this.state.showHeader = true);
+        this.containerEl.addEventListener('mouseout', () => this.state.showHeader = false);
 
         this.scene_changed();
-        this.listenTo(this.model, 'change:axis_helper', () => this.stateControls.evtHandlers.onAxesHelperToggled(
-            this.model.get('axis_helper')
+        this.listenTo(this.model, 'change:axes_helper', () => this.stateControls.evtHandlers.onAxesHelperToggled(
+            this.model.get('axes_helper')
         ));
         this.listenTo(this.model, 'change:light_helper', () => this.stateControls.evtHandlers.onLightHelperToggled(
             this.model.get('light_helper')
@@ -284,8 +274,8 @@ export class SceneWidgetView extends DOMWidgetView {
                 this.listenTo(this.model, `change:${key}`, ((key) => () => this.addScene(this.model.get(key)))(key));
             }
         });
-        this.container.onfullscreenchange = () => {
-            this.state.fullscreen = (document.fullscreenElement === this.container);
+        this.containerEl.onfullscreenchange = () => {
+            this.state.fullscreen = (document.fullscreenElement === this.containerEl);
             if (this.state.fullscreen) {
                 this.resizeDisplay(window.screen.width, window.screen.height);
             } else {

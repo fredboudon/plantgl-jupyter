@@ -8,61 +8,44 @@
 }
 
 .pgl-jupyter-scene-widget {
-    border: 0;
-    margin: 0;
     display: inline-block;
-}
-
-.pgl-jupyter-scene-widget-overlay {
-    width: 100%;
-    height: 100%;
     position: relative;
-}
-
-.pgl-jupyter-scene-widget-header-container {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 40px;
-    pointer-events: none;
-  }
-
-.pgl-jupyter-scene-widget-header {
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-.pgl-jupyter-scene-widget-header * {
-    pointer-events: all;
-    --mdc-typography-body1-font-size: 12px;
-    --mdc-typography-body2-font-size: 12px;
-    margin: 10px 10px 10px 10px;
-    position: absolute;
-    right: 0px;
-    /* FIXME 5x */
-    bottom: 5px;
-}
-
-.pgl-jupyter-scene-widget-controls-container {
-    position: absolute;
-    right: 0;
-    width: 150px;
-    pointer-events: none;
 }
 
 .pgl-jupyter-scene-widget-controls {
-    position: relative;
-    /* background-color: #00305312; */
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 160px;
+    height: 99%; /* FIXME: there is an odd height overshoot in jupyter */
+    pointer-events: none;
+}
+
+.pgl-jupyter-scene-widget-controls-container {
+    padding: 5px;
+    height: 100%;
     pointer-events: none;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 5px;
+    --mdc-typography-body1-font-size: 12px;
+    --mdc-typography-body2-font-size: 12px;
 }
 
-.pgl-jupyter-scene-widget-controls * {
+.pgl-jupyter-scene-widget-controls-header {
+    pointer-events: none;
+    float: right;
+}
+
+.pgl-jupyter-scene-widget-controls-body {
+    pointer-events: none;
+    clear: both;
+}
+
+.pgl-jupyter-scene-widget-controls-header * {
     pointer-events: all;
-    --mdc-typography-body1-font-size: 14px;
-    --mdc-typography-body2-font-size: 14px;
+}
+
+.pgl-jupyter-scene-widget-controls-body * {
+    display: block;
+    pointer-events: all;
 }
