@@ -43,9 +43,16 @@ jupyter labextension install @jupyter-widgets/jupyterlab-manager
 jupyter labextension install .
 jupyter lab --browser=google-chrome
 ```
+
 or
 
 ```bash
 npm run watch
 jupyter lab --watch
+```
+
+or
+```bash
+docker build --rm -f "docker/Dockerfile" -t plantgljupyter:latest --network=host .
+docker run --rm --network host  plantgljupyter:latest
 ```
