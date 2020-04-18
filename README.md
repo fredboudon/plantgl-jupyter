@@ -51,7 +51,8 @@ npm run watch
 jupyter lab --watch
 ```
 
-or
+### docker
+
 ```bash
 docker build --rm -f "docker/Dockerfile" -t plantgljupyter:latest --network=host .
 docker run --rm --network host  plantgljupyter:latest
