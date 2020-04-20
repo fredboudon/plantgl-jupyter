@@ -34,11 +34,11 @@ class SceneWidget(DOMWidget):
     scene = Dict(traits={
         'drc': Instance(memoryview),
         'scene': Instance(Scene),
-        'position': Tuple(Int(1), Int(1), Int(1)),
+        'position': Tuple(Float(0), Float(0), Float(0)),
         'scale': Float(1)
     }).tag(sync=True, to_json=scene_to_json)
-    size_display = Tuple(Int(min=0), Int(min=0), default_value=(400, 400)).tag(sync=True)
-    size_world = Tuple(Int(min=0), Int(min=0), Int(min=0), default_value=(10, 10, 10)).tag(sync=True)
+    size_display = Tuple(Float(min=0), Float(min=0), default_value=(400, 400)).tag(sync=True)
+    size_world = Tuple(Float(min=0), Float(min=0), Float(min=0), default_value=(10, 10, 10)).tag(sync=True)
     axes_helper = Bool(False).tag(sync=True)
     light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
@@ -77,7 +77,7 @@ class SceneWidget(DOMWidget):
         trait = Dict(traits={
             'drc': Instance(memoryview),
             'scene': Instance(Scene),
-            'position': Tuple(Int(0), Int(0), Int(0)),
+            'position': Tuple(Float(0), Float(0), Float(0)),
             'scale': Float(1)
         }).tag(sync=True, to_json=scene_to_json);
         self.add_traits(**{ name: trait })

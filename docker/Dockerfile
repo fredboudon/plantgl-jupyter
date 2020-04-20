@@ -34,6 +34,7 @@ RUN pip3 install git+https://github.com/fredboudon/mtg.git qtconsole numpy jupyt
 FROM jupyter as plantgl-jupyter
 WORKDIR /jupyter
 COPY ./ .
-RUN pip3 install -e . && jupyter labextension install --clean --dev-build=False .
+RUN python3 -m ipykernel install --user --name pgl-jupyter
+RUN pip3 install -e . && jupyter labextension install --dev-build=False .
 
 CMD jupyter lab --notebook-dir=examples --allow-root

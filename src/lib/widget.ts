@@ -127,16 +127,16 @@ export class SceneWidgetView extends DOMWidgetView {
         const [x_size, y_size, z_size] = this.sizeWorld;
 
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.01);
-        this.camera.position.set(x_size * 1.5, y_size * 2/3, z_size * 1.5);
+        this.camera.position.set(x_size, Math.max(x_size, z_size) * 1.5, z_size / 2);
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color('#b7b7b7');
+        this.scene.background = new THREE.Color('#888888');
 
         this.plane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(x_size, y_size),
+            new THREE.PlaneBufferGeometry(x_size, z_size),
             new THREE.MeshStandardMaterial({
-                color: new THREE.Color('#e0e0e0'),
+                color: new THREE.Color('#c4c2c2'),
                 roughness: 0.6
             })
         );
@@ -150,19 +150,19 @@ export class SceneWidgetView extends DOMWidgetView {
         this.axesHelper.visible = initialState.axesHelper;
         this.scene.add(this.axesHelper);
 
-        this.scene.add(new THREE.HemisphereLight(0xFFFFFF, 0xAAAAAA, 0.2));
+        this.scene.add(new THREE.HemisphereLight(0xFFFFFF, 0xAAAAAA, 0.1));
 
         this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
         this.light.shadow.bias = -0.001;
         this.light.castShadow = true;
-        this.light.position.set(0, y_size, z_size);
+        this.light.position.set(x_size / 2, y_size / 2, z_size / 2);
         this.light.target.position.set(0, 0, 0);
         this.light.shadow.camera.near = 0.01;
-        this.light.shadow.camera.far = z_size * Math.SQRT2 * 2;
-        this.light.shadow.camera.top = z_size;
-        this.light.shadow.camera.bottom = -z_size;
-        this.light.shadow.camera.left = -x_size;
-        this.light.shadow.camera.right = x_size;
+        this.light.shadow.camera.far = Math.sqrt(x_size * x_size + z_size * z_size);
+        this.light.shadow.camera.top = y_size / 2;
+        this.light.shadow.camera.bottom = -y_size / 2;
+        this.light.shadow.camera.left = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
+        this.light.shadow.camera.right = Math.sqrt(x_size * x_size + z_size * z_size) / 2;
         this.light.shadow.bias = -0.0001;
         this.scene.add(this.light);
 
@@ -205,8 +205,8 @@ export class SceneWidgetView extends DOMWidgetView {
                     this.containerEl.requestFullscreen();
                 }
             },
-            onAutoRotateToggled: () => {
-                this.state.autoRotate = !this.state.autoRotate;
+            onAutoRotateToggled: (value) => {
+                this.state.autoRotate = value;
                 if (this.orbitControl.autoRotate = this.state.autoRotate) {
                     const rotate = () => {
                         const id = requestAnimationFrame(rotate);
@@ -367,6 +367,8 @@ export class SceneWidgetView extends DOMWidgetView {
                 }
             }
         });
+        this.renderer.dispose();
+        this.renderer.forceContextLoss();
 
     }
 
