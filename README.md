@@ -54,6 +54,6 @@ jupyter lab --watch
 ### docker
 
 ```bash
-docker build --rm -f "docker/Dockerfile" -t plantgljupyter:latest --network=host .
-docker run --rm --network host  plantgljupyter:latest
+docker build --build-arg USER_ID=$(id -u) --target jupyter --rm -f "docker/Dockerfile" -t plantgljupyter:latest --network=host .
+docker run -it --rm --network host -v $PWD:/home/user/plantgljupyter --user $(id -u):$(id -g) -e "NOTEBOOK_DIR=plantgljupyter/examples" plantgljupyter:latest
 ```

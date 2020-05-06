@@ -29,6 +29,7 @@
     overflow-x: hidden;
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
+    --mdc-typography-body2-color: white;
 }
 
 .pgl-jupyter-scene-widget-controls-header {

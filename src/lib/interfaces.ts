@@ -1,5 +1,6 @@
 export interface IScene {
     drc: DataView;
+    offsets: number[];
     scene: string;
     position: number[];
     scale: number;
@@ -11,12 +12,16 @@ export interface IDecodingTask extends ITaskData {
 }
 
 export interface ITaskData {
-    drc: ArrayBuffer;
+    drcs: ArrayBuffer[];
     userData: any;
 }
 
 export interface ITaskResult {
-    geometry: THREE.BufferGeometry;
+    results: {
+        geometry: THREE.BufferGeometry;
+        instances: { matrices: number[][], metaData: { [key: string]: any } };
+        metaData: {[key:string]: any };
+    }[];
     userData: any;
 }
 

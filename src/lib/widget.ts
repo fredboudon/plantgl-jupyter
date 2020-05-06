@@ -14,7 +14,6 @@ import { OrbitControls } from './orbit-controls';
 import { IScene, IControlState } from './interfaces';
 import Controls from './controls';
 
-
 export class SceneWidgetModel extends DOMWidgetModel {
 
     defaults() {
@@ -131,12 +130,12 @@ export class SceneWidgetView extends DOMWidgetView {
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color('#888888');
+        this.scene.background = new THREE.Color('#8e8e8e');
 
         this.plane = new THREE.Mesh(
             new THREE.PlaneBufferGeometry(x_size, z_size),
             new THREE.MeshStandardMaterial({
-                color: new THREE.Color('#c4c2c2'),
+                color: new THREE.Color('#b5b5b5'),
                 roughness: 0.6
             })
         );
@@ -150,17 +149,27 @@ export class SceneWidgetView extends DOMWidgetView {
         this.axesHelper.visible = initialState.axesHelper;
         this.scene.add(this.axesHelper);
 
-        this.scene.add(new THREE.HemisphereLight(0xFFFFFF, 0xAAAAAA, 0.1));
+        const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.5);
+        lightTop.castShadow = false;
+        lightTop.position.set(0, y_size, 0);
+        lightTop.target.position.set(0, 0, 0);
+        this.scene.add(lightTop);
 
-        this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
+        const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.5);
+        lightBottom.castShadow = false;
+        lightBottom.position.set(0, -y_size, 0);
+        lightBottom.target.position.set(0, 0, 0);
+        this.scene.add(lightBottom);
+
+        this.light = new THREE.DirectionalLight(0xFFFFFF, 1.2);
         this.light.shadow.bias = -0.001;
         this.light.castShadow = true;
         this.light.position.set(x_size / 2, y_size / 2, z_size / 2);
         this.light.target.position.set(0, 0, 0);
         this.light.shadow.camera.near = 0.01;
         this.light.shadow.camera.far = Math.sqrt(x_size * x_size + z_size * z_size);
-        this.light.shadow.camera.top = y_size / 2;
-        this.light.shadow.camera.bottom = -y_size / 2;
+        this.light.shadow.camera.top = Math.sqrt(x_size * x_size + z_size * z_size) / 2;
+        this.light.shadow.camera.bottom = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
         this.light.shadow.camera.left = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
         this.light.shadow.camera.right = Math.sqrt(x_size * x_size + z_size * z_size) / 2;
         this.light.shadow.bias = -0.0001;
@@ -174,8 +183,8 @@ export class SceneWidgetView extends DOMWidgetView {
         this.lightHelper.visible = initialState.lightHelper;
         this.scene.add(this.lightHelper);
 
-        const camLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
-        this.scene.add(camLight);
+        // const camLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
+        // this.scene.add(camLight);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -184,13 +193,13 @@ export class SceneWidgetView extends DOMWidgetView {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.canvas = this.renderer.domElement;
         this.containerEl.appendChild(this.canvas);
-        camLight.position.copy(this.camera.position);
+        // camLight.position.copy(this.camera.position);
         this.renderer.render(this.scene, this.camera);
 
         this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
         this.orbitControl.addEventListener('change', () => {
-            camLight.position.copy(this.camera.position);
+            // camLight.position.copy(this.camera.position);
             this.renderer.render(this.scene, this.camera)
         });
         this.renderer.render(this.scene, this.camera);
@@ -307,50 +316,64 @@ export class SceneWidgetView extends DOMWidgetView {
 
     scene_changed() {
 
-        const { drc, position, scale } = this.model.get('scene') as IScene;
-        this.addMesh(drc.buffer, position, scale);
+        this.addScene(this.model.get('scene') as IScene);
 
     }
 
     addScene(scene: IScene) {
 
-        const { drc, position, scale } = scene;
-        this.addMesh(drc.buffer, position, scale);
+        const { drc, offsets, position, scale } = scene;
+        this.addMesh(offsets.map((begin, idx, arr) => {
+            return drc.buffer.slice(begin, arr[idx + 1] || drc.buffer.byteLength);
+        }), position, scale);
 
     }
 
-    addMesh(drc: ArrayBuffer, position=[0, 0, 0], scale=1) {
+    addMesh(drcs: ArrayBuffer[], position=[0, 0, 0], scale=1) {
 
-        if (!(drc instanceof ArrayBuffer) || !drc.byteLength)
-            return;
+        drcs = drcs.filter(drc => drc instanceof ArrayBuffer && !!drc.byteLength);
+        if (drcs.length === 0) return;
 
-        decoder.decode({ drc, userData: { position, scale }}).then(result => {
+        decoder.decode({ drcs, userData: { position, scale }}).then(result => {
 
-            const { geometry, userData: { position, scale } } = result;
+            const { results, userData: { position, scale } } = result;
+            results.forEach(result => {
+                const { geometry, metaData, instances } = result;
+                let mesh: THREE.InstancedMesh | THREE.Mesh = null;
+                const material = new THREE.MeshStandardMaterial({
+                    side: THREE.DoubleSide,
+                    shadowSide: THREE.BackSide,
+                    vertexColors: true,
+                    roughness: 0.7
+                });
+                if (metaData.type === 'instanced_mesh') {
+                    mesh = new THREE.InstancedMesh(geometry, material, instances.matrices.length);
+                    for (let i = 0; i < instances.matrices.length; i++) {
+                        (mesh as THREE.InstancedMesh).setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.matrices[i]));
+                    }
+                } else if (metaData.type === 'mesh') {
+                    mesh = new THREE.Mesh(geometry, material);
+                }
+                mesh.userData = metaData;
+                geometry.computeVertexNormals();
 
-            geometry.computeVertexNormals();
+                const [x, y, z] = position;
 
-            const [x, y, z] = position;
-            const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-                side: THREE.DoubleSide,
-                shadowSide: THREE.BackSide,
-                vertexColors: true,
-                roughness: 0.7
-            }));
-            mesh.scale.multiplyScalar(scale);
-            mesh.position.set(x, y, z);
-            mesh.rotation.x = -Math.PI / 2;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
+                mesh.scale.multiplyScalar(scale);
+                mesh.position.set(x, y, z);
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
 
-            this.scene.add(mesh);
+                this.scene.add(mesh);
+                this.disposables.push(mesh);
+            });
             this.renderer.render(this.scene, this.camera);
             this.orbitControl.update();
-            this.disposables.push(mesh);
 
-            }).catch(err => {
-                throw err;
-            });
+        }).catch(err => {
+            throw err;
+        });
 
     }
 
@@ -358,7 +381,7 @@ export class SceneWidgetView extends DOMWidgetView {
 
         // TODO: dispose helpers etc.?
         this.disposables.forEach(d => {
-            if (d instanceof THREE.Mesh) {
+            if (d instanceof THREE.Mesh || d instanceof THREE.InstancedMesh) {
                 d.geometry.dispose();
                 if (Array.isArray(d.material)) {
                     d.material.forEach(m => m.dispose());
@@ -367,8 +390,13 @@ export class SceneWidgetView extends DOMWidgetView {
                 }
             }
         });
+
+        // TODO: use a context pool for all widget instances in a notebook?
         this.renderer.dispose();
-        this.renderer.forceContextLoss();
+
+        // TODO: https://github.com/jupyter-widgets/ipywidgets/issues/1970
+        // seems the widget state is kept even if the widget is out of scope
+        super.remove();
 
     }
 

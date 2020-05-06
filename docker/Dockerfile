@@ -1,12 +1,18 @@
-FROM debian:latest AS base
+FROM node:buster-slim AS base
+
+ARG USER_ID
+
+RUN echo "root:root" | chpasswd && \
+    groupadd -g ${USER_ID} user && \
+    adduser --quiet --uid ${USER_ID} --gid ${USER_ID} user
+# -p $(openssl passwd -1 "user")
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y  git build-essential cmake \
-    python libboost-all-dev python-dev libboost-python-dev python3-pip python3-pyqt5  pyqt5-dev-tools \
-    zlib1g-dev libpng-dev libjpeg-dev \
+    sudo python libboost-all-dev python-dev libboost-python-dev python3-pip python3-pyqt5  pyqt5-dev-tools \
+    zlib1g-dev libpng-dev libjpeg-dev libbz2-dev \
     libgl-dev libglu1-mesa libglu1-mesa-dev libgl1-mesa-dev libgl1-mesa-glx libgl1-mesa-dri freeglut3-dev \
-    qtbase5-dev libqt5x11extras5-dev libqhull-dev libcgal-dev libann-dev bison libeigen3-dev flex \
-    nodejs npm
+    qtbase5-dev libqt5x11extras5-dev libqhull-dev libcgal-dev libann-dev bison libeigen3-dev flex
 
 FROM base as draco
 RUN git clone  https://github.com/google/draco.git  && cd draco \
@@ -14,27 +20,31 @@ RUN git clone  https://github.com/google/draco.git  && cd draco \
     mkdir build && cd build && cmake -DBUILD_SHARED_LIBS=ON ../ && make -j4 && make install
 
 FROM draco as plantgl
+RUN pip3 install git+https://github.com/fredboudon/deploy.git --user
+RUN pip3 install git+https://github.com/fredboudon/mtg.git toml matplotlib pandas future qtconsole numpy jupyter jupyterlab && jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 RUN git clone  https://github.com/jvail/plantgl.git  && cd plantgl && \
     git checkout plantgl-jupyter && \
     mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ../ && \
     make -j4 && make install && \
-    cd .. && pip3 install -e .
+    cd .. && pip3 install .
 
 FROM plantgl as lpy
-RUN pip3 install git+https://github.com/fredboudon/deploy.git
-RUN git clone  https://github.com/fredboudon/lpy.git && cd lpy && \
-    sed -i 's/set(Boost_NO_SYSTEM_PATHS ON)/set(Boost_NO_SYSTEM_PATHS OFF)/g' CMakeLists.txt && \
+RUN git clone https://github.com/jvail/lpy.git && cd lpy && \
+    git checkout plantgl-jupyter && \
     mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DPLANTGL_ROOT=../plantgl/build-cmake ../ -DBOOST_INCLUDEDIR=/usr/include/boost && \
     make -j4 && make install && \
-    cd .. && python3 setup.py develop
+    cd .. && pip3 install .
 
-FROM lpy as jupyter
-RUN pip3 install git+https://github.com/fredboudon/mtg.git qtconsole numpy jupyter jupyterlab && jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
-
-FROM jupyter as plantgl-jupyter
-WORKDIR /jupyter
+FROM lpy as plantgl-jupyter
+WORKDIR /pgljupyter
 COPY ./ .
-RUN python3 -m ipykernel install --user --name pgl-jupyter
-RUN pip3 install -e . && jupyter labextension install --dev-build=False .
+RUN pip3 install -e . && \
+    jupyter nbextension install --sys-prefix --overwrite --py pgljupyter && \
+    jupyter nbextension enable --sys-prefix --py pgljupyter && \
+    jupyter labextension install . && \
+    python3 -m ipykernel install --name pgl-jupyter
 
-CMD jupyter lab --notebook-dir=examples --allow-root
+FROM plantgl-jupyter as jupyter
+USER user
+WORKDIR /home/user
+CMD jupyter lab --notebook-dir=$NOTEBOOK_DIR

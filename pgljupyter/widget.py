@@ -3,10 +3,10 @@ TODO: Add module docstring
 """
 
 from ipywidgets.widgets import DOMWidget, Widget, register
-from traitlets import Unicode, Instance, Int, Float, Tuple, Dict, Bool
-from openalea.plantgl.all import Scene, Shape, ParametricModel, scene_to_drc
+from traitlets import Unicode, Instance, Int, Float, Tuple, Dict, Bool, List, observe
+from openalea.plantgl.all import Scene, Shape, ParametricModel, serialize
 from functools import reduce
-import random, string
+import random, string, io
 
 from ._frontend import module_name, module_version
 
@@ -33,6 +33,7 @@ class SceneWidget(DOMWidget):
 
     scene = Dict(traits={
         'drc': Instance(memoryview),
+        'offsets': List([]),
         'scene': Instance(Scene),
         'position': Tuple(Float(0), Float(0), Float(0)),
         'scale': Float(1)
@@ -43,11 +44,14 @@ class SceneWidget(DOMWidget):
     light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
     mesh_compression = Int(10, min=0, max=10).tag(sync=True)
+    single_mesh = False
 
     def __init__(self, obj=None, **kwargs):
         scene = self.__to_scene(obj)
+        serialized = self.__serialize(scene);
         kwargs['scene'] = {
-            'drc': self.__compress(scene),
+            'drc': serialized['data'],
+            'offsets': serialized['offsets'],
             'scene': scene,
             'position': kwargs.get('position') if 'position' in kwargs else (0,0,0),
             'scale':  kwargs.get('scale') if 'scale' in kwargs else 1.0
@@ -65,27 +69,35 @@ class SceneWidget(DOMWidget):
         elif isinstance(obj, list) and reduce(lambda a, b: a and (isinstance(b, Shape) or isinstance(b, ParametricModel)), obj):
             scene = Scene(obj)
         else:
-            raise ValueError('Not a PlantGL Scene or Shape or ParametricModel')
+            raise ValueError('Not a PlantGL Scene, Shape or Model')
         return scene
 
-    # TODO: compress in thread
-    def __compress(self, scene):
-        return scene_to_drc(scene, min(10, max(0, 10 - self.mesh_compression)))
+    # TODO: serialize in thread
+    def __serialize(self, scene):
+        serialized = serialize(scene, self.single_mesh, 10 - self.mesh_compression)
+        if not serialized['status']:
+            raise ValueError('scene serialization failed')
+        # print(serialized)
+        return serialized
 
     def add(self, scene, position=(0,0,0), scale=1.0):
-        name = 'scene_' + ''.join(random.choices(string.ascii_letters + string.digits, k=25))
+        id = ''.join(random.choices(string.ascii_letters + string.digits, k=25))
+        name = 'scene_' + id
         trait = Dict(traits={
             'drc': Instance(memoryview),
+            'offsets': List([]),
             'scene': Instance(Scene),
             'position': Tuple(Float(0), Float(0), Float(0)),
             'scale': Float(1)
         }).tag(sync=True, to_json=scene_to_json);
         self.add_traits(**{ name: trait })
         self.send({'new_trait': { 'name': name }})
+        serialized = self.__serialize(scene);
         self.set_trait(name, {
-            'drc': self.__compress(scene),
+            'drc': serialized['data'],
+            'offsets': serialized['offsets'],
             'scene': scene,
             'position': position,
             'scale': scale
         })
-        return name
+        return id

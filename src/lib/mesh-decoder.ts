@@ -1,6 +1,17 @@
-import getWorker from 'draco-mesh-web-decoder';
+import getWorker from 'draco-web-decoder';
 import * as THREE from 'three';
 import { IDecodingTask, ITaskData, ITaskResult } from './interfaces';
+
+const makeMsg = (drcs) => ({
+    drc: drcs,
+    configs: {
+        metadata: [
+            { name: 'id', type: 'int' },
+            { name: 'type', type: 'string' },
+            { name: 'instances', type: 'mesh' }
+        ]
+    }
+});
 
 const MAX_WORKER = 5;
 const decoders: Map<Worker, IDecodingTask[]> = new Map();
@@ -19,7 +30,7 @@ const getDecoder = () => {
             if (data && 'initialized' in data) {
                 if (data.initialized) {
                     // console.log('initialized');
-                    this.postMessage(decoders.get(this)[0].drc);
+                    this.postMessage(makeMsg(decoders.get(this)[0].drcs));
                 } else {
                     // console.log('terminate on error');
                     const tasks = decoders.get(this);
@@ -28,17 +39,43 @@ const getDecoder = () => {
                     tasks.forEach(task => task.reject());
                 }
             } else {
-                if (data && data instanceof Object) {
-                    const geometry = new THREE.BufferGeometry();
-                    geometry.setIndex(new THREE.BufferAttribute(data.index.array, 1));
-                    data.attributes.forEach(attribute => {
-                        geometry.setAttribute(
-                            attribute.name,
-                            new THREE.BufferAttribute(attribute.array, attribute.itemSize, attribute.name === 'color')
-                        );
-                    });
+                if (data && Array.isArray(data)) {
+
+                    const results = data.reduce((results, d, i)=> {
+                        let instances;
+                        const metaData = d.metadata;
+                        const geometry = new THREE.BufferGeometry();
+                        geometry.setIndex(new THREE.BufferAttribute(d.index.array, 1));
+                        d.attributes.forEach(attribute => {
+                            if (!(metaData.type === 'instanced_mesh' && attribute.name === 'color')) {
+                                geometry.setAttribute(
+                                    attribute.name,
+                                    new THREE.BufferAttribute(attribute.array, attribute.itemSize, attribute.name === 'color')
+                                );
+                            }
+                        });
+                        if (metaData.type === 'instanced_mesh' && metaData.instances && metaData.instances.metadata.type === 'instances') {
+                            instances = {
+                                ...metaData.instances.attributes.reduce((data, attr) => {
+                                    if (attr.name === 'position') {
+                                        const size = attr.itemSize;
+                                        const count = attr.array.length / size;
+                                        for (let i = 0; i < count; i++) {
+                                            data.matrices.push(Array.from(attr.array.slice(i * size, i * size + size)));
+                                        }
+                                    } else if (attr.name === 'color') {
+                                        geometry.setAttribute('color', new THREE.InstancedBufferAttribute(attr.array, 3, true));
+                                    }
+                                    return data;
+                                }, { matrices: [] }),
+                                metaData: metaData.instances.metadata
+                            }
+                        }
+                        results.push({ geometry, metaData, instances })
+                        return results;
+                    }, []);
                     const { resolve, userData } = decoders.get(this).shift();
-                    resolve({ geometry, userData });
+                    resolve({ results, userData });
                     // console.log(Array.from(decoders.values()).map(v => v.length));
                 } else {
                     decoders.get(this).shift().reject();
@@ -50,11 +87,11 @@ const getDecoder = () => {
                             // console.log('terminated');
                             self.terminate();
                         } else {
-                            self.postMessage(decoders.get(self)[0].drc);
+                            self.postMessage(makeMsg(decoders.get(self)[0].drcs));
                         }
                     }))(this), 1000);
                 } else {
-                    this.postMessage(decoders.get(this)[0].drc);
+                    this.postMessage(makeMsg(decoders.get(this)[0].drcs));
                 }
             }
         };
