@@ -109,7 +109,17 @@ export class SceneWidgetView extends DOMWidgetView {
         }
 
         super.render();
+
+        const [width, height] = this.sizeDisplay;
         this.containerEl = document.createElement('div');
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height
+        const context = canvas.getContext('webgl2', { alpha: false }) || (
+            canvas.getContext('experimental-webgl', { alpha: false }) ||
+            canvas.getContext('webgl', { alpha: false })
+        ) as WebGLRenderingContext;
+        this.containerEl.appendChild(canvas);
         this.containerEl.setAttribute('class', 'pgl-jupyter-scene-widget');
         this.el.appendChild(this.containerEl);
         this.controlsEl = document.createElement('div');
@@ -122,7 +132,6 @@ export class SceneWidgetView extends DOMWidgetView {
             return false;
         });
 
-        const [width, height] = this.sizeDisplay;
         const [x_size, y_size, z_size] = this.sizeWorld;
 
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.01);
@@ -186,7 +195,7 @@ export class SceneWidgetView extends DOMWidgetView {
         // const camLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
         // this.scene.add(camLight);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(width, height);
         this.renderer.shadowMap.enabled = true;
