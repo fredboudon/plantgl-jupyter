@@ -37,7 +37,9 @@ export class SceneWidgetModel extends DOMWidgetModel {
     static serializers: ISerializers = {
         ...DOMWidgetModel.serializers,
         scene: {
-            serialize: scene => scene, // async serialization?
+            serialize: (scene, model) => {
+                return Object.keys(model.views).length ? scene : undefined;
+            }, // async serialization?
             deserialize: scene => scene
         }
     }
@@ -84,7 +86,9 @@ export class SceneWidgetView extends DOMWidgetView {
         // add required fns for dynamically added scenes after loading the notebook with saved widget state
         Object.keys(parameters.model.attributes).filter(key => key.startsWith('scene_')).forEach(key => {
             SceneWidgetModel.serializers[key] = {
-                serialize: scene => scene,
+                serialize: (scene, model) => {
+                    return Object.keys(model.views).length ? scene : undefined;
+                },
                 deserialize: scene => scene
             };
             this.listenTo(this.model, `change:${key}`, ((key) => () => this.addScene(this.model.get(key)))(key));
@@ -286,7 +290,9 @@ export class SceneWidgetView extends DOMWidgetView {
             if ('new_trait' in msg) {
                 const key = msg.new_trait.name;
                 SceneWidgetModel.serializers[key] = {
-                    serialize: scene => scene,
+                    serialize: (scene, model) => {
+                        return Object.keys(model.views).length ? scene : undefined;
+                    },
                     deserialize: scene => scene
                 }
                 this.listenTo(this.model, `change:${key}`, ((key) => () => this.addScene(this.model.get(key)))(key));
@@ -402,9 +408,6 @@ export class SceneWidgetView extends DOMWidgetView {
 
         // TODO: use a context pool for all widget instances in a notebook?
         this.renderer.dispose();
-
-        // TODO: https://github.com/jupyter-widgets/ipywidgets/issues/1970
-        // seems the widget state is kept even if the widget is out of scope
         super.remove();
 
     }
