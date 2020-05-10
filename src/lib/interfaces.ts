@@ -42,3 +42,9 @@ export interface IControlHandlers {
     onAxesHelperToggled: Function;
     onLightHelperToggled: Function;
 }
+
+export enum Unit {
+    m = 0,
+    cm = 1,
+    mm = 2
+}

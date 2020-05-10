@@ -1,5 +1,6 @@
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import * as widget from './lib/widget';
+import * as widgets from './lib/widgets';
+import * as models from './lib/models';
 import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
@@ -11,7 +12,7 @@ export default {
     registry.registerWidget({
       name: MODULE_NAME,
       version: MODULE_VERSION,
-      exports: widget
+      exports: { ...widgets, ...models }
     });
   },
   autoStart: true
