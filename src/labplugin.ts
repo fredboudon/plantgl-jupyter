@@ -1,6 +1,6 @@
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import * as widgets from './lib/widgets';
-import * as models from './lib/models';
+import * as widgets from './widgets/widgets';
+import * as models from './widgets/models';
 import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
