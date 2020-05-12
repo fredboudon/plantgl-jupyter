@@ -1,9 +1,9 @@
 import random as rd
 
-leafduration = 3 # life time of a leaf
-leafold =      2 # age at which a leaf is considered as old
-maxorder =     4 # maximum number of branching order
-radinc =    0.01 # increment of radius through time
+leafduration = 2 # life time of a leaf
+leafold =      1 # age at which a leaf is considered as old
+maxorder =     7 # maximum number of branching order
+radinc =    0.03 # increment of radius through time
 
 maxduration = lambda order : int(10./(order+1))+3  # life time of an apex
 branch_angle = lambda order : 60+30*((maxorder-order)/maxorder) # branching angle
@@ -19,7 +19,7 @@ module L # whorl of leaf
 module I # Internode
 module T # Meristem ending
 
-Axiom: _(0.1)@GcI(0.5,0.1)A(0,0)
+Axiom: _(0.8)@GcI(0.5,0.1)A(0,0)
 
 derivation length: nbiter
 production:
@@ -27,7 +27,7 @@ production:
 A(t,o) :
   if t < maxduration(o):
      # simply produces a metamer and ages the apex
-     produce I(1,0.1)L(0,t)A(t+1,o)
+     produce I(1,0.5)L(0,t)A(t+1,o)
   else:
       # produce a whorl of sympodial branches
       nbaxe = nb_axes(o)

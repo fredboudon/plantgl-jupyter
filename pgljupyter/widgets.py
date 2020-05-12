@@ -9,6 +9,7 @@ from openalea.lpy import Lsystem
 from functools import reduce
 import random, string, io
 from enum import Enum
+import io
 
 from ._frontend import module_name, module_version
 
@@ -60,7 +61,7 @@ class PGLWidget(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    size_display = Tuple(Int(400, min=400), Int(400, min=400), default_value=(400, 400)).tag(sync=True)
+    size_display = Tuple(Int(400, min=300), Int(400, min=300), default_value=(400, 400)).tag(sync=True)
     size_world = Tuple(Int(1, min=1), Int(1, min=1), Int(1, min=1), default_value=(10, 10, 10)).tag(sync=True)
     axes_helper = Bool(False).tag(sync=True)
     light_helper = Bool(False).tag(sync=True)
@@ -137,9 +138,11 @@ class LsystemWidget(PGLWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
+    __trees = []
+    __scenes = {}
+    __filename = ''
+
     units = Unit
-    trees = []
-    scenes = []
     lsystem = Instance(Lsystem).tag(sync=True, to_json=lambda e, o: {
         'derivationLength': e.derivationLength
     })
@@ -148,42 +151,68 @@ class LsystemWidget(PGLWidget):
         'drc': Instance(memoryview),
         'offsets': List([]),
         'scene': Instance(Scene),
-        'derivationStep': Int(0, min=0)
+        'derivationStep': Int(0, min=0),
+        'id': Int(0, min=0)
     }).tag(sync=True, to_json=scene_to_json)
     animate = Bool(False).tag(sync=True)
 
-    def __init__(self, lsystem, unit=Unit.m, animate=False, **kwargs):
-        self.lsystem = lsystem
-        self.trees.append(lsystem.axiom)
+    def __init__(self, filename, options={}, unit=Unit.m, animate=False, **kwargs):
+        self.__filename = filename
+        self.lsystem = Lsystem(filename, options)
+        self.__trees.append(self.lsystem.axiom)
         self.unit = unit
         self.animate = animate
         self.__set_scene(0)
-        self.on_msg(self.on_custom_msg)
+        self.on_msg(self.__on_custom_msg)
         super().__init__(**kwargs)
 
-    def on_custom_msg(self, widget, content, buffers):
-        if 'derive' in content and content['derive']:
-            self.__derive(self.scene['derivationStep'] + 1)
+    def __on_custom_msg(self, widget, content, buffers):
+        if 'derive' in content:
+            step = content['derive']
+            if step < self.lsystem.derivationLength:
+                if step < len(self.__trees):
+                    self.__set_scene(step)
+                else:
+                    self.__derive(step)
+        elif 'rewind' in content:
+            self.__rewind()
+
+    def __rewind(self):
+        self.lsystem.clear()
+        with io.open(self.__filename, 'r') as lpy:
+            self.lsystem.setCode(lpy.read())
+        self.send_state('lsystem')
+        self.__clear()
+        self.__trees.append(self.lsystem.axiom)
+        self.__set_scene(0)
+
+    def __clear(self):
+        self.__trees = []
+        self.__scenes = {}
 
     def __set_scene(self, step):
-        if step < len(self.scenes):
-            self.scene = self.scenes[step]
+        if step in self.__scenes.keys():
+            self.scene = self.__scenes[step]
         else:
-            scene = self.lsystem.sceneInterpretation(self.trees[step])
+            scene = self.lsystem.sceneInterpretation(self.__trees[step])
             serialized = serialize_scene(scene)
             serialized_scene = {
                 'drc': serialized.data,
                 'offsets': serialized.offsets,
                 'scene': scene,
-                'derivationStep': step
+                'derivationStep': step,
+                'id': step
             }
             self.scene = serialized_scene
-            self.scenes.append(serialized_scene)
+            self.__scenes[step] = serialized_scene
 
     def __derive(self, step):
-        if step < self.lsystem.derivationLength and step <= len(self.trees):
-            if step == len(self.trees):
-                self.trees.append(self.lsystem.derive(self.trees[step - 1], step, 1))
-            self.__set_scene(step)
+        if step < self.lsystem.derivationLength:
+            while True:
+                if step == len(self.__trees) - 1:
+                    self.__set_scene(step)
+                    break;
+                else:
+                    self.__trees.append(self.lsystem.derive(self.__trees[-1], len(self.__trees), 1))
         else:
-            print('derivation step out of Lsystem bounds')
+            raise ValueError(f'derivation step {step} out of Lsystem bounds')

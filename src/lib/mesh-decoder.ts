@@ -1,6 +1,6 @@
-import getWorker from 'draco-web-decoder';
+import makeWorker from 'draco-web-decoder';
 import * as THREE from 'three';
-import { IDecodingTask, ITaskData, ITaskResult } from './interfaces';
+import { IDecodingTask, ITaskData, ITaskResult } from './types';
 
 const makeMsg = (drcs) => ({
     drc: drcs,
@@ -13,15 +13,17 @@ const makeMsg = (drcs) => ({
     }
 });
 
-const MAX_WORKER = 5;
-const decoders: Map<Worker, IDecodingTask[]> = new Map();
-const getDecoder = () => {
+let MAX_WORKER = 5;
+const workers: Map<Worker, IDecodingTask[]> = new Map();
+const getWorker = (sequential=false): Worker => {
+    if (sequential) {
+        MAX_WORKER = 1;
+    }
+    const avg = Array.from(workers.values()).reduce((s, v) => s + v.length / workers.size, 0);
 
-    const avg = Array.from(decoders.values()).reduce((s, v) => s + v.length / decoders.size, 0);
-
-    if ((!decoders.size || avg > 2) && decoders.size < MAX_WORKER) {
-        const worker: Worker = getWorker();
-        decoders.set(worker, []);
+    if ((!workers.size || avg > 4) && workers.size < MAX_WORKER) {
+        const worker: Worker = makeWorker();
+        workers.set(worker, []);
         worker.onerror = function (evt) {
             console.log(evt);
         }
@@ -30,15 +32,18 @@ const getDecoder = () => {
             if (data && 'initialized' in data) {
                 if (data.initialized) {
                     // console.log('initialized');
-                    this.postMessage(makeMsg(decoders.get(this)[0].drcs));
+                    (this as any).initialized = true;
+                    workers.get(this).forEach(task => this.postMessage(makeMsg(task.drcs)))
                 } else {
                     // console.log('terminate on error');
-                    const tasks = decoders.get(this);
+                    const tasks = workers.get(this);
                     worker.terminate();
-                    decoders.delete(this);
+                    workers.delete(this);
                     tasks.forEach(task => task.reject());
                 }
             } else {
+                // console.log(Array.from(workers.values()).map(v => v.length));
+                const { resolve, reject, userData } = workers.get(this).shift();
                 if (data && Array.isArray(data)) {
 
                     const results = data.reduce((results, d, i)=> {
@@ -74,36 +79,32 @@ const getDecoder = () => {
                         results.push({ geometry, metaData, instances })
                         return results;
                     }, []);
-                    const { resolve, userData } = decoders.get(this).shift();
+
                     resolve({ results, userData });
-                    // console.log(Array.from(decoders.values()).map(v => v.length));
+
                 } else {
-                    decoders.get(this).shift().reject();
+                    reject(userData);
                 }
-                if (decoders.get(this).length === 0) {
+                if (workers.get(this).length === 0) {
                     setTimeout((self => (() => {
-                        if (decoders.get(self).length === 0) {
-                            decoders.delete(self);
+                        if (workers.get(self) && workers.get(self).length === 0) {
+                            workers.delete(self);
                             // console.log('terminated');
                             self.terminate();
-                        } else {
-                            self.postMessage(makeMsg(decoders.get(self)[0].drcs));
                         }
-                    }))(this), 1000);
-                } else {
-                    this.postMessage(makeMsg(decoders.get(this)[0].drcs));
+                    }))(this), 60000);
                 }
             }
         };
         return worker;
     } else {
-        let worker = decoders.keys().next().value;
-        for (const key of decoders.keys()) {
-            if (!decoders.get(key).length) {
+        let worker = workers.keys().next().value;
+        for (const key of workers.keys()) {
+            if (!workers.get(key).length) {
                 worker = key;
                 break;
             }
-            if (decoders.get(worker).length > decoders.get(key).length) {
+            if (workers.get(worker).length > workers.get(key).length) {
                 worker = key;
             }
         }
@@ -114,10 +115,13 @@ const getDecoder = () => {
 
 class Decoder {
 
-    decode = (task: ITaskData): Promise<ITaskResult> => {
-        const decoder = getDecoder();
+    decode = (task: ITaskData, sequential=false): Promise<ITaskResult> => {
+        const worker = getWorker(sequential);
         return new Promise((resolve, reject) => {
-            decoders.get(decoder).push({ resolve, reject, ...task });
+            workers.get(worker).push({ resolve, reject, ...task });
+            if ((worker as any).initialized) {
+                worker.postMessage(makeMsg(task.drcs));
+            }
         });
     }
 
