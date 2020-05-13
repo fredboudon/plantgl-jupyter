@@ -8,8 +8,9 @@ import '../../css/widget.css';
 import decoder from './mesh-decoder';
 import { PGLControls, LsystemControls } from './controls';
 import { OrbitControls } from './orbit-controls';
-import { IScene, IPGLControlState, Unit, ILsystemControlState, ILsystemScene } from './types';
+import { IScene, IPGLControlsState, LsystemUnit, ILsystemControlsState, ILsystemScene } from './types';
 import { SceneWidgetModel } from './models';
+import { disposeScene } from './utilities';
 
 const MIN_DELAY = 250;
 
@@ -20,6 +21,7 @@ export class PGLWidgetView extends DOMWidgetView {
     renderer: THREE.WebGLRenderer = null;
     plane: THREE.Mesh = null;
     light: THREE.DirectionalLight = null;
+    camLight: THREE.DirectionalLight = null;
     axesHelper: THREE.AxesHelper = null;
     lightHelper: THREE.DirectionalLightHelper = null;
     cameraHelper: THREE.CameraHelper = null;
@@ -31,8 +33,10 @@ export class PGLWidgetView extends DOMWidgetView {
     sizeWorld: number[];
 
     pglControls: PGLControls = null;
-    pglControlState: IPGLControlState = null;
+    pglControlsState: IPGLControlsState = null;
     pglControlsEl: HTMLDivElement = null;
+
+    disposables: THREE.Scene[] = [];
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -44,7 +48,7 @@ export class PGLWidgetView extends DOMWidgetView {
 
         super.render();
 
-        const initialState: IPGLControlState = {
+        const initialState: IPGLControlsState = {
             axesHelper: this.model.get('axes_helper'),
             lightHelper: this.model.get('light_helper'),
             plane: this.model.get('plane'),
@@ -63,11 +67,11 @@ export class PGLWidgetView extends DOMWidgetView {
             canvas.getContext('experimental-webgl', { alpha: false }) ||
             canvas.getContext('webgl', { alpha: false })) as WebGLRenderingContext;
         this.containerEl.appendChild(canvas);
-        this.containerEl.setAttribute('class', 'pgl-jupyter-scene-widget');
+        this.containerEl.setAttribute('class', 'pgl-jupyter-pgl-widget');
         this.el.appendChild(this.containerEl);
 
         this.pglControlsEl = document.createElement('div');
-        this.pglControlsEl.setAttribute('class', 'pgl-jupyter-scene-widget-controls');
+        this.pglControlsEl.setAttribute('class', 'pgl-jupyter-pgl-widget-controls');
         this.containerEl.appendChild(this.pglControlsEl);
 
         this.containerEl.addEventListener('contextmenu', ev => {
@@ -81,19 +85,18 @@ export class PGLWidgetView extends DOMWidgetView {
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.01);
         this.camera.position.set(x_size, Math.max(x_size, z_size) * 1.5, z_size / 2);
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+        this.camera.up = new THREE.Vector3(0, 0, 1);
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color('#8e8e8e');
+        this.scene.background = new THREE.Color('#cccccc');
 
         this.plane = new THREE.Mesh(
             new THREE.PlaneBufferGeometry(x_size, z_size),
-            new THREE.MeshStandardMaterial({
-                color: new THREE.Color('#b5b5b5'),
-                roughness: 0.6
+            new THREE.MeshPhongMaterial({
+                color: new THREE.Color(0xFFFFFF)
             })
         );
         this.plane.name = 'plane';
-        this.plane.rotation.x = -Math.PI / 2;
         this.plane.receiveShadow = true;
         this.plane.visible = initialState.plane;
         this.scene.add(this.plane);
@@ -102,13 +105,22 @@ export class PGLWidgetView extends DOMWidgetView {
         this.axesHelper.visible = initialState.axesHelper;
         this.scene.add(this.axesHelper);
 
-        this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
+        this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.4));
+
+        const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.9);
+        lightBottom.position.set(0, -y_size, 0);
+        this.scene.add(lightBottom);
+        const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.9);
+        lightTop.position.set(0, y_size, 0);
+        this.scene.add(lightTop);
+
+        this.light = new THREE.DirectionalLight(0xFFFFFF, 0.9);
         this.light.shadow.bias = -0.001;
         this.light.castShadow = true;
         this.light.position.set(x_size / 2, y_size / 2, z_size / 2);
         this.light.target.position.set(0, 0, 0);
         this.light.shadow.camera.near = 0.01;
-        this.light.shadow.camera.far = Math.sqrt(x_size * x_size + z_size * z_size);
+        this.light.shadow.camera.far = Math.sqrt(Math.pow(Math.sqrt(x_size * x_size + z_size * z_size), 2) + Math.pow(y_size, 2));
         this.light.shadow.camera.top = Math.sqrt(x_size * x_size + z_size * z_size) / 2;
         this.light.shadow.camera.bottom = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
         this.light.shadow.camera.left = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
@@ -123,21 +135,16 @@ export class PGLWidgetView extends DOMWidgetView {
         this.lightHelper.visible = initialState.lightHelper;
         this.scene.add(this.lightHelper);
 
-        const camLight = new THREE.DirectionalLight(0xFFFFFF, 0.8);
-        this.scene.add(camLight);
-
         this.renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(width, height);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        camLight.position.copy(this.camera.position);
         this.renderer.render(this.scene, this.camera);
 
         this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
         this.orbitControl.addEventListener('change', () => {
-            camLight.position.copy(this.camera.position);
             this.renderer.render(this.scene, this.camera)
         });
         this.renderer.render(this.scene, this.camera);
@@ -152,12 +159,12 @@ export class PGLWidgetView extends DOMWidgetView {
                     this.containerEl.requestFullscreen();
                 }
             },
-            onAutoRotateToggled: (value) => {
-                this.pglControlState.autoRotate = value;
-                if (this.orbitControl.autoRotate = this.pglControlState.autoRotate) {
+            onAutoRotateToggled: (value: boolean) => {
+                this.pglControlsState.autoRotate = value;
+                if (this.orbitControl.autoRotate = this.pglControlsState.autoRotate) {
                     const rotate = () => {
                         const id = requestAnimationFrame(rotate);
-                        if (!this.pglControlState.autoRotate) {
+                        if (!this.pglControlsState.autoRotate) {
                             window.cancelAnimationFrame(id)
                         }
                         this.orbitControl.update();
@@ -166,33 +173,33 @@ export class PGLWidgetView extends DOMWidgetView {
                     rotate();
                 }
             },
-            onPlaneToggled: (value) => {
-                this.pglControlState.plane = value;
-                this.plane.visible = this.pglControlState.plane;
+            onPlaneToggled: (value: boolean) => {
+                this.pglControlsState.plane = value;
+                this.plane.visible = this.pglControlsState.plane;
                 this.renderer.render(this.scene, this.camera);
-                this.model.set('plane', this.pglControlState.plane);
+                this.model.set('plane', this.pglControlsState.plane);
                 this.touch();
             },
-            onAxesHelperToggled: (value) => {
-                this.pglControlState.axesHelper = value;
-                this.axesHelper.visible = this.pglControlState.axesHelper;
+            onAxesHelperToggled: (value: boolean) => {
+                this.pglControlsState.axesHelper = value;
+                this.axesHelper.visible = this.pglControlsState.axesHelper;
                 this.renderer.render(this.scene, this.camera);
-                this.model.set('axes_helper', this.pglControlState.axesHelper);
+                this.model.set('axes_helper', this.pglControlsState.axesHelper);
                 this.touch();
             },
-            onLightHelperToggled: (value) => {
-                this.pglControlState.lightHelper = value;
-                this.lightHelper.visible = this.pglControlState.lightHelper;
-                this.cameraHelper.visible = this.pglControlState.lightHelper;
+            onLightHelperToggled: (value: boolean) => {
+                this.pglControlsState.lightHelper = value;
+                this.lightHelper.visible = this.pglControlsState.lightHelper;
+                this.cameraHelper.visible = this.pglControlsState.lightHelper;
                 this.renderer.render(this.scene, this.camera);
-                this.model.set('light_helper', this.pglControlState.lightHelper);
+                this.model.set('light_helper', this.pglControlsState.lightHelper);
                 this.touch();
             }
         }, this.pglControlsEl);
-        this.pglControlState = this.pglControls.state;
+        this.pglControlsState = this.pglControls.state;
 
-        this.containerEl.addEventListener('mouseover', () => this.pglControlState.showHeader = true);
-        this.containerEl.addEventListener('mouseout', () => this.pglControlState.showHeader = false);
+        this.containerEl.addEventListener('mouseover', () => this.pglControlsState.showHeader = true);
+        this.containerEl.addEventListener('mouseout', () => this.pglControlsState.showHeader = false);
 
         this.listenTo(this.model, 'change:axes_helper', () => this.pglControls.evtHandlers.onAxesHelperToggled(
             this.model.get('axes_helper')
@@ -210,8 +217,8 @@ export class PGLWidgetView extends DOMWidgetView {
         });
         this.listenTo(this.model, 'change:size_world', this.resizeWorld);
         this.containerEl.onfullscreenchange = () => {
-            this.pglControlState.fullscreen = (document.fullscreenElement === this.containerEl);
-            if (this.pglControlState.fullscreen) {
+            this.pglControlsState.fullscreen = (document.fullscreenElement === this.containerEl);
+            if (this.pglControlsState.fullscreen) {
                 this.resizeDisplay(window.screen.width, window.screen.height);
             } else {
                 const [width, height] = this.sizeDisplay;
@@ -246,8 +253,6 @@ export class PGLWidgetView extends DOMWidgetView {
 }
 
 export class SceneWidgetView extends PGLWidgetView {
-
-    disposables: THREE.Object3D[] = [];
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -301,73 +306,65 @@ export class SceneWidgetView extends PGLWidgetView {
     addScene(scene: IScene) {
 
         const { drc, offsets, position, scale } = scene;
-        this.addMesh(offsets.map((begin, idx, arr) => {
+        const drcs = offsets.map((begin, idx, arr) => {
             return drc.buffer.slice(begin, arr[idx + 1] || drc.buffer.byteLength);
-        }), position, scale);
+        }).filter(drc => drc instanceof ArrayBuffer && !!drc.byteLength);
 
-    }
+        if (drcs.length) {
 
-    addMesh(drcs: ArrayBuffer[], position = [0, 0, 0], scale = 1) {
+            const scene = new THREE.Scene();
 
-        drcs = drcs.filter(drc => drc instanceof ArrayBuffer && !!drc.byteLength);
-        if (drcs.length === 0) return;
+            decoder.decode({ drcs, userData: { position, scale } }).then(result => {
 
-        decoder.decode({ drcs, userData: { position, scale } }).then(result => {
-
-            const { results, userData: { position, scale } } = result;
-            results.forEach(result => {
-                const { geometry, metaData, instances } = result;
-                let mesh: THREE.InstancedMesh | THREE.Mesh = null;
-                const material = new THREE.MeshStandardMaterial({
-                    side: THREE.DoubleSide,
-                    shadowSide: THREE.BackSide,
-                    vertexColors: true,
-                    roughness: 0.7
-                });
-                if (metaData.type === 'instanced_mesh') {
-                    mesh = new THREE.InstancedMesh(geometry, material, instances.matrices.length);
-                    for (let i = 0; i < instances.matrices.length; i++) {
-                        (mesh as THREE.InstancedMesh).setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.matrices[i]));
+                const { results, userData: { position, scale } } = result;
+                results.forEach(result => {
+                    const { geometry, metaData, instances } = result;
+                    let mesh: THREE.InstancedMesh | THREE.Mesh = null;
+                    const material = new THREE.MeshStandardMaterial({
+                        side: THREE.DoubleSide,
+                        shadowSide: THREE.BackSide,
+                        vertexColors: true,
+                        roughness: 0.7
+                    });
+                    if (metaData.type === 'instanced_mesh') {
+                        mesh = new THREE.InstancedMesh(geometry, material, instances.matrices.length);
+                        for (let i = 0; i < instances.matrices.length; i++) {
+                            (mesh as THREE.InstancedMesh).setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.matrices[i]));
+                        }
+                    } else if (metaData.type === 'mesh') {
+                        mesh = new THREE.Mesh(geometry, material);
                     }
-                } else if (metaData.type === 'mesh') {
-                    mesh = new THREE.Mesh(geometry, material);
-                }
-                mesh.userData = metaData;
-                geometry.computeVertexNormals();
+                    mesh.userData = metaData;
+                    geometry.computeVertexNormals();
 
-                const [x, y, z] = position;
+                    const [x, y, z] = position;
 
-                mesh.scale.multiplyScalar(scale);
-                mesh.position.set(x, y, z);
-                mesh.rotation.x = -Math.PI / 2;
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
+                    mesh.scale.multiplyScalar(scale);
+                    mesh.position.set(x, y, z);
+                    // mesh.rotation.x = -Math.PI / 2;
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
 
-                this.scene.add(mesh);
-                this.disposables.push(mesh);
+                    scene.add(mesh);
+                });
+
+                this.scene.add(scene);
+                this.disposables.push(scene);
+                this.renderer.render(this.scene, this.camera);
+                this.orbitControl.update();
+
+            }).catch(err => {
+                throw err;
             });
-            this.renderer.render(this.scene, this.camera);
-            this.orbitControl.update();
 
-        }).catch(err => {
-            throw err;
-        });
+        }
 
     }
 
     remove() {
 
         // TODO: dispose helpers etc.?
-        this.disposables.forEach(d => {
-            if (d instanceof THREE.Mesh || d instanceof THREE.InstancedMesh) {
-                d.geometry.dispose();
-                if (Array.isArray(d.material)) {
-                    d.material.forEach(m => m.dispose());
-                } else {
-                    d.material.dispose();
-                }
-            }
-        });
+        this.disposables.forEach(scene => disposeScene(scene));
 
         super.remove();
 
@@ -377,8 +374,8 @@ export class SceneWidgetView extends PGLWidgetView {
 
 export class LsystemWidgetView extends PGLWidgetView {
 
-    unit: Unit = Unit.m;
-    disposables: THREE.Object3D[] = [];
+    unit: LsystemUnit = LsystemUnit.M;
+
     lsystemScenes: {[key: number]: ILsystemScene} = {};
 
     initialize(parameters: WidgetView.InitializeParameters) {
@@ -386,37 +383,26 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     removeScenes() {
-        this.scene.children.filter(obj => {
-            if (obj.name === 'lsystem') {
+        this.scene.remove(...this.scene.children
+            .filter(obj => obj instanceof THREE.Scene)
+            .map(obj => {
                 obj.visible = false;
-                return true;
-            }
-            return false;
-        }).forEach(obj => {
-
-            this.scene.remove(obj);
-            if (obj instanceof THREE.Mesh || obj instanceof THREE.InstancedMesh) {
-                obj.geometry.dispose();
-                if (Array.isArray(obj.material)) {
-                    obj.material.forEach(m => m.dispose());
-                } else {
-                    obj.material.dispose();
-                }
-            }
-            this.disposables = [];
-        });
+                return obj;
+            }));
+        this.disposables.forEach(scene => disposeScene(scene));
     }
 
     render() {
 
         super.render();
 
-        const initialState: ILsystemControlState = {
+        const initialState: ILsystemControlsState = {
             animate: this.model.get('animate'),
             derivationStep: this.model.get('scene').derivationStep,
             derivationLength: this.model.get('lsystem').derivationLength,
             showControls: false,
-            busy: 0
+            busy: 0,
+            comm_live: this.model.comm_live
         };
 
         const controlsEl = document.createElement('div');
@@ -427,6 +413,9 @@ export class LsystemWidgetView extends PGLWidgetView {
             if (lsysState.animate) {
                 const scene = this.lsystemScenes[step];
                 if (scene) {
+                    if (lsysState.busy && step - lsysState.derivationStep > 1) {
+                        return setTimeout(() => animation(step), MIN_DELAY);
+                    }
                     lsysState.derivationStep = step;
                     this.setSceneVisible(scene.id);
                 } else {
@@ -461,7 +450,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                 lsysState.busy = 1;
                 lsysState.derivationStep = 0;
                 this.send({ rewind: true });
-                requestAnimationFrame(() => this.removeScenes());
+                this.removeScenes();
                 this.renderer.render(this.scene, this.camera);
             }
         }, controlsEl);
@@ -479,7 +468,7 @@ export class LsystemWidgetView extends PGLWidgetView {
             .then(res => {
                 const { results, userData: { id } } = res;
                 this.lsystemScenes[scene.derivationStep] = scene;
-                this.addMesh(id, results);
+                this.addScene(id, results);
             })
             .catch(err => console.log(err));
 
@@ -492,7 +481,10 @@ export class LsystemWidgetView extends PGLWidgetView {
         this.listenTo(this.model, 'change:lsystem', () => {
             lsysState.derivationLength = this.model.get('lsystem').derivationLength;
         });
-        const queue = [];
+        this.listenTo(this.model, 'comm_live_update', () => {
+            lsysState.comm_live = this.model.comm_live;
+        });
+
         this.listenTo(this.model, 'change:scene', () => {
             const scene = this.model.get('scene') as ILsystemScene;
             this.lsystemScenes[scene.derivationStep] = scene;
@@ -505,7 +497,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                         const { results, userData: { step } } = res;
                         setTimeout(((step, mesh) => {
                             return () => {
-                                this.addMesh(step, mesh);
+                                this.addScene(step, mesh);
                                 lsysState.derivationStep = step;
                                 lsysState.busy--;
                             };
@@ -518,7 +510,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     setSceneVisible(id: number) {
-        this.scene.traverse(obj => {
+        this.scene.children.forEach(obj => {
             if (obj.name === 'lsystem') {
                 obj.visible = obj.userData.id === id;
             }
@@ -526,8 +518,11 @@ export class LsystemWidgetView extends PGLWidgetView {
         this.renderer.render(this.scene, this.camera);
     }
 
-    addMesh(id: number, meshs, position = [0, 0, 0]) {
+    addScene(id: number, meshs, position = [0, 0, 0]) {
 
+        const scene = new THREE.Scene();
+        scene.userData = { id };
+        scene.name = 'lsystem';
         meshs.forEach(result => {
             const { geometry, metaData, instances } = result;
             let mesh: THREE.InstancedMesh | THREE.Mesh = null;
@@ -553,23 +548,19 @@ export class LsystemWidgetView extends PGLWidgetView {
             geometry.computeVertexNormals();
 
             const [x, y, z] = position;
-            const scale = this.unit === Unit.cm ? 0.1 : (this.unit === Unit.mm ? 0.01 : 1);
+            const scale = this.unit === LsystemUnit.CM ? 0.1 : (this.unit === LsystemUnit.MM ? 0.01 : 1);
 
             mesh.scale.multiplyScalar(scale);
             mesh.position.set(x, y, z);
-            mesh.rotation.x = -Math.PI / 2;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
 
-            this.scene.add(mesh);
-            this.disposables.push(mesh);
+            scene.add(mesh);
         });
 
-        this.scene.traverseVisible(obj => {
-            if (obj.name === 'lsystem') {
-                obj.visible = obj.userData.id === id;
-            }
-        });
+        this.scene.add(scene);
+        this.setSceneVisible(id);
+        this.disposables.push(scene);
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
 
@@ -578,16 +569,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     remove() {
 
         // TODO: dispose helpers etc.?
-        this.disposables.forEach(d => {
-            if (d instanceof THREE.Mesh || d instanceof THREE.InstancedMesh) {
-                d.geometry.dispose();
-                if (Array.isArray(d.material)) {
-                    d.material.forEach(m => m.dispose());
-                } else {
-                    d.material.dispose();
-                }
-            }
-        });
+        this.disposables.forEach(scene => disposeScene(scene));
 
         super.remove();
 

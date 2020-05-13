@@ -11,12 +11,12 @@
     outline: none;
 }
 
-.pgl-jupyter-scene-widget {
+.pgl-jupyter-pgl-widget {
     display: inline-block;
     position: relative;
 }
 
-.pgl-jupyter-scene-widget-controls {
+.pgl-jupyter-pgl-widget-controls {
     position: absolute;
     top: 0px;
     right: 0px;
@@ -25,7 +25,7 @@
     pointer-events: none;
 }
 
-.pgl-jupyter-scene-widget-controls-container {
+.pgl-jupyter-pgl-widget-controls-container {
     padding: 5px;
     height: 100%;
     pointer-events: none;
@@ -40,21 +40,21 @@
     --mdc-button-size: 35px;
 }
 
-.pgl-jupyter-scene-widget-controls-header {
+.pgl-jupyter-pgl-widget-controls-header {
     pointer-events: none;
     float: right;
 }
 
-.pgl-jupyter-scene-widget-controls-body {
+.pgl-jupyter-pgl-widget-controls-body {
     pointer-events: none;
     clear: both;
 }
 
-.pgl-jupyter-scene-widget-controls-header * {
+.pgl-jupyter-pgl-widget-controls-header * {
     pointer-events: all;
 }
 
-.pgl-jupyter-scene-widget-controls-body * {
+.pgl-jupyter-pgl-widget-controls-body * {
     display: block;
     pointer-events: all;
 }
@@ -87,6 +87,7 @@
 }
 
 .pgl-jupyter-lsystem-widget-controls-container mwc-linear-progress {
+    margin-top: 5px;
     display: block;
     text-align: left;
     --mdc-theme-primary: #636262;

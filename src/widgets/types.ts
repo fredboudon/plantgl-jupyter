@@ -30,7 +30,7 @@ export interface ITaskResult {
     userData: any;
 }
 
-export interface IPGLControlState {
+export interface IPGLControlsState {
     axesHelper: boolean;
     lightHelper: boolean;
     plane: boolean;
@@ -38,9 +38,10 @@ export interface IPGLControlState {
     autoRotate: boolean;
     showHeader: boolean;
     showControls: boolean;
+
 }
 
-export interface IPGLControlHandlers {
+export interface IPGLControlsHandlers {
     onAutoRotateToggled: Function;
     onFullscreenToggled: Function;
     onPlaneToggled: Function;
@@ -48,22 +49,23 @@ export interface IPGLControlHandlers {
     onLightHelperToggled: Function;
 }
 
-export interface ILsystemControlState {
+export interface ILsystemControlsState {
     animate: boolean;
     derivationStep: number;
     derivationLength: number;
     showControls: boolean;
     busy: number;
+    comm_live: boolean;
 }
 
-export interface ILsystemControlHandlers {
+export interface ILsystemControlsHandlers {
     onAnimateToggled: Function;
     onDeriveClicked: Function;
     onRewindClicked: Function;
 }
 
-export enum Unit {
-    m = 0,
-    cm = 1,
-    mm = 2
+export enum LsystemUnit {
+    M = 0,
+    CM = 1,
+    MM = 2
 }

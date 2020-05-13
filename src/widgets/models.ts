@@ -6,7 +6,7 @@ import {
     MODULE_NAME, MODULE_VERSION
 } from '../version';
 
-import { Unit } from './types';
+import { LsystemUnit } from './types';
 
 export class PGLWidgetModel extends DOMWidgetModel {
 
@@ -85,7 +85,7 @@ export class LsystemWidgetModel extends DOMWidgetModel {
                 derivationLength: 0
             },
             scene: null,
-            unit: Unit.m,
+            unit: LsystemUnit.M,
             animate: false
         };
     }

@@ -6,21 +6,21 @@ import '@material/mwc-icon-button-toggle';
 import '@material/mwc-icon-button';
 import '@material/mwc-linear-progress';
 import {
-    IPGLControlState,
-    IPGLControlHandlers,
-    ILsystemControlState,
-    ILsystemControlHandlers
+    IPGLControlsState,
+    IPGLControlsHandlers,
+    ILsystemControlsState,
+    ILsystemControlsHandlers
 } from './types';
 
 // TODO refactor handlers
 
 export class PGLControls {
 
-    evtHandlers: IPGLControlHandlers;
-    state: IPGLControlState;
+    evtHandlers: IPGLControlsHandlers;
+    state: IPGLControlsState;
     controlsEl: HTMLElement;
 
-    constructor(state: IPGLControlState, evtHandlers: IPGLControlHandlers, controlsEl: HTMLElement) {
+    constructor(state: IPGLControlsState, evtHandlers: IPGLControlsHandlers, controlsEl: HTMLElement) {
         this.controlsEl = controlsEl;
         this.evtHandlers = evtHandlers;
         const that = this;
@@ -40,12 +40,12 @@ export class PGLControls {
         render(this.renderControls(this.state, this.evtHandlers), this.controlsEl);
     };
 
-    private renderControls = (state: IPGLControlState, handlers: IPGLControlHandlers) => {
-        return html`<div class='pgl-jupyter-scene-widget-controls-container' style=${styleMap(state.showControls ? { 'background-color': '#00305312' } : {})}>
-            <div class='pgl-jupyter-scene-widget-controls-header' style=${styleMap(state.showControls || state.showHeader ? { 'display': 'block' } : { 'display': 'none' })}>
+    private renderControls = (state: IPGLControlsState, handlers: IPGLControlsHandlers) => {
+        return html`<div class='pgl-jupyter-pgl-widget-controls-container' style=${styleMap(state.showControls ? { 'background-color': '#00305312' } : {})}>
+            <div class='pgl-jupyter-pgl-widget-controls-header' style=${styleMap(state.showControls || state.showHeader ? { 'display': 'block' } : { 'display': 'none' })}>
                 <mwc-icon-button icon="&#9881;" @click=${() => state.showControls = !state.showControls}></mwc-icon-button>
             </div>
-            <div class='pgl-jupyter-scene-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
+            <div class='pgl-jupyter-pgl-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
                 <mwc-formfield label='fullscreen'>
                     <mwc-checkbox @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)} ?checked=${state.fullscreen}></mwc-checkbox>
                 </mwc-formfield>
@@ -59,7 +59,9 @@ export class PGLControls {
                     <mwc-checkbox @change=${(evt) => handlers.onAxesHelperToggled(evt.target.checked)} ?checked=${state.axesHelper}></mwc-checkbox>
                 </mwc-formfield>
                 <mwc-formfield label='light helper'>
-                    <mwc-checkbox @change=${(evt) => handlers.onLightHelperToggled(evt.target.checked)} ?checked=${state.lightHelper}></mwc-checkbox>
+                    <mwc-checkbox
+                        @change=${(evt) => handlers.onLightHelperToggled(evt.target.checked)} ?checked=${state.lightHelper}>
+                    </mwc-checkbox>
                 </mwc-formfield>
             </div>
         </div>`;
@@ -68,11 +70,11 @@ export class PGLControls {
 
 export class LsystemControls {
 
-    state: ILsystemControlState;
-    evtHandlers: ILsystemControlHandlers;
+    state: ILsystemControlsState;
+    evtHandlers: ILsystemControlsHandlers;
     controlsEl: HTMLElement;
 
-    constructor(state: ILsystemControlState, evtHandlers: ILsystemControlHandlers, controlsEl: HTMLElement) {
+    constructor(state: ILsystemControlsState, evtHandlers: ILsystemControlsHandlers, controlsEl: HTMLElement) {
         this.controlsEl = controlsEl;
         this.evtHandlers = evtHandlers;
         const that = this;
@@ -92,8 +94,8 @@ export class LsystemControls {
         render(this.renderControls(this.state, this.evtHandlers), this.controlsEl);
     };
 
-    private renderControls = (state: ILsystemControlState, handlers: ILsystemControlHandlers) => {
-        return html`<div class='pgl-jupyter-lsystem-widget-controls-container unselectable'>
+    private renderControls = (state: ILsystemControlsState, handlers: ILsystemControlsHandlers) => {
+        return html`<div class='pgl-jupyter-lsystem-widget-controls-container unselectable' ?hidden=${!this.state.comm_live}>
             <div style=${styleMap(state.showControls ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
                 <mwc-icon-button icon="&#8676"
                     ?disabled=${state.animate || state.derivationStep === 0 || state.busy}
