@@ -83,7 +83,7 @@ export class PGLWidgetView extends DOMWidgetView {
         const [x_size, y_size, z_size] = this.sizeWorld;
 
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.01);
-        this.camera.position.set(x_size, Math.max(x_size, z_size) * 1.5, z_size / 2);
+        this.camera.position.set(x_size / 2, y_size, z_size);
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
         this.camera.up = new THREE.Vector3(0, 0, 1);
 
@@ -91,7 +91,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.scene.background = new THREE.Color('#cccccc');
 
         this.plane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(x_size, z_size),
+            new THREE.PlaneBufferGeometry(x_size, y_size),
             new THREE.MeshPhongMaterial({
                 color: new THREE.Color(0xFFFFFF)
             })
@@ -108,23 +108,24 @@ export class PGLWidgetView extends DOMWidgetView {
         this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.4));
 
         const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.9);
-        lightBottom.position.set(0, -y_size, 0);
+        lightBottom.position.set(0, -z_size, 0);
         this.scene.add(lightBottom);
         const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.9);
-        lightTop.position.set(0, y_size, 0);
+        lightTop.position.set(0, z_size, 0);
         this.scene.add(lightTop);
 
         this.light = new THREE.DirectionalLight(0xFFFFFF, 0.9);
         this.light.shadow.bias = -0.001;
         this.light.castShadow = true;
-        this.light.position.set(x_size / 2, y_size / 2, z_size / 2);
+        this.light.position.set(x_size / 2, y_size / 2, Math.max(x_size, y_size) / 2);
         this.light.target.position.set(0, 0, 0);
+        this.light.shadow.camera.up = new THREE.Vector3(0, 0, 1);
         this.light.shadow.camera.near = 0.01;
-        this.light.shadow.camera.far = Math.sqrt(Math.pow(Math.sqrt(x_size * x_size + z_size * z_size), 2) + Math.pow(y_size, 2));
-        this.light.shadow.camera.top = Math.sqrt(x_size * x_size + z_size * z_size) / 2;
-        this.light.shadow.camera.bottom = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
-        this.light.shadow.camera.left = -Math.sqrt(x_size * x_size + z_size * z_size) / 2;
-        this.light.shadow.camera.right = Math.sqrt(x_size * x_size + z_size * z_size) / 2;
+        this.light.shadow.camera.far = Math.sqrt(Math.pow(Math.sqrt(x_size * x_size + y_size * y_size), 2) + Math.pow(z_size, 2));
+        this.light.shadow.camera.top = Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.shadow.camera.bottom = -Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.shadow.camera.left = -Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.shadow.camera.right = Math.sqrt(x_size * x_size + y_size * y_size) / 2;
         this.scene.add(this.light);
 
         this.cameraHelper = new THREE.CameraHelper(this.light.shadow.camera);
