@@ -1,6 +1,6 @@
 import { render, html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map'
-import '@material/mwc-checkbox';
+import '@material/mwc-switch';
 import '@material/mwc-formfield';
 import '@material/mwc-icon-button-toggle';
 import '@material/mwc-icon-button';
@@ -41,27 +41,27 @@ export class PGLControls {
     };
 
     private renderControls = (state: IPGLControlsState, handlers: IPGLControlsHandlers) => {
-        return html`<div class='pgl-jupyter-pgl-widget-controls-container' style=${styleMap(state.showControls ? { 'background-color': '#00305312' } : {})}>
+        return html`<div class='pgl-jupyter-pgl-widget-controls-container' style=${styleMap(state.showControls ? { 'background-color': 'rgba(160, 160, 160, 0.1)' } : {})}>
             <div class='pgl-jupyter-pgl-widget-controls-header' style=${styleMap(state.showControls || state.showHeader ? { 'display': 'block' } : { 'display': 'none' })}>
                 <mwc-icon-button icon="&#9881;" @click=${() => state.showControls = !state.showControls}></mwc-icon-button>
             </div>
             <div class='pgl-jupyter-pgl-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
                 <mwc-formfield label='fullscreen'>
-                    <mwc-checkbox @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)} ?checked=${state.fullscreen}></mwc-checkbox>
+                    <mwc-switch @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)} ?checked=${state.fullscreen}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='auto rotate'>
-                    <mwc-checkbox @change=${(evt) => handlers.onAutoRotateToggled(evt.target.checked)} ?checked=${state.autoRotate}></mwc-checkbox>
+                    <mwc-switch @change=${(evt) => handlers.onAutoRotateToggled(evt.target.checked)} ?checked=${state.autoRotate}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='plane'>
-                    <mwc-checkbox @change=${(evt) => handlers.onPlaneToggled(evt.target.checked)} ?checked=${state.plane}></mwc-checkbox>
+                    <mwc-switch @change=${(evt) => handlers.onPlaneToggled(evt.target.checked)} ?checked=${state.plane}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='axes helper'>
-                    <mwc-checkbox @change=${(evt) => handlers.onAxesHelperToggled(evt.target.checked)} ?checked=${state.axesHelper}></mwc-checkbox>
+                    <mwc-switch @change=${(evt) => handlers.onAxesHelperToggled(evt.target.checked)} ?checked=${state.axesHelper}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='light helper'>
-                    <mwc-checkbox
+                    <mwc-switch
                         @change=${(evt) => handlers.onLightHelperToggled(evt.target.checked)} ?checked=${state.lightHelper}>
-                    </mwc-checkbox>
+                    </mwc-switch>
                 </mwc-formfield>
             </div>
         </div>`;
@@ -103,11 +103,11 @@ export class LsystemControls {
                 </mwc-icon-button>
                 <mwc-icon-button icon="&#8612"
                     ?disabled=${state.animate || state.derivationStep === 0 || state.busy}
-                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(state.derivationStep - 1)}>
+                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(Math.max(0, state.derivationStep - 1))}>
                 </mwc-icon-button>
                 <mwc-icon-button icon="&#8614"
                     ?disabled=${state.animate || state.derivationStep === state.derivationLength - 1 || state.busy}
-                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(state.derivationStep + 1)}>
+                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(Math.min(state.derivationLength - 1, state.derivationStep + 1))}>
                 </mwc-icon-button>
                 <mwc-icon-button icon="&#8677"
                     ?disabled=${state.animate || state.derivationStep === state.derivationLength - 1 || state.busy}
