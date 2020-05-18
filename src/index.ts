@@ -1,2 +1,3 @@
 export * from './version';
-export * from './lib/widget';
+export * from './widgets/widgets';
+export * from './widgets/models';
