@@ -59,7 +59,7 @@
     "@material/mwc-switch": "^0.15.0",
     "draco-web-decoder": "^1.0.0",
     "lit-html": "^1.2.1",
-    "three": "^0.116.1"
+    "three": "^0.117.0"
   },
   "devDependencies": {
     "@phosphor/application": "^1.6.0",
