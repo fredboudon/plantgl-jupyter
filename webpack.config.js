@@ -4,7 +4,7 @@ const version = require('./package.json').version;
 // Custom webpack rules
 const rules = [
   { test: /\.ts$/, loader: 'ts-loader' },
-  { test: /\.js$/, loader: 'source-map-loader' },
+  { test: /\.js$/, loader: 'source-map-loader', exclude:  [path.join(process.cwd(), 'node_modules')] },
   { test: /\.css$/, use: ['style-loader', 'css-loader']}
 ];
 
@@ -36,6 +36,9 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
+    performance: {
+      hints: false
+    }
   },
 
   /**
@@ -63,6 +66,9 @@ module.exports = [
     },
     externals,
     resolve,
+    performance: {
+      hints: false
+    }
   },
 
 
@@ -85,6 +91,9 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
+    performance: {
+      hints: false
+    }
   }
 
 ];
