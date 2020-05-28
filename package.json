@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "description": "PlantGL jupyter widget",
   "keywords": [
     "jupyter",
@@ -52,6 +52,9 @@
   },
   "dependencies": {
     "@jupyter-widgets/base": "^3.0.0",
+    "@jupyterlab/application": "^2.1.2",
+    "@jupyterlab/codemirror": "^2.1.1",
+    "@jupyterlab/ui-components": "^2.1.1",
     "@material/mwc-formfield": "^0.14.1",
     "@material/mwc-icon-button": "^0.15.0",
     "@material/mwc-icon-button-toggle": "^0.15.0",
