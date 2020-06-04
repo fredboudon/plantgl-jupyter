@@ -40,4 +40,4 @@ RUN git clone https://github.com/jvail/plantgl-jupyter.git && cd plantgl-jupyter
     jupyter nbextension install --overwrite --py pgljupyter && \
     jupyter nbextension enable --py pgljupyter && \
     jupyter labextension install --dev-build=False --clean . && \
-    python3 -m ipykernel install --name pgl-jupyter
+    python3 -m ipykernel install --name pgljupyter
