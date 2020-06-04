@@ -61,6 +61,8 @@ docker run -it --rm --network host -v $PWD:/home/user/plantgljupyter --user $(id
     -e "NOTEBOOK_DIR=plantgljupyter/examples" plantgljupyter:latest
 ```
 
-docker build --rm -f "docker/prod.Dockerfile" -t plantgljupyter:dev --network=host .
+docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
+
+docker build --rm -f "docker/prod.Dockerfile" -t plantgl-jupyter:prod --network=host .
 
 docker run -it --rm -p 8080:8080 -v $PWD/examples:/home/user/examples jvail/plantgl-jupyter:1a jupyter lab --port=8080 --allow-root --ip=0.0.0.0 --notebook-dir=/home/user/examples
