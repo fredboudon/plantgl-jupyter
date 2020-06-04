@@ -60,3 +60,5 @@ docker build --build-arg USER_ID=$(id -u) --target jupyter --rm -f "docker/Docke
 docker run -it --rm --network host -v $PWD:/home/user/plantgljupyter --user $(id -u):$(id -g) \
     -e "NOTEBOOK_DIR=plantgljupyter/examples" plantgljupyter:latest
 ```
+
+docker build --rm -f "docker/prod.Dockerfile" -t plantgljupyter:dev --network=host .
