@@ -4,12 +4,17 @@ const version = require('./package.json').version;
 // Custom webpack rules
 const rules = [
   { test: /\.ts$/, loader: 'ts-loader' },
-  { test: /\.js$/, loader: 'source-map-loader' },
+  { test: /\.js$/, loader: 'source-map-loader', exclude:  [path.join(process.cwd(), 'node_modules')] },
   { test: /\.css$/, use: ['style-loader', 'css-loader']}
 ];
 
 // Packages that shouldn't be bundled but loaded at runtime
-const externals = ['@jupyter-widgets/base'];
+const externals = [
+  '@jupyter-widgets/base',
+  '@jupyterlab/application',
+  '@jupyterlab/codemirror',
+  '@jupyterlab/ui-components'
+];
 
 const resolve = {
   // Add '.ts' and '.tsx' as resolvable extensions.
@@ -36,6 +41,9 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
+    performance: {
+      hints: false
+    }
   },
 
   /**
@@ -63,6 +71,9 @@ module.exports = [
     },
     externals,
     resolve,
+    performance: {
+      hints: false
+    }
   },
 
 
@@ -85,6 +96,9 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
+    performance: {
+      hints: false
+    }
   }
 
 ];

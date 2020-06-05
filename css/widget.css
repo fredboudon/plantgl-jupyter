@@ -34,8 +34,8 @@
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
-    --mdc-theme-primary: rgba(0, 0, 0, 0.8);
-    --mdc-theme-secondary: rgba(0, 0, 0, 0.8);
+    --mdc-theme-primary: rgb(160, 160, 160);
+    --mdc-theme-secondary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
 }
@@ -54,9 +54,10 @@
     pointer-events: all;
 }
 
-.pgl-jupyter-pgl-widget-controls-body * {
+.pgl-jupyter-pgl-widget-controls-body > * {
     display: block;
     pointer-events: all;
+    padding: 12px;
 }
 
 .pgl-jupyter-lsystem-widget-controls {
@@ -76,7 +77,8 @@
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
-    --mdc-theme-primary: rgba(0, 0, 0, 0.8);
+    --mdc-theme-primary: rgb(160, 160, 160);
+    --mdc-theme-secondary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
 }
@@ -87,12 +89,14 @@
 }
 
 .pgl-jupyter-lsystem-widget-controls-container mwc-linear-progress {
-    margin-top: 5px;
+    margin: 5px 12px;
     display: block;
     text-align: left;
-    --mdc-theme-primary: #636262;
+    --mdc-theme-primary: rgb(160, 160, 160);
+    --mdc-theme-secondary: rgb(75, 75, 75);
 }
 
 mwc-icon-button-toggle, mwc-icon-button {
-  color: #242424;
+    color: rgb(75, 75, 75);
+    --mdc-icon-button-ripple-opacity: 0
 }

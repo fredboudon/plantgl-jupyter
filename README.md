@@ -1,4 +1,6 @@
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab)
+
 # pgljupyter
 
 PlantGL jupyter widget
@@ -54,9 +56,15 @@ jupyter lab --watch
 ### docker
 
 ```bash
-docker build --build-arg USER_ID=$(id -u) --target jupyter --rm -f "docker/Dockerfile" \
-    -t plantgljupyter:latest --network=host .
+docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
+```
 
-docker run -it --rm --network host -v $PWD:/home/user/plantgljupyter --user $(id -u):$(id -g) \
-    -e "NOTEBOOK_DIR=plantgljupyter/examples" plantgljupyter:latest
+or
+
+```bash
+docker pull jvail/plantgl-jupyter:1a
+```
+
+```bash
+docker run -it --rm -p 8080:8080 -v $PWD/examples:/examples jvail/plantgl-jupyter:1a jupyter lab --port=8080 --allow-root --ip=0.0.0.0 --notebook-dir=/examples
 ```

@@ -398,6 +398,7 @@ export class LsystemWidgetView extends PGLWidgetView {
         super.render();
 
         const initialState: ILsystemControlsState = {
+            // TODO: fix inital animation
             animate: this.model.get('animate'),
             derivationStep: this.model.get('scene').derivationStep,
             derivationLength: this.model.get('lsystem').derivationLength,
