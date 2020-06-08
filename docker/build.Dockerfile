@@ -19,7 +19,7 @@ RUN pip3 install git+https://github.com/fredboudon/mtg.git
 FROM py AS R
 RUN apt-get install -y r-base r-cran-vgam r-cran-multcomp r-cran-combinat
 
-FROM py as plantgl
+FROM R as plantgl
 RUN git clone  https://github.com/jvail/plantgl.git  && cd plantgl && \
     git checkout plantgl-jupyter && \
     mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ../ && \
