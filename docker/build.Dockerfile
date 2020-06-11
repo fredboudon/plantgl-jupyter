@@ -13,8 +13,8 @@ RUN git clone  https://github.com/google/draco.git  && cd draco \
 
 FROM base as py
 RUN pip3 install rpy2 toml matplotlib pandas future qtconsole numpy jupyter jupyterlab && jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
-RUN pip3 install git+https://github.com/fredboudon/deploy.git --user
-RUN pip3 install git+https://github.com/fredboudon/mtg.git
+RUN pip3 install git+https://github.com/fredboudon/deploy.git --system
+RUN pip3 install git+https://github.com/fredboudon/mtg.git --system
 
 FROM py AS R
 RUN apt-get install -y r-base r-cran-vgam r-cran-multcomp r-cran-combinat
@@ -24,19 +24,19 @@ RUN git clone  https://github.com/jvail/plantgl.git  && cd plantgl && \
     git checkout plantgl-jupyter && \
     mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ../ && \
     make -j4 && make install && \
-    cd .. && pip3 install .
+    cd .. && pip3 install . --system
 
 FROM plantgl as lpy
 RUN git clone https://github.com/jvail/lpy.git && cd lpy && \
     git checkout plantgl-jupyter && \
     mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DPLANTGL_ROOT=../plantgl/build-cmake ../ -DBOOST_INCLUDEDIR=/usr/include/boost && \
     make -j4 && make install && \
-    cd .. && pip3 install .
+    cd .. && pip3 install . --system
 
 FROM lpy as plantgl-jupyter-build
 RUN git clone https://github.com/jvail/plantgl-jupyter.git && cd plantgl-jupyter && \
     npm install && npm run build && \
-    pip3 install . && \
+    pip3 install . --system && \
     jupyter nbextension install --overwrite --py pgljupyter && \
     jupyter nbextension enable --py pgljupyter && \
     jupyter labextension install --dev-build=False --clean . && \
