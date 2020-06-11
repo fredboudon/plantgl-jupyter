@@ -1,5 +1,5 @@
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab&filepath=examples/lpy/leuwenberg.ipynb)
 
 # pgljupyter
 
@@ -59,12 +59,6 @@ jupyter lab --watch
 docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
 ```
 
-or
+docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
 
-```bash
-docker pull jvail/plantgl-jupyter:1a
-```
-
-```bash
-docker run -it --rm -p 8080:8080 -v $PWD/examples:/examples jvail/plantgl-jupyter:1a jupyter lab --port=8080 --allow-root --ip=0.0.0.0 --notebook-dir=/examples
-```
+docker run -it --rm -p 8080:8080 -v $PWD/examples:/examples plantgl-jupyter:build jupyter lab --port=8080 --allow-root --ip=0.0.0.0 --notebook-dir=/examples
