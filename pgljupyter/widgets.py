@@ -3,8 +3,8 @@ TODO: Add module docstring
 """
 
 from ipywidgets.widgets import DOMWidget, Widget, register
-from traitlets import Unicode, Instance, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum
-from openalea.plantgl.all import Scene, Shape, ParametricModel, serialize_scene as pgl_serialize_scene
+from traitlets import Unicode, Instance, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum, Any
+from openalea.plantgl.all import Scene, Shape, ParametricModel#, serialize_scene as pgl_serialize_scene
 from openalea.lpy import Lsystem
 from functools import reduce
 import random, string, io
@@ -43,12 +43,12 @@ def to_scene(obj):
     return scene
 
 # TODO: serialize in thread
-def serialize_scene(scene, single_mesh=False):
+""" def serialize_scene(scene, single_mesh=False):
     serialized = pgl_serialize_scene(scene, single_mesh)
     if not serialized.status:
         raise ValueError('scene serialization failed')
     # print(serialized)
-    return serialized
+    return serialized """
 
 @register
 class PGLWidget(DOMWidget):
@@ -82,24 +82,19 @@ class SceneWidget(PGLWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    scene = Dict(traits={
-        'drc': Instance(memoryview),
-        'offsets': List([]),
-        'scene': Instance(Scene),
-        'position': Tuple(Float(0), Float(0), Float(0)),
-        'scale': Float(1)
-    }).tag(sync=True, to_json=scene_to_json)
+    scene = List(traits=Any).tag(sync=True)
 
     def __init__(self, obj=None, position=(0,0,0), scale=(1.0), **kwargs):
-        scene = to_scene(obj)
-        serialized = serialize_scene(scene);
+        self.scene = obj
+        #scene = to_scene(obj)
+        """         serialized = serialize_scene(scene)
         self.scene = {
             'drc': serialized.data,
             'offsets': serialized.offsets,
             'scene': scene,
             'position': position,
             'scale':  scale
-        }
+        } """
         super().__init__(**kwargs)
 
     def add(self, obj, position=(0,0,0), scale=1.0):
@@ -112,17 +107,17 @@ class SceneWidget(PGLWidget):
             'scene': Instance(Scene),
             'position': Tuple(Float(0), Float(0), Float(0)),
             'scale': Float(1)
-        }).tag(sync=True, to_json=scene_to_json);
+        }).tag(sync=True, to_json=scene_to_json)
         self.add_traits(**{ name: trait })
         self.send({'new_trait': { 'name': name }})
-        serialized = serialize_scene(scene);
+        """         serialized = serialize_scene(scene)
         self.set_trait(name, {
             'drc': serialized.data,
             'offsets': serialized.offsets,
             'scene': scene,
             'position': position,
             'scale': scale
-        })
+        }) """
         return id
 
 
@@ -195,7 +190,7 @@ class LsystemWidget(PGLWidget):
             self.scene = self.__scenes[step]
         else:
             scene = self.lsystem.sceneInterpretation(self.__trees[step])
-            serialized = serialize_scene(scene)
+            """             serialized = serialize_scene(scene)
             serialized_scene = {
                 'drc': serialized.data,
                 'offsets': serialized.offsets,
@@ -204,14 +199,14 @@ class LsystemWidget(PGLWidget):
                 'id': step
             }
             self.scene = serialized_scene
-            self.__scenes[step] = serialized_scene
+            self.__scenes[step] = serialized_scene """
 
     def __derive(self, step):
         if step < self.lsystem.derivationLength:
             while True:
                 if step == len(self.__trees) - 1:
                     self.__set_scene(step)
-                    break;
+                    break
                 else:
                     self.__trees.append(self.lsystem.derive(self.__trees[-1], len(self.__trees), 1))
         else:

@@ -11,6 +11,8 @@ import { OrbitControls } from './orbit-controls';
 import { IScene, IPGLControlsState, LsystemUnit, ILsystemControlsState, ILsystemScene } from './types';
 import { SceneWidgetModel } from './models';
 import { disposeScene } from './utilities';
+import { ShapeType, geometry as getGeometry } from './shapes';
+import { BufferGeometry } from 'three';
 
 const MIN_DELAY = 250;
 
@@ -300,7 +302,32 @@ export class SceneWidgetView extends PGLWidgetView {
 
     scene_changed() {
 
-        this.addScene(this.model.get('scene') as IScene);
+        //this.addScene(this.model.get('scene') as IScene);
+        const shapes = this.model.get('scene');
+        shapes.forEach(shape => {
+            const [shapeType, args, matrices]: [ShapeType, number[], number[][]] = shape;
+            let geometry: BufferGeometry = getGeometry(shapeType, args)
+
+            if (geometry) {
+                const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({
+                    color: 0xFF0000,
+                    side: THREE.DoubleSide,
+                    shadowSide: THREE.BackSide,
+                    vertexColors: false,
+                    roughness: 0.7
+                }), matrices.length);
+                matrices.forEach((matrix, i) => {
+                    mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...matrix));
+                });
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                this.scene.add(mesh);
+            }
+
+        });
+
+        this.renderer.render(this.scene, this.camera);
+        this.orbitControl.update();
 
     }
 
