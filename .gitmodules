@@ -1,0 +1,3 @@
+[submodule "src/plantgl"]
+	path = src/pgljs/plantgl
+	url = git@github.com:jvail/plantgl.git

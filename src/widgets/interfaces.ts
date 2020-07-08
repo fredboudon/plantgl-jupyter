@@ -1,6 +1,5 @@
 export interface IScene {
-    drc: DataView;
-    offsets: number[];
+    data: DataView;
     scene: string;
     position: number[];
     scale: number;
@@ -12,21 +11,17 @@ export interface ILsystemScene extends IScene {
 }
 
 export interface IDecodingTask extends ITaskData {
-    reject: Function;
-    resolve: Function;
+    reject(arg?: any): any;
+    resolve(arg: ITaskResult): any;
 }
 
 export interface ITaskData {
-    drcs: ArrayBuffer[];
-    userData: any;
+    data: ArrayBuffer;
+    userData?: any;
 }
 
 export interface ITaskResult {
-    results: {
-        geometry: THREE.BufferGeometry;
-        instances: { matrices: number[][], metaData: { [key: string]: any } };
-        metaData: {[key:string]: any };
-    }[];
+    results: (THREE.Mesh | THREE.InstancedMesh)[];
     userData: any;
 }
 
@@ -66,6 +61,15 @@ export interface ILsystemControlsHandlers {
 
 export enum LsystemUnit {
     M = 0,
-    CM = 1,
-    MM = 2
+    DM = 1,
+    CM = 2,
+    MM = 3
+}
+
+export interface IGeom {
+    index: ArrayBuffer,
+    color: ArrayBuffer,
+    position: ArrayBuffer,
+    instances: ArrayBuffer
+    isInstanced: boolean,
 }

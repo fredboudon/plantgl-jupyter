@@ -6,7 +6,7 @@ import {
     MODULE_NAME, MODULE_VERSION
 } from '../version';
 
-import { LsystemUnit } from './types';
+import { LsystemUnit } from './interfaces';
 
 export class PGLWidgetModel extends DOMWidgetModel {
 

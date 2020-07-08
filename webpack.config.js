@@ -13,7 +13,10 @@ const externals = [
   '@jupyter-widgets/base',
   '@jupyterlab/application',
   '@jupyterlab/codemirror',
-  '@jupyterlab/ui-components'
+  '@jupyterlab/ui-components',
+  '@jupyterlab/docregistry',
+  '@jupyterlab/rendermime',
+  '@jupyterlab/rendermime-interfaces'
 ];
 
 const resolve = {

@@ -10,7 +10,7 @@ import {
     IPGLControlsHandlers,
     ILsystemControlsState,
     ILsystemControlsHandlers
-} from './types';
+} from './interfaces';
 
 // TODO refactor handlers
 
@@ -117,7 +117,7 @@ export class LsystemControls {
                     ?disabled=${!state.animate && state.busy}
                     ?on=${state.animate}
                     ?off=${!state.animate}
-                    onIcon="&#9632"
+                    onIcon="&#8603"
                     offIcon="&#8620"
                     @click=${(evt) => evt.target.disabled || handlers.onAnimateToggled(!state.animate)}>
                 </mwc-icon-button-toggle>

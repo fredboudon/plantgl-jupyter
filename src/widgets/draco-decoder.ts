@@ -1,6 +1,6 @@
 import makeWorker from 'draco-web-decoder';
 import * as THREE from 'three';
-import { IDecodingTask, ITaskData, ITaskResult } from './types';
+import { IDecodingTask, ITaskData, ITaskResult } from './interfaces';
 
 const makeMsg = (drcs) => ({
     drc: drcs,
@@ -33,7 +33,7 @@ const getWorker = (sequential=false): Worker => {
                 if (data.initialized) {
                     // console.log('initialized');
                     (this as any).initialized = true;
-                    workers.get(this).forEach(task => this.postMessage(makeMsg(task.drcs)))
+                    workers.get(this).forEach(task => this.postMessage(makeMsg(task.data)))
                 } else {
                     // console.log('terminate on error');
                     const tasks = workers.get(this);
@@ -76,7 +76,16 @@ const getWorker = (sequential=false): Worker => {
                                 metaData: metaData.instances.metadata
                             }
                         }
-                        results.push({ geometry, metaData, instances })
+                        geometry.computeVertexNormals();
+                        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+                            side: THREE.DoubleSide,
+                            shadowSide: THREE.BackSide,
+                            vertexColors: true,
+                            roughness: 0.7
+                        }));
+                        mesh.castShadow = true;
+                        mesh.receiveShadow = true;
+                        results.push(mesh)
                         return results;
                     }, []);
 
@@ -120,7 +129,7 @@ class Decoder {
         return new Promise((resolve, reject) => {
             workers.get(worker).push({ resolve, reject, ...task });
             if ((worker as any).initialized) {
-                worker.postMessage(makeMsg(task.drcs));
+                worker.postMessage(makeMsg(task.data));
             }
         });
     }

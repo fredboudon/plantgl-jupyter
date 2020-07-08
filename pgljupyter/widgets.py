@@ -3,20 +3,20 @@ TODO: Add module docstring
 """
 
 from ipywidgets.widgets import DOMWidget, Widget, register
-from traitlets import Unicode, Instance, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum
-from openalea.plantgl.all import Scene, Shape, ParametricModel, serialize_scene as pgl_serialize_scene
+from traitlets import Unicode, Instance, Bytes, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum
+from openalea.plantgl.all import Scene, Shape, ParametricModel, tobinarystring as scene_to_bgeom, serialize_scene as scene_to_draco
 from openalea.lpy import Lsystem
 from functools import reduce
-import random, string, io
+import random, string, io, os
 from enum import Enum
-import io
 
 from ._frontend import module_name, module_version
 
 class Unit(Enum):
     m = 0
-    cm = 1
-    mm = 2
+    dm = 1
+    cm = 2
+    mm = 3
 
 def scene_to_json(x, obj):
     if isinstance(x, dict):
@@ -43,12 +43,12 @@ def to_scene(obj):
     return scene
 
 # TODO: serialize in thread
-def serialize_scene(scene, single_mesh=False):
-    serialized = pgl_serialize_scene(scene, single_mesh)
-    if not serialized.status:
-        raise ValueError('scene serialization failed')
+def scene_to_bytes(scene, single_mesh=False):
+    # serialized = pgl_scene_to_bytes(scene, single_mesh)
+    # if not serialized.status:
+    #     raise ValueError('scene serialization failed')
     # print(serialized)
-    return serialized
+    return scene_to_bgeom(scene)
 
 @register
 class PGLWidget(DOMWidget):
@@ -83,8 +83,7 @@ class SceneWidget(PGLWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     scene = Dict(traits={
-        'drc': Instance(memoryview),
-        'offsets': List([]),
+        'data': Bytes(),
         'scene': Instance(Scene),
         'position': Tuple(Float(0), Float(0), Float(0)),
         'scale': Float(1)
@@ -92,40 +91,14 @@ class SceneWidget(PGLWidget):
 
     def __init__(self, obj=None, position=(0,0,0), scale=(1.0), **kwargs):
         scene = to_scene(obj)
-        serialized = serialize_scene(scene);
+        serialized = scene_to_bytes(scene);
         self.scene = {
-            'drc': serialized.data,
-            'offsets': serialized.offsets,
+            'data': serialized,
             'scene': scene,
             'position': position,
             'scale':  scale
         }
         super().__init__(**kwargs)
-
-    def add(self, obj, position=(0,0,0), scale=1.0):
-        scene = to_scene(obj)
-        id = ''.join(random.choices(string.ascii_letters + string.digits, k=25))
-        name = 'scene_' + id
-        trait = Dict(traits={
-            'drc': Instance(memoryview),
-            'offsets': List([]),
-            'scene': Instance(Scene),
-            'position': Tuple(Float(0), Float(0), Float(0)),
-            'scale': Float(1)
-        }).tag(sync=True, to_json=scene_to_json);
-        self.add_traits(**{ name: trait })
-        self.send({'new_trait': { 'name': name }})
-        serialized = serialize_scene(scene);
-        self.set_trait(name, {
-            'drc': serialized.data,
-            'offsets': serialized.offsets,
-            'scene': scene,
-            'position': position,
-            'scale': scale
-        })
-        return id
-
-
 
 @register
 class LsystemWidget(PGLWidget):
@@ -139,7 +112,6 @@ class LsystemWidget(PGLWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     __trees = []
-    __scenes = {}
     __filename = ''
 
     units = Unit
@@ -148,20 +120,23 @@ class LsystemWidget(PGLWidget):
     })
     unit = UseEnum(Unit).tag(sync=True, to_json=lambda e, o: e.value)
     scene = Dict(traits={
-        'drc': Instance(memoryview),
-        'offsets': List([]),
+        'data': Bytes(),
         'scene': Instance(Scene),
         'derivationStep': Int(0, min=0),
         'id': Int(0, min=0)
     }).tag(sync=True, to_json=scene_to_json)
     animate = Bool(False).tag(sync=True)
+    dump = Unicode('').tag(sync=False)
+    compress = Bool(False).tag(sync=False)
 
-    def __init__(self, filename, options={}, unit=Unit.m, animate=False, **kwargs):
+    def __init__(self, filename, options={}, unit=Unit.m, animate=False, dump='', compress=False, **kwargs):
         self.__filename = filename
         self.lsystem = Lsystem(filename, options)
         self.__trees.append(self.lsystem.axiom)
         self.unit = unit
         self.animate = animate
+        self.dump = dump
+        self.compress = compress
         self.__set_scene(0)
         self.on_msg(self.__on_custom_msg)
         super().__init__(**kwargs)
@@ -188,23 +163,21 @@ class LsystemWidget(PGLWidget):
 
     def __clear(self):
         self.__trees = []
-        self.__scenes = {}
 
     def __set_scene(self, step):
-        if step in self.__scenes.keys():
-            self.scene = self.__scenes[step]
-        else:
-            scene = self.lsystem.sceneInterpretation(self.__trees[step])
-            serialized = serialize_scene(scene)
-            serialized_scene = {
-                'drc': serialized.data,
-                'offsets': serialized.offsets,
-                'scene': scene,
-                'derivationStep': step,
-                'id': step
-            }
-            self.scene = serialized_scene
-            self.__scenes[step] = serialized_scene
+        scene = self.lsystem.sceneInterpretation(self.__trees[step])
+        serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized_scene = {
+            'data': serialized,
+            'scene': scene,
+            'derivationStep': step,
+            'id': step
+        }
+        self.scene = serialized_scene
+        if len(self.dump) > 0:
+            file_type = 'cgeom' if self.compress else 'bgeom'
+            with io.open(os.path.join(self.dump, f'{self.__filename}_{step}.{file_type}'), 'wb') as file:
+                file.write(serialized)
 
     def __derive(self, step):
         if step < self.lsystem.derivationLength:

@@ -34,8 +34,8 @@
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
-    --mdc-theme-primary: rgb(160, 160, 160);
-    --mdc-theme-secondary: rgb(75, 75, 75);
+    --mdc-theme-secondary: #f57c24;
+    --mdc-theme-primary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
 }
@@ -77,7 +77,7 @@
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
-    --mdc-theme-primary: rgb(160, 160, 160);
+    --mdc-theme-primary: #f57c24;
     --mdc-theme-secondary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
@@ -92,11 +92,11 @@
     margin: 5px 12px;
     display: block;
     text-align: left;
-    --mdc-theme-primary: rgb(160, 160, 160);
+    --mdc-theme-primary: #f57c24;
     --mdc-theme-secondary: rgb(75, 75, 75);
 }
 
 mwc-icon-button-toggle, mwc-icon-button {
-    color: rgb(75, 75, 75);
+    color: #f57c24;
     --mdc-icon-button-ripple-opacity: 0
 }
