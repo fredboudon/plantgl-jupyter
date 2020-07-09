@@ -11,6 +11,7 @@ import {
     ILsystemControlsState,
     ILsystemControlsHandlers
 } from './interfaces';
+import { stat } from 'fs';
 
 // TODO refactor handlers
 
@@ -88,6 +89,7 @@ export class LsystemControls {
                 return true;
             }
         });
+
     };
 
     private render() {
@@ -129,7 +131,7 @@ export class LsystemControls {
             <div style=${styleMap((state.derivationStep < state.derivationLength - 1 && (state.showControls || state.animate || state.busy)) ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
                 <mwc-linear-progress
                     progress=${state.derivationStep / (state.derivationLength - 1)}
-                    buffer=${state.busy ? state.derivationStep / (state.derivationLength - 1) : 1}>
+                    buffer=${state.pyFeed ? (state.derivationLength - state.pyFeed) / state.derivationLength : 1}>
                 </mwc-linear-progress>
             </div>
         </div>`;

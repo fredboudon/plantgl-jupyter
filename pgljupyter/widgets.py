@@ -47,8 +47,7 @@ def scene_to_bytes(scene, single_mesh=False):
     # serialized = pgl_scene_to_bytes(scene, single_mesh)
     # if not serialized.status:
     #     raise ValueError('scene serialization failed')
-    # print(serialized)
-    return scene_to_bgeom(scene)
+    return scene_to_bgeom(scene, False)
 
 @register
 class PGLWidget(DOMWidget):
@@ -113,6 +112,7 @@ class LsystemWidget(PGLWidget):
 
     __trees = []
     __filename = ''
+    __do_abort = False
 
     units = Unit
     lsystem = Instance(Lsystem).tag(sync=True, to_json=lambda e, o: {
@@ -141,7 +141,15 @@ class LsystemWidget(PGLWidget):
         self.on_msg(self.__on_custom_msg)
         super().__init__(**kwargs)
 
+    @observe('animate')
+    def on_animate_changed(self, change):
+        # print('on_animate_changed', change['old'], change['new'])
+        if change['old'] and not change['new'] and self.scene['derivationStep'] < self.lsystem.derivationLength - 1:
+            # print('__do_abort')
+            __do_abort = True
+
     def __on_custom_msg(self, widget, content, buffers):
+        # print('__on_custom_msg', content)
         if 'derive' in content:
             step = content['derive']
             if step < self.lsystem.derivationLength:
@@ -165,6 +173,7 @@ class LsystemWidget(PGLWidget):
         self.__trees = []
 
     def __set_scene(self, step):
+        # print('__set_scene', step)
         scene = self.lsystem.sceneInterpretation(self.__trees[step])
         serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
@@ -180,6 +189,7 @@ class LsystemWidget(PGLWidget):
                 file.write(serialized)
 
     def __derive(self, step):
+        # print('__derive', step)
         if step < self.lsystem.derivationLength:
             while True:
                 if step == len(self.__trees) - 1:

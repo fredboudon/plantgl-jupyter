@@ -16,8 +16,6 @@ import {
 import { disposeScene, isDracoFile } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
 
-const MIN_DELAY = 250;
-
 export class PGLWidgetView extends DOMWidgetView {
 
     camera: THREE.PerspectiveCamera = null;
@@ -303,7 +301,8 @@ export class SceneWidgetView extends PGLWidgetView {
 export class LsystemWidgetView extends PGLWidgetView {
 
     unit: LsystemUnit = LsystemUnit.M;
-    state: ILsystemControlsState;
+    controls: LsystemControls = null;
+    cache: {[key:number]: THREE.Mesh[]} = {};
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -329,6 +328,7 @@ export class LsystemWidgetView extends PGLWidgetView {
             derivationLength: this.model.get('lsystem').derivationLength,
             showControls: false,
             busy: 1,
+            pyFeed: 0,
             comm_live: this.model.comm_live
         };
 
@@ -336,98 +336,152 @@ export class LsystemWidgetView extends PGLWidgetView {
         controlsEl.setAttribute('class', 'pgl-jupyter-lsystem-widget-controls');
         this.containerEl.appendChild(controlsEl);
 
-        const animation = (step) => {
-            if (this.state.animate) {
-                this.state.busy++;
-                this.send({ derive: step });
-                this.state.animate = step + 1 < this.state.derivationLength;
-                setTimeout(() => animation(step + 1), MIN_DELAY);
-            }
-        }
-
-        const controls = new LsystemControls(initialState, {
+        this.controls = new LsystemControls(initialState, {
             onAnimateToggled: (animate: boolean) => {
-                this.state.animate = animate;
+                this.controls.state.animate = animate;
+                this.model.set('animate', animate);
+                this.touch();
                 if (animate) {
-                    const next = this.state.derivationStep + 1;
-                    animation(next >= this.state.derivationLength ? 0 : next);
+                    const animation = (step) => {
+                        // console.log('animation', step, this.controls.state.pyFeed);
+                        if (this.controls.state.animate) {
+                            this.controls.state.busy++;
+                            this.controls.state.pyFeed++;
+                            this.send({ derive: step });
+                            if (step + 1 < this.controls.state.derivationLength) {
+                                const next = (step) => {
+                                    if (this.controls.state.pyFeed > 1) {
+                                        setTimeout(() => {
+                                            next(step);
+                                        }, 100);
+                                    } else {
+                                        animation(step)
+                                    }
+                                }
+                                setTimeout(() => {
+                                    next(step + 1);
+                                }, 100);
+                            }
+                        }
+                    }
+                    const next = this.controls.state.derivationStep + 1;
+                    animation(next >= this.controls.state.derivationLength ? 0 : next);
                 }
             },
             onDeriveClicked: (step: number) => {
-                this.state.busy++;
+                this.controls.state.busy++;
+                this.controls.state.pyFeed++;
                 this.send({ derive: step });
             },
             onRewindClicked: () => {
-                this.state.busy = 1;
-                this.state.derivationStep = 0;
+                this.controls.state.busy = 1;
+                this.controls.state.pyFeed = 0;
+                this.controls.state.derivationStep = 0;
                 this.send({ rewind: true });
                 this.removeScenes();
                 this.renderer.render(this.scene, this.camera);
+                this.cache = [];
             }
         }, controlsEl);
+        if (initialState.animate) {
+            this.controls.evtHandlers.onAnimateToggled(true);
+        }
 
-        this.state = controls.state;
-
-        this.containerEl.addEventListener('mouseover', () => this.state.showControls = true);
-        this.containerEl.addEventListener('mouseout', () => this.state.showControls = false);
+        this.containerEl.addEventListener('mouseover', () => this.controls.state.showControls = true);
+        this.containerEl.addEventListener('mouseout', () => this.controls.state.showControls = false);
 
         this.unit = this.model.get('unit');
         const scene = this.model.get('scene') as ILsystemScene;
         this.decode(scene);
 
-        if (this.state.animate) {
-            animation(1);
-        }
         this.listenTo(this.model, 'change:unit', () => {
             this.unit = this.model.get('unit')
         });
         this.listenTo(this.model, 'change:lsystem', () => {
-            this.state.derivationLength = this.model.get('lsystem').derivationLength;
+            this.controls.state.derivationLength = this.model.get('lsystem').derivationLength;
         });
         this.listenTo(this.model, 'comm_live_update', () => {
-            this.state.comm_live = this.model.comm_live;
+            this.controls.state.comm_live = this.model.comm_live;
         });
         this.listenTo(this.model, 'change:scene', () => {
             const scene = this.model.get('scene') as ILsystemScene;
             this.decode(scene);
+            if (this.controls.state.pyFeed > 0) {
+                this.controls.state.pyFeed--;
+            }
         });
+    }
+
+    getFromCache() {
+        setTimeout(() => {
+            const step = this.controls.state.derivationStep + 1;
+            const mesh = this.cache[step];
+            // console.log('getFromCache', step, Object.keys(this.cache));
+            if (mesh) {
+                delete this.cache[step];
+                this.addScene(step, mesh);
+                this.controls.state.derivationStep = step;
+                this.controls.state.busy--;
+                if (this.cache[step + 1]) {
+                    this.getFromCache();
+                }
+            }
+        }, 500);
     }
 
     decode(scene: ILsystemScene) {
         if (isDracoFile(scene.data.buffer)) {
-            dracoDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } }, true)
+            dracoDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
                 .then(res => {
                     const { results, userData: { step } } = res;
-                    this.addScene(step, results);
-                    this.state.derivationStep = step;
-                    this.state.busy--;
+                    if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
+                        this.cache[step] = results;
+                    } else {
+                        this.addScene(step, results);
+                        this.controls.state.derivationStep = step;
+                        this.controls.state.busy--;
+                        if (this.cache[step + 1]) {
+                            this.getFromCache();
+                        }
+                    }
                 })
                 .catch(err => console.log(err));
         } else {
-            geomDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } }, true)
+            geomDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
                 .then(res => {
                     const { results, userData: { step } } = res;
-                    this.addScene(step, results);
-                    this.state.derivationStep = step;
-                    this.state.busy--;
+                    if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
+                        this.cache[step] = results;
+                    } else {
+                        this.addScene(step, results);
+                        this.controls.state.derivationStep = step;
+                        this.controls.state.busy--;
+                        if (this.cache[step + 1]) {
+                            this.getFromCache();
+                        }
+                    }
+                    // console.log('decoded', step);
                 })
                 .catch(err => console.log(err));
         }
     }
 
-    addScene(id: number, meshs, position = [0, 0, 0]) {
+    addScene(step: number, meshs, position = [0, 0, 0]) {
         const scene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];
         scene.scale.multiplyScalar(scale);
         scene.position.set(x, y, z);
         scene.add(...meshs);
-        scene.userData = { id };
+        scene.userData = { step };
         scene.name = 'lsystem';
         this.removeScenes();
         this.scene.add(scene);
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
+        if (this.controls.state.animate && step === this.controls.state.derivationLength - 1) {
+            this.controls.state.animate = false;
+        }
     }
 
     remove() {

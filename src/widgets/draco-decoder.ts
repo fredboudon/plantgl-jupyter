@@ -15,13 +15,11 @@ const makeMsg = (drcs) => ({
 
 let MAX_WORKER = 5;
 const workers: Map<Worker, IDecodingTask[]> = new Map();
-const getWorker = (sequential=false): Worker => {
-    if (sequential) {
-        MAX_WORKER = 1;
-    }
+const getWorker = (): Worker => {
+
     const avg = Array.from(workers.values()).reduce((s, v) => s + v.length / workers.size, 0);
 
-    if ((!workers.size || avg > 4) && workers.size < MAX_WORKER) {
+    if ((!workers.size || avg >= 1) && workers.size < MAX_WORKER) {
         const worker: Worker = makeWorker();
         workers.set(worker, []);
         worker.onerror = function (evt) {
@@ -124,8 +122,8 @@ const getWorker = (sequential=false): Worker => {
 
 class Decoder {
 
-    decode = (task: ITaskData, sequential=false): Promise<ITaskResult> => {
-        const worker = getWorker(sequential);
+    decode = (task: ITaskData): Promise<ITaskResult> => {
+        const worker = getWorker();
         return new Promise((resolve, reject) => {
             workers.get(worker).push({ resolve, reject, ...task });
             if ((worker as any).initialized) {

@@ -2,7 +2,7 @@ import random as rd
 
 leafduration = 2 # life time of a leaf
 leafold =      1 # age at which a leaf is considered as old
-maxorder =     5 # maximum number of branching order
+maxorder =     6 # maximum number of branching order
 radinc =    0.01 # increment of radius through time
 
 maxduration = lambda order : int(10./(order+1))+3  # life time of an apex

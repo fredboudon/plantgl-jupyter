@@ -3,15 +3,13 @@ import * as THREE from 'three';
 import { IDecodingTask, ITaskData, ITaskResult, IGeom } from './interfaces';
 import { merge } from './utilities';
 
-let MAX_WORKER = 1;
+let MAX_WORKER = 5;
 const workers: Map<Worker, IDecodingTask[]> = new Map();
-const getWorker = (sequential=false): Worker => {
-    if (sequential) {
-        MAX_WORKER = 1;
-    }
+const getWorker = (): Worker => {
+
     const avg = Array.from(workers.values()).reduce((s, v) => s + v.length / workers.size, 0);
 
-    if ((workers.size === 0 || avg > 4) && workers.size < MAX_WORKER) {
+    if ((workers.size === 0 || avg >= 1) && workers.size < MAX_WORKER) {
         const worker = pgljs();
         workers.set(worker, []);
         worker.onerror = function (evt) {
@@ -22,8 +20,8 @@ const getWorker = (sequential=false): Worker => {
             if (evt.data && 'initialized' in evt.data) {
                 if (evt.data.initialized) {
                     // console.log('initialized');
-                    (this as any).initialized = true;
                     workers.get(this).forEach(task => this.postMessage(task.data));
+                    (this as any).initialized = true;
                 } else {
                     // console.log('terminate on error');
                     const tasks = workers.get(this);
@@ -91,6 +89,7 @@ const getWorker = (sequential=false): Worker => {
                 }))(this), 60000);
             }
         };
+        console.log('workers', Array.from(workers.values()).map(w => w.length));
         return worker;
 
     } else {
@@ -104,6 +103,7 @@ const getWorker = (sequential=false): Worker => {
                 worker = key;
             }
         }
+        // console.log('workers', Array.from(workers.values()).map(w => w.length));
         return worker;
     }
 
@@ -111,9 +111,9 @@ const getWorker = (sequential=false): Worker => {
 
 class Decoder {
 
-    decode = async (task: ITaskData, sequential=false): Promise<ITaskResult> => {
+    decode = async (task: ITaskData): Promise<ITaskResult> => {
 
-        const worker = getWorker(sequential);
+        const worker = getWorker();
         return new Promise((resolve, reject) => {
             workers.get(worker).push({ resolve, reject, ...task });
             if ((worker as any).initialized) {

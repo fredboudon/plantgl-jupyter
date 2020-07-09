@@ -50,6 +50,7 @@ export interface ILsystemControlsState {
     derivationLength: number;
     showControls: boolean;
     busy: number;
+    pyFeed: number;
     comm_live: boolean;
 }
 
