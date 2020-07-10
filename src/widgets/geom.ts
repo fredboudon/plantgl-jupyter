@@ -19,6 +19,11 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
 
     constructor(options: IRenderMime.IRendererOptions) {
         super();
+
+        if (this.scene) {
+            disposeScene(this.scene);
+        }
+
         this.mimeType = options.mimeType;
         this.addClass('geom');
         const canvas = document.createElement('canvas');
@@ -29,22 +34,20 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
             canvas.getContext('webgl', { alpha: false })) as WebGLRenderingContext;
         this.node.appendChild(canvas);
 
-        const [x_size, y_size, z_size] = [1, 1, 1];
-
-        this.camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.01);
-        this.camera.position.set(x_size * 2, y_size * 2, z_size / 2);
+        this.camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.01, 5000);
+        this.camera.position.set(1, 1, 0);
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
         this.camera.up = new THREE.Vector3(0, 0, 1);
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color('#9c9c9c');
 
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1.5));
-        this.ligths[0].position.set(0, 0, z_size * 2);
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1.5));
-        this.ligths[1].position.set(x_size * 2, y_size * 2, z_size * 2);
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1.5));
-        this.ligths[2].position.set(-x_size * 2, -y_size * 2, -z_size * 2);
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
+        this.ligths[0].position.set(0, 0, 1);
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
+        this.ligths[1].position.set(1, 1, 1);
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
+        this.ligths[2].position.set(-1, -1, -1);
         this.scene.add(...this.ligths);
 
         this.renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });
@@ -84,20 +87,25 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         }
     }
 
-    addMesh(meshs) {
+    setMeshs(meshs) {
 
-        let max = 1;
-        meshs.forEach((mesh: THREE.Mesh) => {
-            // bug in bbox with instanced mesh: https://github.com/mrdoob/three.js/issues/18334
-            mesh.geometry.computeBoundingBox();
-            max = Math.max.apply(Math, [max, ...mesh.geometry.boundingBox.max.toArray()])
-        });
-
-        meshs.forEach((mesh: THREE.Mesh) => {
-            mesh.scale.multiplyScalar(1 / max);
-        });
+        // let max = 1;
+        // meshs.forEach((mesh: THREE.Mesh) => {
+        //     // bug in bbox with instanced mesh: https://github.com/mrdoob/three.js/issues/18334
+        //     mesh.geometry.computeBoundingBox();
+        //     max = Math.max.apply(Math, [max, ...mesh.geometry.boundingBox.max.toArray()])
+        // });
+        // meshs.forEach((mesh: THREE.Mesh) => {
+        //     mesh.scale.multiplyScalar(1 / max);
+        // });
 
         this.scene.add(...meshs);
+        const box = new THREE.Box3().setFromObject(this.scene);
+        const [x, y, z] = box.max.toArray();
+        this.camera.position.set(x * 3, y * 3, z);
+        this.ligths[0].position.set(0, 0, z);
+        this.ligths[1].position.set(x, y, z);
+        this.ligths[2].position.set(-x, -y, -z);
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
 
@@ -107,12 +115,14 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
 
         // all data is base64 currently: Change to arraybuffer if supported by jupyter
         const data = Uint8Array.from(atob(model.data[this.mimeType] as any), c => c.charCodeAt(0)).buffer;
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const decoder = isDracoFile(data) ? dracoDecoder : geomDecoder;
-            decoder.decode({ data }).then(res => {
-                this.addMesh(res.results);
-                resolve();
-            });
+            decoder.decode({ data })
+                .then(res => {
+                    this.setMeshs(res.results);
+                    resolve();
+                })
+                .catch(() => reject());
         });
 
     }
