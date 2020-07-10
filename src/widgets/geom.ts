@@ -32,7 +32,7 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         const [x_size, y_size, z_size] = [1, 1, 1];
 
         this.camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.01);
-        this.camera.position.set(x_size / 2, y_size, z_size * 2);
+        this.camera.position.set(x_size * 2, y_size * 2, z_size / 2);
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
         this.camera.up = new THREE.Vector3(0, 0, 1);
 
@@ -40,9 +40,11 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         this.scene.background = new THREE.Color('#9c9c9c');
 
         this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1.5));
-        this.ligths[0].position.set(x_size, y_size, z_size);
+        this.ligths[0].position.set(0, 0, z_size * 2);
         this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1.5));
-        this.ligths[1].position.set(-x_size, -y_size, -z_size);
+        this.ligths[1].position.set(x_size * 2, y_size * 2, z_size * 2);
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1.5));
+        this.ligths[2].position.set(-x_size * 2, -y_size * 2, -z_size * 2);
         this.scene.add(...this.ligths);
 
         this.renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });

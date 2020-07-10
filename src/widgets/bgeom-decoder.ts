@@ -89,7 +89,7 @@ const getWorker = (): Worker => {
                 }))(this), 60000);
             }
         };
-        console.log('workers', Array.from(workers.values()).map(w => w.length));
+        // console.log('workers', Array.from(workers.values()).map(w => w.length));
         return worker;
 
     } else {

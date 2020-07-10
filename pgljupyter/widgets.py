@@ -81,23 +81,41 @@ class SceneWidget(PGLWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    scene = Dict(traits={
+    scenes = List(trait=Dict(traits={
+        'id': Unicode(),
         'data': Bytes(),
         'scene': Instance(Scene),
         'position': Tuple(Float(0), Float(0), Float(0)),
         'scale': Float(1)
-    }).tag(sync=True, to_json=scene_to_json)
+    })).tag(sync=True, to_json=scene_to_json)
 
     def __init__(self, obj=None, position=(0,0,0), scale=(1.0), **kwargs):
         scene = to_scene(obj)
-        serialized = scene_to_bytes(scene);
-        self.scene = {
+        serialized = scene_to_bytes(scene)
+        self.scenes = [{
+            'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
             'scene': scene,
             'position': position,
             'scale':  scale
-        }
+        }]
         super().__init__(**kwargs)
+
+    # TODO: avoid re-sending all scenes after a scene was added.
+    # - Partially syncing a state is not available out of the box
+    # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
+    def add(self, obj, position=(0,0,0), scale=1.0):
+        scene = to_scene(obj)
+        serialized = scene_to_bytes(scene)
+        self.scenes.append({
+            'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
+            'data': serialized,
+            'scene': scene,
+            'position': position,
+            'scale':  scale
+        })
+        self.send_state('scenes')
+
 
 @register
 class LsystemWidget(PGLWidget):
@@ -184,6 +202,7 @@ class LsystemWidget(PGLWidget):
         }
         self.scene = serialized_scene
         if len(self.dump) > 0:
+            os.makedirs(self.dump, exist_ok=True)
             file_type = 'cgeom' if self.compress else 'bgeom'
             with io.open(os.path.join(self.dump, f'{self.__filename}_{step}.{file_type}'), 'wb') as file:
                 file.write(serialized)
@@ -194,7 +213,7 @@ class LsystemWidget(PGLWidget):
             while True:
                 if step == len(self.__trees) - 1:
                     self.__set_scene(step)
-                    break;
+                    break
                 else:
                     self.__trees.append(self.lsystem.derive(self.__trees[-1], len(self.__trees), 1))
         else:

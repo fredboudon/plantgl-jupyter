@@ -258,36 +258,41 @@ export class SceneWidgetView extends PGLWidgetView {
     render() {
         super.render();
         this.scene_changed();
-        this.listenTo(this.model, 'change:scene', this.scene_changed);
+        this.listenTo(this.model, 'change:scenes', this.scene_changed);
     }
 
     scene_changed() {
-        this.addScene(this.model.get('scene') as IScene);
+        this.addScenes(this.model.get('scenes') as IScene[]);
     }
 
-    addScene(sceneData: IScene) {
-        const { data, position, scale } = sceneData;
-        geomDecoder.decode({ data: data.buffer, userData: { position, scale } })
-            .then(result => {
+    addScenes(scenes: IScene[]) {
 
-                const scene = new THREE.Scene();
-                const { results, userData: { position, scale } } = result;
-                const [x, y, z] = position;
+        for (let i = 0; i < scenes.length; i++) {
+            const scene = scenes[i];
+            if(!this.scene.getObjectByName(scene.id)) {
+                const { id, data, position, scale } = scene;
+                geomDecoder.decode({ data: data.buffer, userData: { position, scale, id } })
+                    .then(result => {
+                        const scene = new THREE.Scene();
+                        const { results, userData: { position, scale, id } } = result;
+                        const [x, y, z] = position;
 
-                if (results.length > 0) {
-                    scene.add(...results);
-                    scene.position.set(x, y, z);
-                    scene.scale.multiplyScalar(scale);
+                        if (results.length > 0) {
+                            scene.add(...results);
+                            scene.name = id;
+                            scene.position.set(x, y, z);
+                            scene.scale.multiplyScalar(scale);
 
-                    this.scene.add(scene);
-                    this.disposables.push(scene);
-                    this.renderer.render(this.scene, this.camera);
-                    this.orbitControl.update();
-                }
+                            this.scene.add(scene);
+                            this.disposables.push(scene);
+                            this.renderer.render(this.scene, this.camera);
+                            this.orbitControl.update();
+                        }
+                    })
+                    .catch(err => console.log(err));
+            }
+        }
 
-            }).catch(err => {
-                throw err;
-            });
     }
 
     remove() {

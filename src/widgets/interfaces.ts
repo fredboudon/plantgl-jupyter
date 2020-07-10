@@ -1,4 +1,5 @@
 export interface IScene {
+    id: string;
     data: DataView;
     scene: string;
     position: number[];
@@ -7,7 +8,6 @@ export interface IScene {
 
 export interface ILsystemScene extends IScene {
     derivationStep: number;
-    id: number;
 }
 
 export interface IDecodingTask extends ITaskData {

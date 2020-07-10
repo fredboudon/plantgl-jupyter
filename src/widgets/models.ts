@@ -47,17 +47,17 @@ export class SceneWidgetModel extends DOMWidgetModel {
             _view_name: SceneWidgetModel.view_name,
             _view_module: SceneWidgetModel.view_module,
             _view_module_version: SceneWidgetModel.view_module_version,
-            scene: null
+            scenes: null
         };
     }
 
     static serializers: ISerializers = {
         ...DOMWidgetModel.serializers,
-        scene: {
-            serialize: (scene, model) => {
-                return Object.keys(model.views).length ? scene : undefined;
+        scenes: {
+            serialize: (scenes, model) => {
+                return Object.keys(model.views).length ? scenes : undefined;
             }, // async serialization?
-            deserialize: scene => scene
+            deserialize: scenes => scenes
         }
     }
 

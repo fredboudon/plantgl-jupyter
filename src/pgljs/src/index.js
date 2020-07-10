@@ -6,7 +6,6 @@ const wasmURL = URL.createObjectURL(new Blob([
 ], { type: 'application/octet-stream' }));
 export default () => {
     const worker = new Worker(workerURL);
-    console.log('created worker');
     worker.postMessage({ wasmURL });
     return worker;
 };
