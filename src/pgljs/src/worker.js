@@ -12,6 +12,7 @@ self.onmessage = function (evt) {
                 arr.push(mesh.color);
                 arr.push(mesh.index);
                 arr.push(mesh.position);
+                arr.push(mesh.normal);
                 if (mesh.instances.byteLength) {
                     arr.push(mesh.instances);
                 }

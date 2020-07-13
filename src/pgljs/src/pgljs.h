@@ -19,11 +19,13 @@ class TriangleSet {
 
         uint32_t indexSize();
         uint32_t pointSize();
+        uint32_t normalSize();
         uint32_t colorSize();
         uint32_t instanceMatrixSize();
 
         uint32_t* indexData();
         real_t* pointData();
+        real_t* normalData();
         uchar_t* colorData();
         real_t* instanceMatrixData();
 

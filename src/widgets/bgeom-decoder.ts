@@ -65,7 +65,7 @@ const getWorker = (): Worker => {
                         geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(d.index), 1));
                         geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(d.position), 3));
                         geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(d.color), 3, true));
-                        geometry.computeVertexNormals();
+                        geometry.setAttribute('normal', new THREE.InstancedBufferAttribute(new Float32Array(d.normal), 3, true));
                         const mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
                         for (let i = 0; i < instances.length / 16; i++) {
                             mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));

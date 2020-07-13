@@ -48,6 +48,7 @@ namespace PGLJS
 
 TriangleSet::TriangleSet(TriangleSetPtr triangleSet, uchar_t red, uchar_t green, uchar_t blue) :
     _triangleSet(triangleSet) {
+        _triangleSet->computeNormalList(true);
         instancesColors.push_back(PGL::Color3(red, green, blue));
     };
 TriangleSet::TriangleSet() {};
@@ -66,6 +67,10 @@ uint32_t TriangleSet::indexSize() {
 
 uint32_t TriangleSet::pointSize() {
     return _triangleSet->getPointListSize() * 3;
+};
+
+uint32_t TriangleSet::normalSize() {
+    return _triangleSet->getNormalList()->size() * 3;
 };
 
 uint32_t TriangleSet::colorSize() {
@@ -89,6 +94,10 @@ real_t* TriangleSet::pointData() {
         PGL::TriangleSetPtr transformed = dynamic_pointer_cast<PGL::TriangleSet>(_triangleSet->transform(transform)).get();
         return transformed->getPointList()->data();
     }
+};
+
+real_t* TriangleSet::normalData() {
+    return _triangleSet->getNormalList()->data();
 };
 
 uchar_t* TriangleSet::colorData() {

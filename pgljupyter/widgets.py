@@ -88,10 +88,12 @@ class SceneWidget(PGLWidget):
         'position': Tuple(Float(0), Float(0), Float(0)),
         'scale': Float(1)
     })).tag(sync=True, to_json=scene_to_json)
+    compress = Bool(False).tag(sync=False)
 
-    def __init__(self, obj=None, position=(0,0,0), scale=(1.0), **kwargs):
+    def __init__(self, obj=None, position=(0,0,0), scale=(1.0), compress=False, **kwargs):
         scene = to_scene(obj)
-        serialized = scene_to_bytes(scene)
+        serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        self.compress = compress
         self.scenes = [{
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -106,7 +108,7 @@ class SceneWidget(PGLWidget):
     # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
     def add(self, obj, position=(0,0,0), scale=1.0):
         scene = to_scene(obj)
-        serialized = scene_to_bytes(scene)
+        serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.scenes.append({
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,

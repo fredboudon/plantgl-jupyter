@@ -24,17 +24,20 @@ function merge(geoms: IGeom[]) {
     const index = new Uint32Array(len.idx);
     const position = new Float32Array(len.pos);
     const color = new Uint8Array(len.pos);
+    const normal = new Float32Array(len.pos);
     let offset_idx = 0;
     let offset_pos = 0;
     for (let i = 0; i < geoms.length; i++) {
         const geom_index = new Uint32Array(geoms[i].index);
         const geom_pos = new Float32Array(geoms[i].position);
+        const geom_nor = new Float32Array(geoms[i].normal);
         const geom_col = new Uint8Array(geoms[i].color);
         for (let j = 0; j < geom_index.length; j++) {
             index[j + offset_idx] = geom_index[j] + offset_pos;
         }
         position.set(geom_pos, offset_pos * 3);
         color.set(geom_col, offset_pos * 3);
+        normal.set(geom_nor, offset_pos * 3);
         offset_pos += geom_pos.length / 3;
         offset_idx += geom_index.length;
     }
@@ -50,7 +53,7 @@ function merge(geoms: IGeom[]) {
     geometry.setIndex(new THREE.BufferAttribute(index, 1));
     geometry.setAttribute('position', new THREE.BufferAttribute(position, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(color, 3, true));
-    geometry.computeVertexNormals();
+    geometry.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
 
     return geometry;
 

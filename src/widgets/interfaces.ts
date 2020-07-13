@@ -71,6 +71,7 @@ export interface IGeom {
     index: ArrayBuffer,
     color: ArrayBuffer,
     position: ArrayBuffer,
+    normal: ArrayBuffer,
     instances: ArrayBuffer
     isInstanced: boolean,
 }

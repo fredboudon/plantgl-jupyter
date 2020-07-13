@@ -34,7 +34,7 @@
     "build": "npm run build:lib && npm run build:nbextension",
     "build:labextension": "npm run clean:labextension && mkdirp pgljupyter/labextension && cd pgljupyter/labextension && npm pack ../..",
     "build:lib": "tsc",
-    "build:pgljs": "cd src/pgljs && npm run build",
+    "build:pgljs": "cd src/pgljs && npm run build && cp -a dist ../../lib/pgljs",
     "build:nbextension": "webpack -p",
     "build:all": "npm run build:labextension && npm run build:nbextension",
     "clean": "npm run clean:lib && npm run clean:nbextension",

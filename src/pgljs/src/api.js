@@ -21,6 +21,9 @@ function parse (bgeom) {
         const pointPtr = triangles.pointData();
         const pointSize = triangles.pointSize();
 
+        const normalPtr = triangles.normalData();
+        const normalSize = triangles.normalSize();
+
         const colorPtr = triangles.colorData();
         const colorSize = triangles.colorSize();
 
@@ -37,15 +40,17 @@ function parse (bgeom) {
 
         const index = Module['HEAPU32'].buffer.slice(indexPtr.ptr, indexPtr.ptr + indexSize * 4);
         const position = Module['HEAPF32'].buffer.slice(pointPtr.ptr, pointPtr.ptr + pointSize * 4);
+        const normal = Module['HEAPF32'].buffer.slice(normalPtr.ptr, normalPtr.ptr + normalSize * 4);
         const color = Module['HEAPU8'].buffer.slice(colorPtr.ptr, colorPtr.ptr + colorSize);
 
         // TODO: Test if array memory is realy freed
         Module['_free'](indexPtr);
         Module['_free'](pointPtr);
+        Module['_free'](normalPtr);
         Module['_free'](colorPtr);
 
         data.push({
-            index, position, color, instances, isInstanced
+            index, position, normal, color, instances, isInstanced
         });
 
     }

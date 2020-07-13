@@ -90,10 +90,11 @@ else()
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS}
+  set(CMAKE_EXE_LINKER_FLAGS
     "-s INITIAL_MEMORY=16MB\
     -s ALLOW_MEMORY_GROWTH=1\
     -s ASSERTIONS=2\
+    -s PRECISE_F32=0\
     -s EXPORT_ES6=1\
     -s USE_ES6_IMPORT_META=0\
     -s MODULARIZE=1\
@@ -105,15 +106,15 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     --source-map-base http://localhost:5000/debug/"
   )
 else()
-  set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS}
+  set(CMAKE_EXE_LINKER_FLAGS
     "-s INITIAL_MEMORY=16MB\
+    -s PRECISE_F32=0
     -s ALLOW_MEMORY_GROWTH=1\
     -s EXPORT_ES6=1\
     -s USE_ES6_IMPORT_META=0\
     -s MODULARIZE=1\
     -s EXPORT_NAME='PGL'\
-    --no-entry\
-    -O3"
+    --no-entry"
   )
 endif()
 

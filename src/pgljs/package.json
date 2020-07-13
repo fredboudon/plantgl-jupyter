@@ -4,7 +4,7 @@
   "description": "js port of some plantgl features",
   "main": "index.js",
   "scripts": {
-    "build:pgl": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4 VERBOSE=1",
+    "build:pgl": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=MinSizeRel .. && make -j4 VERBOSE=1",
     "build:strings": "node scripts/stringify_wasm.js && rollup -c rollup.config.worker.js && node scripts/stringify_worker.js",
     "build": "npm run build:pgl && npm run build:strings && rollup -c rollup.config.js",
     "build:debug": "npm run build:pgl:debug && rollup -c --configDebug rollup.config.js",

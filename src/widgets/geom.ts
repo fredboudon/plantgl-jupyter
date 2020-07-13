@@ -5,6 +5,7 @@ import geomDecoder from './bgeom-decoder';
 import dracoDecoder from './draco-decoder';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { disposeScene, isDracoFile } from './utilities';
+import { imageIcon } from '@jupyterlab/ui-components';
 
 const MIME_TYPE = 'application/octet-stream';
 
@@ -35,19 +36,19 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         this.node.appendChild(canvas);
 
         this.camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.01, 5000);
-        this.camera.position.set(1, 1, 0);
+        this.camera.position.set(2, 2, 0);
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
         this.camera.up = new THREE.Vector3(0, 0, 1);
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color('#9c9c9c');
 
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
+        this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.5));
+
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 0.7));
         this.ligths[0].position.set(0, 0, 1);
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
-        this.ligths[1].position.set(1, 1, 1);
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
-        this.ligths[2].position.set(-1, -1, -1);
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 0.7));
+        this.ligths[1].position.set(0, 0, -1);
         this.scene.add(...this.ligths);
 
         this.renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });
@@ -89,23 +90,12 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
 
     setMeshs(meshs) {
 
-        // let max = 1;
-        // meshs.forEach((mesh: THREE.Mesh) => {
-        //     // bug in bbox with instanced mesh: https://github.com/mrdoob/three.js/issues/18334
-        //     mesh.geometry.computeBoundingBox();
-        //     max = Math.max.apply(Math, [max, ...mesh.geometry.boundingBox.max.toArray()])
-        // });
-        // meshs.forEach((mesh: THREE.Mesh) => {
-        //     mesh.scale.multiplyScalar(1 / max);
-        // });
-
         this.scene.add(...meshs);
         const box = new THREE.Box3().setFromObject(this.scene);
-        const [x, y, z] = box.max.toArray();
-        this.camera.position.set(x * 3, y * 3, z);
-        this.ligths[0].position.set(0, 0, z);
-        this.ligths[1].position.set(x, y, z);
-        this.ligths[2].position.set(-x, -y, -z);
+        const scale = 1 / Math.max.apply(Math, box.max.toArray());
+        meshs.forEach((mesh: THREE.Mesh) => {
+            mesh.scale.multiplyScalar(scale);
+        });
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
 
@@ -143,6 +133,7 @@ const extension: IRenderMime.IExtension = {
     dataType: 'string',
     fileTypes: [{
         name: 'bgeom',
+        icon: imageIcon,
         iconClass: '',
         fileFormat: 'base64',
         mimeTypes: [MIME_TYPE],
