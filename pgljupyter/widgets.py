@@ -4,7 +4,7 @@ TODO: Add module docstring
 
 from ipywidgets.widgets import DOMWidget, Widget, register
 from traitlets import Unicode, Instance, Bytes, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum
-from openalea.plantgl.all import Scene, Shape, ParametricModel, tobinarystring as scene_to_bgeom, serialize_scene as scene_to_draco
+from openalea.plantgl.all import Scene, Shape, ParametricModel, tobinarystring as scene_to_bgeom #, serialize_scene as scene_to_draco
 from openalea.lpy import Lsystem
 from functools import reduce
 import random, string, io, os
@@ -88,11 +88,11 @@ class SceneWidget(PGLWidget):
         'position': Tuple(Float(0), Float(0), Float(0)),
         'scale': Float(1)
     })).tag(sync=True, to_json=scene_to_json)
-    compress = Bool(False).tag(sync=False)
+    # compress = Bool(False).tag(sync=False)
 
-    def __init__(self, obj=None, position=(0,0,0), scale=(1.0), compress=False, **kwargs):
+    def __init__(self, obj=None, position=(0,0,0), scale=(1.0), **kwargs):
         scene = to_scene(obj)
-        serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = scene_to_bytes(scene) # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.compress = compress
         self.scenes = [{
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
@@ -108,7 +108,7 @@ class SceneWidget(PGLWidget):
     # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
     def add(self, obj, position=(0,0,0), scale=1.0):
         scene = to_scene(obj)
-        serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = scene_to_bytes(scene) # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.scenes.append({
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -147,9 +147,9 @@ class LsystemWidget(PGLWidget):
     }).tag(sync=True, to_json=scene_to_json)
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
-    compress = Bool(False).tag(sync=False)
+    # compress = Bool(False).tag(sync=False)
 
-    def __init__(self, filename, options={}, unit=Unit.m, animate=False, dump='', compress=False, **kwargs):
+    def __init__(self, filename, options={}, unit=Unit.m, animate=False, dump='', **kwargs):
         self.__filename = filename
         self.lsystem = Lsystem(filename, options)
         self.__trees.append(self.lsystem.axiom)
@@ -195,7 +195,7 @@ class LsystemWidget(PGLWidget):
     def __set_scene(self, step):
         # print('__set_scene', step)
         scene = self.lsystem.sceneInterpretation(self.__trees[step])
-        serialized = bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = scene_to_bytes(scene) # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
             'data': serialized,
             'scene': scene,
@@ -205,7 +205,7 @@ class LsystemWidget(PGLWidget):
         self.scene = serialized_scene
         if len(self.dump) > 0:
             os.makedirs(self.dump, exist_ok=True)
-            file_type = 'cgeom' if self.compress else 'bgeom'
+            file_type = 'bgeom' # 'cgeom' if self.compress else 'bgeom'
             with io.open(os.path.join(self.dump, f'{self.__filename}_{step}.{file_type}'), 'wb') as file:
                 file.write(serialized)
 
