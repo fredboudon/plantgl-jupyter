@@ -10,7 +10,7 @@ PlantGL & L-Py jupyter widgets
  - install jupyterlab and widgetsextension
 
 ```bash
-pip install jupyterlab>=2.5.1 ipywidgets>=7.0.0
+pip install 'jupyterlab>=2.1.5' 'ipywidgets>=7.0.0'
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```
 
