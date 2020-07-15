@@ -3,62 +3,63 @@
 
 # pgljupyter
 
-PlantGL jupyter widget
+PlantGL & L-Py jupyter widgets
 
-## Installation
+## Install and run from source
 
-You can install using `pip`:
-
-```bash
-pip install pgljupyter
-```
-
-Or if you use jupyterlab:
+ - install jupyterlab and widgetsextension
 
 ```bash
-pip install pgljupyter
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
+pip install jupyterlab>=2.5.1 ipywidgets>=7.0.0
+jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```
 
-### dev
+ - install emsdk: https://emscripten.org/docs/getting_started/downloads.html
 
 ```bash
-npm run build
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+cd ..
 ```
+
+ - get pgljupyter source
+
+```bash
+git clone https://github.com/jvail/plantgl-jupyter.git
+cd plantgl-jupyter
+```
+
+ - fetch plantgl and install pgljs deps (requires activation of emsdk i.e. source ./emsdk_env.sh)
+
+```bash
+git submodule update --init --recursive
+cd src/pgljs
+npm install
+cd ../..
+```
+
+ - install deps and build
+
+```bash
+npm install
+npm run build:pgljs && npm run build
+```
+
+ - install python modules and jupyter extensions
 
 ```bash
 pip install -e .
-```
-
-jupyter notebook
-
-```bash
 jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
 jupyter nbextension enable --sys-prefix --py pgljupyter
-jupyter notebook --browser=google-chrome
+jupyter labextension install . --minimize=False --dev-build=False
+jupyter lab clean
 ```
 
-jupyter lab
+ - run the lab
 
 ```bash
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
-jupyter labextension install .
-jupyter lab --browser=google-chrome
+jupyter lab --browser=google-chrome --notebook-dir=./examples
 ```
-
-or
-
-```bash
-npm run watch
-jupyter lab --watch
-```
-
-### docker
-
-```bash
-docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
-```
-
-docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
-
-docker run -it --rm -p 8080:8080 -v $PWD/examples:/examples plantgl-jupyter:build jupyter lab --port=8080 --allow-root --ip=0.0.0.0 --notebook-dir=/examples

@@ -1,4 +1,4 @@
 git submodule update --init --recursive
-git checkout plantgl-jupyter
+source {path where emsdk is installed}/emsdk/emsdk_env.sh
 npm install
 npm run build
