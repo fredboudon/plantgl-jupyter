@@ -4,7 +4,7 @@ TODO: Add module docstring
 
 from ipywidgets.widgets import DOMWidget, Widget, register
 from traitlets import Unicode, Instance, Bytes, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum
-from openalea.plantgl.all import Scene, Shape, ParametricModel, tobinarystring as scene_to_bgeom #, serialize_scene as scene_to_draco
+from openalea.plantgl.all import Scene, tobinarystring as scene_to_bgeom
 from openalea.lpy import Lsystem
 from functools import reduce
 import random, string, io, os
@@ -34,16 +34,15 @@ def to_scene(obj):
         pass
     elif isinstance(obj, Scene):
         scene = obj
-    elif isinstance(obj, (Shape, ParametricModel)):
-        scene = Scene([obj])
-    elif isinstance(obj, list) and reduce(lambda a, b: a and (isinstance(b, Shape) or isinstance(b, ParametricModel)), obj):
-        scene = Scene(obj)
     else:
-        raise ValueError('Not a PlantGL Scene, Shape or Model')
+        if isinstance(obj, list):
+            scene = Scene(obj)
+        else:
+            scene = Scene([obj])
     return scene
 
 # TODO: serialize in thread
-def scene_to_bytes(scene, single_mesh=False):
+def scene_to_bytes(scene):
     # serialized = pgl_scene_to_bytes(scene, single_mesh)
     # if not serialized.status:
     #     raise ValueError('scene serialization failed')
@@ -93,7 +92,7 @@ class SceneWidget(PGLWidget):
     def __init__(self, obj=None, position=(0,0,0), scale=(1.0), **kwargs):
         scene = to_scene(obj)
         serialized = scene_to_bytes(scene) # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
-        self.compress = compress
+        # self.compress = compress
         self.scenes = [{
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -156,7 +155,7 @@ class LsystemWidget(PGLWidget):
         self.unit = unit
         self.animate = animate
         self.dump = dump
-        self.compress = compress
+        # self.compress = compress
         self.__set_scene(0)
         self.on_msg(self.__on_custom_msg)
         super().__init__(**kwargs)

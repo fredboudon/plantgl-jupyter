@@ -82,8 +82,7 @@ setup_args = dict(
     ],
     include_package_data = True,
     install_requires = [
-        'ipywidgets>=7.0.0',
-        'openalea.plantgl>=3.3.0'
+        'ipywidgets>=7.0.0'
     ],
     extras_require = {
         'test': [

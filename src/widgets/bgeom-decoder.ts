@@ -54,18 +54,20 @@ const getWorker = (): Worker => {
                     }
 
                     meshs = [...meshs, ...data.filter(d => d.isInstanced).map(d => {
-                        const geometry = new THREE.InstancedBufferGeometry();
+                        const geometry = new THREE.BufferGeometry();
                         const instances = new Float32Array(d.instances);
                         const material = new THREE.MeshStandardMaterial({
                             side: THREE.DoubleSide,
                             shadowSide: THREE.BackSide,
-                            vertexColors: true,
-                            roughness: 0.7
+                            roughness: 0.7,
+                            vertexColors: true
                         });
+
                         geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(d.index), 1));
                         geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(d.position), 3));
                         geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(d.color), 3, true));
-                        geometry.setAttribute('normal', new THREE.InstancedBufferAttribute(new Float32Array(d.normal), 3, true));
+                        geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
+
                         const mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
                         for (let i = 0; i < instances.length / 16; i++) {
                             mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));

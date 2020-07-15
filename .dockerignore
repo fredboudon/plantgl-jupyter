@@ -1,1 +1,5 @@
 docker
+src/pgljs/build
+src/pgljs/plantgl
+src/pgljs/node_modules
+node_modules
