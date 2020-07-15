@@ -2,7 +2,7 @@ import { Widget } from '@lumino/widgets';
 import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
 import * as THREE from 'three';
 import geomDecoder from './bgeom-decoder';
-import dracoDecoder from './draco-decoder';
+// import dracoDecoder from './draco-decoder';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { disposeScene, isDracoFile } from './utilities';
 import { imageIcon } from '@jupyterlab/ui-components';
@@ -106,8 +106,8 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         // all data is base64 currently: Change to arraybuffer if supported by jupyter
         const data = Uint8Array.from(atob(model.data[this.mimeType] as any), c => c.charCodeAt(0)).buffer;
         return new Promise((resolve, reject) => {
-            const decoder = isDracoFile(data) ? dracoDecoder : geomDecoder;
-            decoder.decode({ data })
+            // const decoder = isDracoFile(data) ? dracoDecoder : geomDecoder;
+            geomDecoder.decode({ data })
                 .then(res => {
                     this.setMeshs(res.results);
                     resolve();
@@ -137,14 +137,14 @@ const extension: IRenderMime.IExtension = {
         iconClass: '',
         fileFormat: 'base64',
         mimeTypes: [MIME_TYPE],
-        extensions: ['.bgeom', '.cgeom']
+        extensions: ['.bgeom']
     }],
     documentWidgetFactoryOptions: [{
         name: 'plantgl-jupyter bgeom viewer',
         primaryFileType: 'bgeom',
         modelName: 'base64',
-        fileTypes: ['bgeom', 'cgeom'],
-        defaultFor: ['bgeom', 'cgeom']
+        fileTypes: ['bgeom'],
+        defaultFor: ['bgeom']
     }]
 };
 

@@ -4,7 +4,7 @@ import {
 } from '@jupyter-widgets/base';
 import * as THREE from 'three';
 import geomDecoder from './bgeom-decoder';
-import dracoDecoder from './draco-decoder';
+// import dracoDecoder from './draco-decoder';
 import { PGLControls, LsystemControls } from './controls';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
@@ -436,21 +436,21 @@ export class LsystemWidgetView extends PGLWidgetView {
 
     decode(scene: ILsystemScene) {
         if (isDracoFile(scene.data.buffer)) {
-            dracoDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
-                .then(res => {
-                    const { results, userData: { step } } = res;
-                    if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
-                        this.cache[step] = results;
-                    } else {
-                        this.addScene(step, results);
-                        this.controls.state.derivationStep = step;
-                        this.controls.state.busy--;
-                        if (this.cache[step + 1]) {
-                            this.getFromCache();
-                        }
-                    }
-                })
-                .catch(err => console.log(err));
+            // dracoDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
+            //     .then(res => {
+            //         const { results, userData: { step } } = res;
+            //         if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
+            //             this.cache[step] = results;
+            //         } else {
+            //             this.addScene(step, results);
+            //             this.controls.state.derivationStep = step;
+            //             this.controls.state.busy--;
+            //             if (this.cache[step + 1]) {
+            //                 this.getFromCache();
+            //             }
+            //         }
+            //     })
+            //     .catch(err => console.log(err));
         } else {
             geomDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
                 .then(res => {

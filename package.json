@@ -59,7 +59,6 @@
     "@material/mwc-icon-button-toggle": "^0.17.2",
     "@material/mwc-linear-progress": "^0.17.2",
     "@material/mwc-switch": "^0.17.2",
-    "draco-web-decoder": "^1.0.0",
     "lit-html": "^1.2.1",
     "three": "^0.118.3"
   },
