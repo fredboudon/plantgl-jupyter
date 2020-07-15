@@ -1,5 +1,7 @@
 const path = require('path');
 const version = require('./package.json').version;
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
 
 // Custom webpack rules
 const rules = [
@@ -16,7 +18,9 @@ const externals = [
   '@jupyterlab/ui-components',
   '@jupyterlab/docregistry',
   '@jupyterlab/rendermime',
-  '@jupyterlab/rendermime-interfaces'
+  '@jupyterlab/rendermime-interfaces',
+  "@lumino/application",
+  "@lumino/widgets"
 ];
 
 const resolve = {
@@ -68,14 +72,31 @@ module.exports = [
         library: "pgljupyter",
         publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
     },
-    devtool: 'source-map',
+    devtool: '',
     module: {
         rules: rules
     },
+    plugins: [
+      // new BundleAnalyzerPlugin()
+    ],
     externals,
     resolve,
     performance: {
       hints: false
+    },
+    optimization: {
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            ecma: 8,
+            warnings: true,
+            parse: {},
+            compress: {},
+            mangle: false
+          }
+        })
+      ],
     }
   },
 
