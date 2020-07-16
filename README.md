@@ -34,7 +34,7 @@ git clone https://github.com/jvail/plantgl-jupyter.git
 cd plantgl-jupyter
 ```
 
- - fetch plantgl and install pgljs deps (requires activation of emsdk i.e. source ./emsdk_env.sh)
+ - fetch plantgl and install pgljs deps
 
 ```bash
 git submodule update --init --recursive
@@ -43,7 +43,7 @@ npm install
 cd ../..
 ```
 
- - install deps and build
+ - install pgljupyter deps and build (requires activation of emsdk i.e. source ./emsdk_env.sh)
 
 ```bash
 npm install
