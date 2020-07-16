@@ -5,12 +5,13 @@
 
 PlantGL & L-Py jupyter widgets
 
-## Install and run from source
+## Build, install and run from source
 
- - install jupyterlab and widgetsextension
+ - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
 ```bash
-pip install 'jupyterlab>=2.1.5' 'ipywidgets>=7.0.0'
+conda create -y -n pgljupyter -c fredboudon -c conda-forge 'openalea.lpy>=3.4.0' 'jupyterlab>=2.1.5' 'ipywidgets>=7.5.0'
+conda activate pgljupyter
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```
 
@@ -61,5 +62,5 @@ jupyter lab clean
  - run the lab
 
 ```bash
-jupyter lab --browser=google-chrome --notebook-dir=./examples
+jupyter lab --notebook-dir=./examples
 ```

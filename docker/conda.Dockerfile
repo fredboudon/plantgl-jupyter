@@ -3,28 +3,40 @@ SHELL [ "/bin/bash", "-c" ]
 WORKDIR /build
 COPY . ./plantgl-jupyter
 RUN source /emsdk/emsdk_env.sh && cd ./plantgl-jupyter/src/pgljs && npm install && \
-    rm -fr plantgl build && git clone  https://github.com/fredboudon/plantgl.git  && \
+    rm -fr plantgl build && git clone  https://github.com/fredboudon/plantgl.git && \
     cd ../..  && npm install && npm run build:pgljs && npm run build
 
 
 FROM jupyter/base-notebook:lab-2.1.5 AS deploy-deps
-
-USER root
-RUN apt update && apt install --no-install-recommends -y libgl1-mesa-dev && \
-    conda install -y -c fredboudon openalea.lpy
-
-FROM deploy-deps AS deploy
-
+WORKDIR /build
 USER root
 SHELL ["/bin/bash", "-c"]
+RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y libgl1-mesa-dev && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* && \
+    conda install --freeze-installed -y -c fredboudon 'openalea.lpy>=3.4.0' && \
+    conda clean -y --all --force-pkgs-dirs
+
+FROM deploy-deps AS deploy
 COPY --from=build  /build/plantgl-jupyter /build/plantgl-jupyter
 RUN cd /build/plantgl-jupyter && \
-    pip3 install . && \
+    pip3 install . --no-cache && \
     jupyter nbextension install --sys-prefix --overwrite --py pgljupyter && \
     jupyter nbextension enable --sys-prefix --py pgljupyter && \
     jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
-    jupyter labextension install . --minimize=False --dev-build=False && \
-    jupyter lab clean && rm -fr /build/plantgl-jupyter
+    jupyter labextension install --no-build . && \
+    jupyter lab build --minimize=False --dev-build=False && \
+    jupyter lab clean && \
+    jlpm cache clean && \
+    npm cache clean --force && \
+    cd / && \
+    rm -fr /build && \
+    rm -fr /tmp/* && \
+    chmod 777 /opt/conda/share/jupyter/lab/settings/build_config.json
+
+# change permisson of
+# /opt/conda/share/jupyter/lab/settings/build_config.json
 
 USER 1000
 WORKDIR $HOME
