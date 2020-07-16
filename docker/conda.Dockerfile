@@ -2,10 +2,9 @@ FROM emscripten/emsdk:1.39.19 as build
 SHELL [ "/bin/bash", "-c" ]
 WORKDIR /build
 COPY . ./plantgl-jupyter
-RUN source /emsdk/emsdk_env.sh && cd ./plantgl-jupyter/src/pgljs && npm install && \
-    rm -fr plantgl build && git clone  https://github.com/fredboudon/plantgl.git && \
+RUN cd plantgl-jupyter && git submodule update --init --recursive && \
+    source /emsdk/emsdk_env.sh && cd src/pgljs && npm install && \
     cd ../..  && npm install && npm run build:pgljs && npm run build
-
 
 FROM jupyter/base-notebook:lab-2.1.5 AS deploy-deps
 WORKDIR /build
