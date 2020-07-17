@@ -9,12 +9,6 @@ if(DEFINED ENV{EMSDK})
       FATAL_ERROR
         "Python required for Emscripten builds, but cmake cannot find it.")
   endif()
-  if(NOT EXISTS ${EMSCRIPTEN_ROOT})
-    message(
-      FATAL_ERROR
-        "The EMSCRIPTEN_ROOT environment variable must be set. See README.md.")
-  endif()
-  message(${EMSCRIPTEN_ROOT})
   set(CMAKE_TOOLCHAIN_FILE "${EMSCRIPTEN_ROOT}/cmake/Modules/Platform/Emscripten.cmake")
 else()
   message(
@@ -80,7 +74,6 @@ set(DEBUG_FLAGS
   "-DPGL_USE_FLOAT"
   "-s ASSERTIONS=0"
   "-s DISABLE_EXCEPTION_CATCHING=1"
-  "-O3"
 )
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
