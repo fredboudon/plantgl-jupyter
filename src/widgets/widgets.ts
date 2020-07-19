@@ -424,7 +424,7 @@ export class LsystemWidgetView extends PGLWidgetView {
             // console.log('getFromCache', step, Object.keys(this.cache));
             if (mesh) {
                 delete this.cache[step];
-                this.addScene(step, mesh);
+                this.setScene(step, mesh);
                 this.controls.state.derivationStep = step;
                 this.controls.state.busy--;
                 if (this.cache[step + 1]) {
@@ -458,7 +458,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                     if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
                         this.cache[step] = results;
                     } else {
-                        this.addScene(step, results);
+                        this.setScene(step, results);
                         this.controls.state.derivationStep = step;
                         this.controls.state.busy--;
                         if (this.cache[step + 1]) {
@@ -471,22 +471,34 @@ export class LsystemWidgetView extends PGLWidgetView {
         }
     }
 
-    addScene(step: number, meshs, position = [0, 0, 0]) {
-        const scene = new THREE.Scene();
+    setScene(step: number, meshs, position = [0, 0, 0]) {
+
+        const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];
-        scene.scale.multiplyScalar(scale);
-        scene.position.set(x, y, z);
-        scene.add(...meshs);
-        scene.userData = { step };
-        scene.name = 'lsystem';
-        this.removeScenes();
-        this.scene.add(scene);
+        currentScene.scale.multiplyScalar(scale);
+        currentScene.position.set(x, y, z);
+        currentScene.add(...meshs);
+        currentScene.userData = { step };
+        currentScene.name = 'lsystem';
+
+        const previousScene = this.scene.getObjectByName('lsystem') as THREE.Scene;
+        if (previousScene) {
+            previousScene.visible = false;
+        }
+
+        this.scene.add(currentScene);
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
         if (this.controls.state.animate && step === this.controls.state.derivationLength - 1) {
             this.controls.state.animate = false;
         }
+
+        if (previousScene) {
+            this.scene.remove(previousScene);
+            disposeScene(previousScene);
+        }
+
     }
 
     remove() {
