@@ -13,6 +13,7 @@ const rules = [
 // Packages that shouldn't be bundled but loaded at runtime
 const externals = [
   '@jupyter-widgets/base',
+  "@jupyter-widgets/controls",
   '@jupyterlab/application',
   '@jupyterlab/codemirror',
   '@jupyterlab/ui-components',

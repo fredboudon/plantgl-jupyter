@@ -15,6 +15,7 @@ import {
 } from './interfaces';
 import { disposeScene, isDracoFile } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
+import { VBoxView } from '@jupyter-widgets/controls';
 
 export class PGLWidgetView extends DOMWidgetView {
 
@@ -321,7 +322,6 @@ export class LsystemWidgetView extends PGLWidgetView {
                 disposeScene(scene as THREE.Scene);
                 return scene;
             }));
-        this.disposables.forEach(scene => disposeScene(scene));
     }
 
     render() {
@@ -347,6 +347,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                 this.model.set('animate', animate);
                 this.touch();
                 if (animate) {
+                    const pyFeedMax = Math.ceil(this.controls.state.derivationLength / 10);
                     const animation = (step) => {
                         // console.log('animation', step, this.controls.state.pyFeed);
                         if (this.controls.state.animate) {
@@ -355,7 +356,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                             this.send({ derive: step });
                             if (step + 1 < this.controls.state.derivationLength) {
                                 const next = (step) => {
-                                    if (this.controls.state.pyFeed > 1) {
+                                    if (this.controls.state.pyFeed > pyFeedMax) {
                                         setTimeout(() => {
                                             next(step);
                                         }, 100);
@@ -426,7 +427,9 @@ export class LsystemWidgetView extends PGLWidgetView {
                 delete this.cache[step];
                 this.setScene(step, mesh);
                 this.controls.state.derivationStep = step;
-                this.controls.state.busy--;
+                if (this.controls.state.busy > 0) {
+                    this.controls.state.busy--;
+                }
                 if (this.cache[step + 1]) {
                     this.getFromCache();
                 }
@@ -460,7 +463,9 @@ export class LsystemWidgetView extends PGLWidgetView {
                     } else {
                         this.setScene(step, results);
                         this.controls.state.derivationStep = step;
-                        this.controls.state.busy--;
+                        if (this.controls.state.busy > 0) {
+                            this.controls.state.busy--;
+                        }
                         if (this.cache[step + 1]) {
                             this.getFromCache();
                         }
@@ -505,4 +510,12 @@ export class LsystemWidgetView extends PGLWidgetView {
         super.remove();
     }
 
+}
+
+
+export class ParameterEditorWidgetView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-parameter-editor');
+      }
 }

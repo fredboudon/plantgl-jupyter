@@ -3,6 +3,7 @@ import { JupyterFrontEnd, JupyterFrontEndPlugin } from "@jupyterlab/application"
 import { pythonIcon, LabIcon } from '@jupyterlab/ui-components';
 import { Mode } from "@jupyterlab/codemirror";
 import * as widgets from './widgets/widgets';
+import * as editors from './widgets/editors';
 import * as models from './widgets/models';
 import bgeom from './widgets/geom';
 import {
@@ -16,7 +17,7 @@ const registerWidgets = (widgetRegistry: IJupyterWidgetRegistry) => {
     widgetRegistry.registerWidget({
         name: MODULE_NAME,
         version: MODULE_VERSION,
-        exports: { ...widgets, ...models }
+        exports: { ...widgets, ...editors, ...models }
     });
 
 };

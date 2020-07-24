@@ -1,7 +1,7 @@
 import {
     DOMWidgetModel, ISerializers
 } from '@jupyter-widgets/base';
-
+import { VBoxModel } from '@jupyter-widgets/controls';
 import {
     MODULE_NAME, MODULE_VERSION
 } from '../version';
@@ -104,6 +104,56 @@ export class LsystemWidgetModel extends DOMWidgetModel {
     static model_module = MODULE_NAME;
     static model_module_version = MODULE_VERSION;
     static view_name = 'LsystemWidgetView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+export class ParameterEditorWidgetModel extends VBoxModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: ParameterEditorWidgetModel.model_name,
+            _model_module: ParameterEditorWidgetModel.model_module,
+            _model_module_version: ParameterEditorWidgetModel.model_module_version,
+            _view_name: ParameterEditorWidgetModel.view_name,
+            _view_module: ParameterEditorWidgetModel.view_module,
+            _view_module_version: ParameterEditorWidgetModel.view_module_version
+        };
+    }
+
+    static model_name = 'ParameterEditorWidgetModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = 'ParameterEditorWidgetView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+
+export class CurveEditorWidgetModel extends DOMWidgetModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: CurveEditorWidgetModel.model_name,
+            _model_module: CurveEditorWidgetModel.model_module,
+            _model_module_version: CurveEditorWidgetModel.model_module_version,
+            _view_name: CurveEditorWidgetModel.view_name,
+            _view_module: CurveEditorWidgetModel.view_module,
+            _view_module_version: CurveEditorWidgetModel.view_module_version,
+            name: '',
+            control_points: [],
+            is_function: false
+        };
+    }
+
+    static model_name = 'CurveEditorWidgetModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = 'CurveEditorWidgetView';
     static view_module = MODULE_NAME;
     static view_module_version = MODULE_VERSION;
 
