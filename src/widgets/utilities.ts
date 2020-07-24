@@ -63,8 +63,36 @@ function isDracoFile(data: ArrayBuffer) {
     return 'DRACO' === String.fromCharCode(...Array.from(new Uint8Array(data.slice(0, 5))));
 }
 
+const Debounce = function (fn: Function, delay: number) {
+
+    let timeoutId = null;
+    let timeout = 0;
+    const _fn = fn;
+    const _delay = delay;
+    const _setTimeout = (delay: number, args) => {
+        timeoutId = setTimeout((...args) => {
+            timeoutId = null;
+            _fn(...args);
+        }, delay, ...args);
+        // console.log(delay, timeoutId);
+    };
+
+    return function (...args) {
+        // console.log(timeoutId);
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            _setTimeout(timeout - Date.now(), args);
+        } else {
+            timeout = Date.now() + _delay;
+            _setTimeout(_delay, args);
+        }
+    };
+
+};
+
 export {
     disposeScene,
     merge,
-    isDracoFile
+    isDracoFile,
+    Debounce
 }

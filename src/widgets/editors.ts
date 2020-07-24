@@ -4,6 +4,7 @@ import {
 } from '@jupyter-widgets/base';
 import * as d3 from 'd3';
 import * as nurbs from 'nurbs';
+import { Debounce } from './utilities';
 
 export class CurveEditorWidgetView extends DOMWidgetView {
 
@@ -95,12 +96,11 @@ export class CurveEditorWidgetView extends DOMWidgetView {
             .attr('cx', d => xScale(d[0]))
             .attr('cy', d => yScale(d[1]))
 
-
-        const updateModel = (points) => {
+        // @ts-ignore
+        const updateModel = new Debounce((points) => {
             this.model.set('control_points', [...points]);
             this.touch();
-        }
-
+        }, 250);
 
         this.svg.selectAll('circle')
             .call( // @ts-ignore
