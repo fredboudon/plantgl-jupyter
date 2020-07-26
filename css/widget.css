@@ -104,10 +104,34 @@ mwc-icon-button-toggle, mwc-icon-button {
 .pgl-curve-editor {
     margin: 10px 10px 0px 0px;
 }
+
 .pgl-curve-editor-svg {
-    width: 450px; max-width: 100%; height: auto; overflow: visible; background-color: #f5f5f5;
+    width: 450px;
+    max-width: 100%;
+    height: auto;
+    overflow: visible;
+    background-color: #f5f5f5;
 }
-.pgl-curve-editor-svg .u-line { stroke: #aaa; stroke-dasharray: 2 2; fill: none; }
-.pgl-curve-editor-svg .u-path { stroke: orange; fill: none; stroke-width: 2;}
-.pgl-curve-editor-svg .u-point { fill: orange; cursor: pointer; }
-.pgl-curve-editor-svg { text-anchor: middle; font: 11px var(--sans-serif); user-select:none; }
+
+.pgl-curve-editor-svg .grid {
+    stroke: lightgrey;
+    stroke-width: 1;
+    fill: none;
+}
+
+.pgl-curve-editor-svg .line {
+    stroke: grey;
+    stroke-dasharray: 2 2;
+    fill: none;
+}
+
+.pgl-curve-editor-svg .curve {
+    stroke: orange;
+    fill: none;
+    stroke-width: 2;
+}
+
+.pgl-curve-editor-svg .point {
+    fill: orange;
+    cursor: pointer;
+}

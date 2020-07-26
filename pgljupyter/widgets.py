@@ -175,7 +175,7 @@ class LsystemWidget(PGLWidget):
         super().__init__(**kwargs)
 
     def __on_options_changed(self, name, obj):
-        if name in self.lsystem.execContext().globals():
+        if not self.animate and name in self.lsystem.execContext().globals():
             self.lsystem.execContext().globals()[name] = obj
             self.__trees = []
             self.__trees.append(self.lsystem.axiom)

@@ -63,28 +63,28 @@ function isDracoFile(data: ArrayBuffer) {
     return 'DRACO' === String.fromCharCode(...Array.from(new Uint8Array(data.slice(0, 5))));
 }
 
-const Debounce = function (fn: Function, delay: number) {
+const debounce = function (fn: Function, delay: number): Function {
 
-    let timeoutId = null;
-    let timeout = 0;
-    const _fn = fn;
-    const _delay = delay;
-    const _setTimeout = (delay: number, args) => {
-        timeoutId = setTimeout((...args) => {
-            timeoutId = null;
-            _fn(...args);
-        }, delay, ...args);
-        // console.log(delay, timeoutId);
-    };
+    // @ts-ignore
+    if (!new.target) return new debounce(fn, delay);
+
+    let time = 0;
+    let _args = [];
+    let id = null;
 
     return function (...args) {
-        // console.log(timeoutId);
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            _setTimeout(timeout - Date.now(), args);
+        _args = args || [];
+        if (id) return;
+        const now = Date.now();
+        if (now - time < delay) {
+            id = setTimeout(() => {
+                id = null;
+                time = Date.now();
+                fn(..._args);
+            }, delay - (now - time));
         } else {
-            timeout = Date.now() + _delay;
-            _setTimeout(_delay, args);
+            time = now;
+            fn(...args);
         }
     };
 
@@ -94,5 +94,5 @@ export {
     disposeScene,
     merge,
     isDracoFile,
-    Debounce
+    debounce
 }
