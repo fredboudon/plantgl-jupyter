@@ -70,6 +70,8 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
     }
 
     processMessage(msg) {
+        super.processMessage(msg);
+
         switch (msg.type) {
             case 'resize':
                 if (this.renderer) {

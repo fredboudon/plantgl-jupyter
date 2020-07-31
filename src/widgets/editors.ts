@@ -5,8 +5,9 @@ import {
 import * as d3 from 'd3';
 import * as nurbs from 'nurbs';
 import { debounce } from './utilities';
+import { CurveType } from './consts';
 
-export class CurveEditorWidgetView extends DOMWidgetView {
+export class CurveEditorView extends DOMWidgetView {
 
     width = 250;
     height = 250;
@@ -14,6 +15,7 @@ export class CurveEditorWidgetView extends DOMWidgetView {
     svg = null;
     name = '';
     isFunction = false;
+    curveType: CurveType;
     controlPoints = [];
 
     initialize(parameters: WidgetView.InitializeParameters) {
@@ -31,10 +33,12 @@ export class CurveEditorWidgetView extends DOMWidgetView {
             .style('height', this.height);
         this.name = this.model.get('name');
         this.isFunction = this.model.get('is_function');
-        this.controlPoints = this.model.get('control_points').map(p => [...p]);
+        this.controlPoints = this.model.get('control_points');
+        this.curveType = this.model.get('curve_type');
+
         this.onControlPointsChanged();
         this.listenTo(this.model, 'change:control_points', () => {
-            const p1 = this.model.get('control_points').map(p => [...p]);
+            const p1 = this.model.get('control_points');
             const p0 = this.controlPoints;
             // test if point data has changed
             if (p1.length !== p0.length || p1.some((p, i) => p[0] !== p0[i][0] || p[1] !== p0[i][1])) {
@@ -51,7 +55,6 @@ export class CurveEditorWidgetView extends DOMWidgetView {
 
         const controlPoints = this.controlPoints;
         const isFunction = this.isFunction;
-        if (controlPoints.length < 2) return;
 
         const width = this.width;
         const height = this.height;
@@ -157,7 +160,7 @@ export class CurveEditorWidgetView extends DOMWidgetView {
 
                         // @ts-ignore
                         d3.select(this).attr('cx', d.x = xScale(x)).attr('cy', d.y = d3.event.y);
-                        updateModel(controlPoints.map(p => [...p]));
+                        updateModel(controlPoints.slice());
                     })
             );
 

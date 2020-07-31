@@ -32,7 +32,7 @@ const getWorker = (): Worker => {
             } else {
                 const { resolve, reject, userData } = workers.get(this).shift();
                 if (evt.data.error) {
-                    reject(userData);
+                    reject({ error: evt.data.error, userData});
                 } else {
 
                     const data = evt.data as IGeom[];

@@ -40,6 +40,7 @@ export class PGLWidgetView extends DOMWidgetView {
     pglControlsEl: HTMLDivElement = null;
 
     disposables: THREE.Scene[] = [];
+    isDetached = false;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -61,6 +62,7 @@ export class PGLWidgetView extends DOMWidgetView {
         };
 
         const [width, height] = this.sizeDisplay;
+        this.pWidget.addClass('pgl-widget');
         this.containerEl = document.createElement('div');
         const canvas = document.createElement('canvas');
         canvas.width = width;
@@ -238,6 +240,32 @@ export class PGLWidgetView extends DOMWidgetView {
         this.orbitControl.update();
     }
 
+    processPhosphorMessage(msg) {
+        super.processPhosphorMessage(msg);
+        switch (msg.type) {
+            case 'resize':
+                if (this.isDetached) {
+                    const { width, height } = this.containerEl.getBoundingClientRect();
+                    this.resizeDisplay(width, height - 5);
+                }
+                break;
+            case 'after-attach':
+                if (this.el.closest('.jp-LinkedOutputView')) {
+                    this.pWidget.addClass('pgl-resizable');
+                    this.containerEl.classList.add('pgl-resizable');
+                    this.isDetached = true;
+                    const output = this.containerEl.closest('.jp-OutputArea') as HTMLElement;
+                    if (output) {
+                        output.style.overflow = 'hidden';
+                    }
+
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     resizeWorld() {
         const size = this.model.get('size_world');
     }
@@ -330,7 +358,7 @@ export class LsystemWidgetView extends PGLWidgetView {
         const initialState: ILsystemControlsState = {
             animate: this.model.get('animate'),
             derivationStep: this.model.get('scene').derivationStep,
-            derivationLength: this.model.get('lsystem').derivationLength,
+            derivationLength: this.model.get('derivationLength'),
             showControls: false,
             busy: 1,
             pyFeed: 0,
@@ -403,8 +431,8 @@ export class LsystemWidgetView extends PGLWidgetView {
         this.listenTo(this.model, 'change:unit', () => {
             this.unit = this.model.get('unit')
         });
-        this.listenTo(this.model, 'change:lsystem', () => {
-            this.controls.state.derivationLength = this.model.get('lsystem').derivationLength;
+        this.listenTo(this.model, 'change:derivationLength', () => {
+            this.controls.state.derivationLength = this.model.get('derivationLength');
         });
         this.listenTo(this.model, 'comm_live_update', () => {
             this.controls.state.comm_live = this.model.comm_live;
@@ -429,6 +457,11 @@ export class LsystemWidgetView extends PGLWidgetView {
                 this.controls.state.derivationStep = step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
+                }
+                if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                    this.controls.state.animate = false;
+                    this.model.set('animate', false);
+                    this.touch();
                 }
                 if (this.cache[step + 1]) {
                     this.getFromCache();
@@ -466,6 +499,11 @@ export class LsystemWidgetView extends PGLWidgetView {
                         if (this.controls.state.busy > 0) {
                             this.controls.state.busy--;
                         }
+                        if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                            this.controls.state.animate = false;
+                            this.model.set('animate', false);
+                            this.touch();
+                        }
                         if (this.cache[step + 1]) {
                             this.getFromCache();
                         }
@@ -495,9 +533,6 @@ export class LsystemWidgetView extends PGLWidgetView {
         this.scene.add(currentScene);
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
-        if (this.controls.state.animate && step === this.controls.state.derivationLength - 1) {
-            this.controls.state.animate = false;
-        }
 
         if (previousScene) {
             this.scene.remove(previousScene);
@@ -513,7 +548,7 @@ export class LsystemWidgetView extends PGLWidgetView {
 }
 
 
-export class ParameterEditorWidgetView extends VBoxView {
+export class ParameterEditorView extends VBoxView {
     initialize(parameters) {
         super.initialize(parameters);
         this.pWidget.addClass('pgl-parameter-editor');

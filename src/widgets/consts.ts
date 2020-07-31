@@ -11,3 +11,9 @@ export const SCALES: {[key:number]: number} = {
     [LsystemUnit.CM]: 0.01,
     [LsystemUnit.MM]: 0.001
 };
+
+export const enum CurveType {
+    NURBS = 'NurbsCurve2D',
+    BEZIER = 'BezierCurve2D',
+    POLY_LINE = 'PolyLine2D'
+}

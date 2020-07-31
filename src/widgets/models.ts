@@ -81,9 +81,7 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             _view_name: LsystemWidgetModel.view_name,
             _view_module: LsystemWidgetModel.view_module,
             _view_module_version: LsystemWidgetModel.view_module_version,
-            lsystem: {
-                derivationLength: 0
-            },
+            derivationLength: 0,
             scene: null,
             unit: LsystemUnit.M,
             animate: false
@@ -109,51 +107,52 @@ export class LsystemWidgetModel extends DOMWidgetModel {
 
 }
 
-export class ParameterEditorWidgetModel extends VBoxModel {
+export class ParameterEditorModel extends VBoxModel {
 
     defaults() {
         return {
             ...super.defaults(),
-            _model_name: ParameterEditorWidgetModel.model_name,
-            _model_module: ParameterEditorWidgetModel.model_module,
-            _model_module_version: ParameterEditorWidgetModel.model_module_version,
-            _view_name: ParameterEditorWidgetModel.view_name,
-            _view_module: ParameterEditorWidgetModel.view_module,
-            _view_module_version: ParameterEditorWidgetModel.view_module_version
+            _model_name: ParameterEditorModel.model_name,
+            _model_module: ParameterEditorModel.model_module,
+            _model_module_version: ParameterEditorModel.model_module_version,
+            _view_name: ParameterEditorModel.view_name,
+            _view_module: ParameterEditorModel.view_module,
+            _view_module_version: ParameterEditorModel.view_module_version
         };
     }
 
-    static model_name = 'ParameterEditorWidgetModel';
+    static model_name = 'ParameterEditorModel';
     static model_module = MODULE_NAME;
     static model_module_version = MODULE_VERSION;
-    static view_name = 'ParameterEditorWidgetView';
+    static view_name = 'ParameterEditorView';
     static view_module = MODULE_NAME;
     static view_module_version = MODULE_VERSION;
 
 }
 
 
-export class CurveEditorWidgetModel extends DOMWidgetModel {
+export class CurveEditorModel extends DOMWidgetModel {
 
     defaults() {
         return {
             ...super.defaults(),
-            _model_name: CurveEditorWidgetModel.model_name,
-            _model_module: CurveEditorWidgetModel.model_module,
-            _model_module_version: CurveEditorWidgetModel.model_module_version,
-            _view_name: CurveEditorWidgetModel.view_name,
-            _view_module: CurveEditorWidgetModel.view_module,
-            _view_module_version: CurveEditorWidgetModel.view_module_version,
+            _model_name: CurveEditorModel.model_name,
+            _model_module: CurveEditorModel.model_module,
+            _model_module_version: CurveEditorModel.model_module_version,
+            _view_name: CurveEditorModel.view_name,
+            _view_module: CurveEditorModel.view_module,
+            _view_module_version: CurveEditorModel.view_module_version,
             name: '',
             control_points: [],
-            is_function: false
+            is_function: false,
+            curve_type: ''
         };
     }
 
-    static model_name = 'CurveEditorWidgetModel';
+    static model_name = 'CurveEditorModel';
     static model_module = MODULE_NAME;
     static model_module_version = MODULE_VERSION;
-    static view_name = 'CurveEditorWidgetView';
+    static view_name = 'CurveEditorView';
     static view_module = MODULE_NAME;
     static view_module_version = MODULE_VERSION;
 

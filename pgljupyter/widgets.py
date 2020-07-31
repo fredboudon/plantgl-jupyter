@@ -4,17 +4,21 @@ TODO: Add module docstring
 
 from ipywidgets.widgets import (
     DOMWidget, Widget, register, VBox, HBox, Tab, Output, GridBox, Layout, Accordion,
-    FloatText, IntText, Text, widget_serialization, Label
+    FloatText, IntText, Text, widget_serialization, Label, ColorPicker, Checkbox, IntSlider, FloatSlider,
+    Dropdown, Button
 )
 from ipywidgets.widgets.widget_description import DescriptionStyle
 from traitlets import Unicode, Instance, Bytes, Int, Float, Tuple, Dict, Bool, List, observe, UseEnum
-from openalea.plantgl.all import Scene, tobinarystring as scene_to_bgeom, NurbsCurve2D, Point3Array, Vector3, QuantisedFunction
-from openalea.lpy import Lsystem, LpyParsing
-import random, string, io, os, toml, warnings, pprint
+from openalea.plantgl.all import Scene, Color3, tobinarystring as scene_to_bgeom, NurbsCurve2D, Point3Array, Vector3, QuantisedFunction
+from openalea.lpy import Lsystem, LpyParsing, LsysContext
+import random, string, io, os, toml, warnings, pprint, json, inspect, textwrap, zlib
 from enum import Enum
+from pathlib import Path
+from jsonschema import validate, RefResolver, exceptions, draft7_format_checker
+import openalea.plantgl.all as pgl
 
 from ._frontend import module_name, module_version
-from .editors import CurveEditorWidget
+from .editors import CurveEditor, CurveType
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -52,7 +56,7 @@ def scene_to_bytes(scene):
     # serialized = pgl_scene_to_bytes(scene, single_mesh)
     # if not serialized.status:
     #     raise ValueError('scene serialization failed')
-    return scene_to_bgeom(scene, False)
+    return zlib.compress(scene_to_bgeom(scene, False), 9)
 
 @register
 class PGLWidget(DOMWidget):
@@ -65,7 +69,7 @@ class PGLWidget(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    size_display = Tuple(Int(400, min=300), Int(400, min=300), default_value=(400, 400)).tag(sync=True)
+    size_display = Tuple(Int(400, min=400), Int(400, min=400), default_value=(400, 400)).tag(sync=True)
     size_world = Tuple(Int(1, min=1), Int(1, min=1), Int(1, min=1), default_value=(10, 10, 10)).tag(sync=True)
     axes_helper = Bool(False).tag(sync=True)
     light_helper = Bool(False).tag(sync=True)
@@ -142,9 +146,7 @@ class LsystemWidget(PGLWidget):
     __do_abort = False
 
     units = Unit
-    lsystem = Instance(Lsystem).tag(sync=True, to_json=lambda e, o: {
-        'derivationLength': e.derivationLength
-    })
+    derivationLength = Int(0, min=0).tag(sync=True)
     unit = UseEnum(Unit).tag(sync=True, to_json=lambda e, o: e.value)
     scene = Dict(traits={
         'data': Bytes(),
@@ -154,78 +156,104 @@ class LsystemWidget(PGLWidget):
     }).tag(sync=True, to_json=scene_to_json)
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
-    # compress = Bool(False).tag(sync=False)
+    editor = None
+    __codes = []
+    __derivationStep = 0
+    __lsystem = None
 
     def __init__(self, filename, options={}, unit=Unit.m, animate=False, dump='', **kwargs):
         self.__filename = filename if filename.endswith('.lpy') else filename + '.lpy'
-        self.lsystem = Lsystem()
-        # self.__initialize_lsystem()
-        if isinstance(options, ParameterEditorWidget):
-            options.on_lpy_context_change = self.__on_options_changed
-            self.lsystem = Lsystem(self.__filename)
+        self.__lsystem = Lsystem()
+        with io.open(self.__filename, 'r') as file:
+            self.__codes = file.read().split(LpyParsing.InitialisationBeginTag)
+            self.__codes.insert(1, f'\n{LpyParsing.InitialisationBeginTag}\n')
+        if len(self.__codes) < 2:
+            raise ValueError('No L-Py code found')
+        # if a json file with the same name is present load context from the json file
+        if Path(self.__filename[0:-3] + 'json').is_file():
+            self.editor = ParameterEditor(self.__filename[0:-3] + 'json')
+            self.editor.on_lpy_context_change = self.__on_lpy_context_change
+            self.__on_lpy_context_change(self.editor.lpy_context)
         else:
-            self.lsystem = Lsystem(self.__filename, options)
-        self.__trees.append(self.lsystem.axiom)
+            self.__initialize_lsystem()
+            self.__set_scene(0)
+
         self.unit = unit
         self.animate = animate
         self.dump = dump
-        # self.compress = compress
-        self.__set_scene(0)
         self.on_msg(self.__on_custom_msg)
+
         super().__init__(**kwargs)
 
-    def __on_options_changed(self, name, obj):
-        if not self.animate and name in self.lsystem.execContext().globals():
-            self.lsystem.execContext().globals()[name] = obj
-            self.__trees = []
-            self.__trees.append(self.lsystem.axiom)
-            self.__derive(max(1, self.scene['derivationStep']))
-
     def __initialize_lsystem(self):
-        with io.open(self.__filename, 'r') as file:
-            codes = file.read().split(LpyParsing.InitialisationBeginTag)
-            if len(codes) == 2:
-                context = self.lsystem.context()
-                try:
-                    init = context.initialiseFrom(LpyParsing.InitialisationBeginTag+codes[1])
-                except:
-                    init = None
-            lpy_code_version = 1.0
-            if '__lpy_code_version__' in context:
-                lpy_code_version = context['__lpy_code_version__']
-            if '__functions__' in context and lpy_code_version <= 1.0 :
-                functions = context['__functions__']
-                for n,c in functions: c.name = n
-                self.__visualparameters += [ ({'name':'Functions'}, [func for n, func in functions]) ]
-            if '__curves__' in context and lpy_code_version <= 1.0 :
-                curves = context['__curves__']
-                for n,c in curves: c.name = n
-                self.__visualparameters += [ ({'name':'Curve2D'}, [curve for n, curve in curves]) ]
-            if '__scalars__' in context:
-                self.__scalars = [ v for v in context['__scalars__'] ]
-            if '__parameterset__' in context:
-                def checkinfo(info):
-                    if type(info) == str:
-                        return {'name':info}
-                    return info
-                parameterset = context['__parameterset__']
-                parameterset = [ (checkinfo(panelinfo), [obj for typename, obj in objects]) for panelinfo,objects in parameterset]
-                self.__visualparameters += parameterset
-            if init is None:
-                warnings.warn('initialisation failed')
+        self.__lsystem.filename = self.__filename
+        self.__lsystem.set(''.join(self.__codes), {})
+        self.derivationLength = self.__lsystem.derivationLength
+        self.__trees = []
+        self.__trees.append(self.__lsystem.axiom)
 
-    @observe('animate')
-    def on_animate_changed(self, change):
-        # print('on_animate_changed', change['old'], change['new'])
-        if change['old'] and not change['new'] and self.scene['derivationStep'] < self.lsystem.derivationLength - 1:
-            # print('__do_abort')
-            __do_abort = True
+    def __on_lpy_context_change(self, context_obj):
+        if not self.animate:
+            self.__codes[2] = self.__initialisation_function(context_obj)
+            self.__lsystem.clear()
+            self.__lsystem.filename = self.__filename
+            self.__lsystem.set(''.join(self.__codes), {})
+            self.derivationLength = self.__lsystem.derivationLength
+            self.__trees = []
+            self.__trees.append(self.__lsystem.axiom)
+            self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
+            self.__derive(self.__derivationStep)
+
+    def __initialisation_function(self, context_obj):
+        def build_context(context_obj, context):
+            for key, value in context_obj.items():
+                if isinstance(value, dict):
+                    if key == 'scalars':
+                        for name, scalar in value.items():
+                            context[name] = scalar['value']
+                    elif key == 'materials':
+                        for name, material in value.items():
+                            context[name] = pgl.Material(
+                                name=name,
+                                ambient=material['ambient']
+                            )
+                            context.turtle.setMaterial(material['index'], context[name])
+                    elif key == 'functions':
+                        for name, function in value.items():
+                            if 'NurbsCurve2D' in function:
+                                points = function['NurbsCurve2D']
+                                context[name] = pgl.QuantisedFunction(
+                                    pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
+                                )
+                    elif key == 'curves':
+                        for name, curve in value.items():
+                            if 'NurbsCurve2D' in curve:
+                                points = curve['NurbsCurve2D']
+                                context[name] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
+
+        codes = [
+            f'\n__lpy_code_version__ = 1.1',
+            f'\ndef {LsysContext.InitialisationFunctionName}(context):',
+            f'\n    import openalea.plantgl.all as pgl',
+            f'\n{textwrap.indent(textwrap.dedent(inspect.getsource(build_context)), "    ")}',
+            f'\n    context_obj={str(context_obj)}',
+            f'\n    build_context(context_obj, context)'
+        ]
+
+        return ''.join(codes)
+
+
+    # @observe('animate')
+    # def on_animate_changed(self, change):
+    #     # print('on_animate_changed', change['old'], change['new'])
+    #     if change['old'] and not change['new'] and self.scene['derivationStep'] < self.lsystem.derivationLength - 1:
+    #         # print('__do_abort')
+    #         __do_abort = True
 
     def __on_custom_msg(self, widget, content, buffers):
-        # print('__on_custom_msg', content)
         if 'derive' in content:
             step = content['derive']
-            if step < self.lsystem.derivationLength:
+            if step < self.derivationLength:
                 if step < len(self.__trees):
                     self.__set_scene(step)
                 else:
@@ -234,20 +262,24 @@ class LsystemWidget(PGLWidget):
             self.__rewind()
 
     def __rewind(self):
-        self.lsystem.clear()
-        with io.open(self.__filename, 'r') as lpy:
-            self.lsystem.setCode(lpy.read())
-        self.send_state('lsystem')
-        self.__clear()
-        self.__trees.append(self.lsystem.axiom)
-        self.__set_scene(0)
-
-    def __clear(self):
-        self.__trees = []
+        self.__lsystem.clear()
+        self.__derivationStep = 0
+        with io.open(self.__filename, 'r') as file:
+            self.__codes = file.read().split(LpyParsing.InitialisationBeginTag)
+            self.__codes.insert(1, f'\n{LpyParsing.InitialisationBeginTag}\n')
+        if len(self.__codes) < 2:
+            raise ValueError('No L_Py code found')
+        # if a json file with the same name is present load context from the json file
+        if Path(self.__filename[0:-3] + 'json').is_file():
+            self.editor = ParameterEditor(self.__filename[0:-3] + 'json')
+            self.editor.on_lpy_context_change = self.__on_lpy_context_change
+            self.__on_lpy_context_change(self.editor.lpy_context)
+        else:
+            self.__initialize_lsystem()
+            self.__set_scene(0)
 
     def __set_scene(self, step):
-        # print('__set_scene', step)
-        scene = self.lsystem.sceneInterpretation(self.__trees[step])
+        scene = self.__lsystem.sceneInterpretation(self.__trees[step])
         serialized = scene_to_bytes(scene) # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
             'data': serialized,
@@ -255,24 +287,25 @@ class LsystemWidget(PGLWidget):
             'derivationStep': step,
             'id': step
         }
+        self.__derivationStep = step
         self.scene = serialized_scene
         if len(self.dump) > 0:
             os.makedirs(self.dump, exist_ok=True)
-            file_type = 'bgeom' # 'cgeom' if self.compress else 'bgeom'
+            file_type = 'bgeom'
             with io.open(os.path.join(self.dump, f'{self.__filename}_{step}.{file_type}'), 'wb') as file:
-                file.write(serialized)
+                file.write(zlib.decompress(serialized))
 
     def __derive(self, step):
-        # print('__derive', step)
-        if step < self.lsystem.derivationLength:
+        if step < self.derivationLength:
             while True:
                 if step == len(self.__trees) - 1:
                     self.__set_scene(step)
                     break
                 else:
-                    self.__trees.append(self.lsystem.derive(self.__trees[-1], len(self.__trees), 1))
+                    self.__trees.append(self.__lsystem.derive(self.__trees[-1], len(self.__trees), 1))
         else:
             raise ValueError(f'derivation step {step} out of Lsystem bounds')
+
 
 
 # def to_json(tomls, _):
@@ -306,73 +339,211 @@ class LsystemWidget(PGLWidget):
 #         }
 #     return json
 
-class ParameterEditorWidget(VBox):
+class ParameterEditor(VBox):
     """TODO: Add docstring here
     """
-    _model_name = Unicode('ParameterEditorWidgetModel').tag(sync=True)
+    _model_name = Unicode('ParameterEditorModel').tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
     _model_module_version = Unicode(module_version).tag(sync=True)
-    _view_name = Unicode('ParameterEditorWidgetView').tag(sync=True)
+    _view_name = Unicode('ParameterEditorView').tag(sync=True)
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    values = List([]).tag(sync=False)
+    # values = List([]).tag(sync=False)
     # widget = Instance(VBox).tag(sync=True, **widget_serialization)
-    tomls = {}
+    # files = {}
     # status = Output(layout={'border': '1px solid black'})
-    on_lpy_context_change = lambda a, b: 1
+    lpy_context = {}
+    __auto_update = False
+    __auto_save = False
+    __tab = Tab()
+    __auto_update_cbx = Checkbox(description='Auto apply')
+    __auto_save_cbx = Checkbox(description='Auto save')
+    __apply_btn = Button(description='Apply changes')
+    __save_btn = Button(description='Save changes')
 
+    def __init__(self, filename, context=None, **kwargs):
 
-    def __init__(self, filename, **kwargs):
-        self.__filename = filename if filename.endswith('.toml') else filename + '.toml'
-        tab = Tab()
+        self.load_from_file(filename)
+        super().__init__([VBox([
+            HBox([
+                self.__apply_btn,
+                self.__auto_update_cbx,
+                self.__save_btn,
+                self.__auto_save_cbx
+            ], layout=Layout(flex_flow='row wrap')),
+            self.__tab
+        ])], **kwargs)
+
+    def load_from_file(self, filename):
+
+        self.__filename = filename
+        self.__tab = Tab()
+
         with io.open(self.__filename, 'r') as file:
-            path = os.path.normpath(os.path.abspath(filename))
-            toml_obj = toml.loads(
-                file.read(),
-                decoder=toml.TomlPreserveCommentDecoder()
+            obj = {}
+            if Path(self.__filename).suffix == '.toml':
+                obj = toml.loads(file.read(), decoder=toml.TomlPreserveCommentDecoder())
+            elif Path(self.__filename).suffix == '.json':
+                obj = json.loads(file.read())
+                if self.__validate(obj):
+                    self.lpy_context = obj
+                    children, titles = self.__build_gui(obj)
+                    self.__tab .children = children
+                    for i, title in enumerate(titles):
+                        self.__tab .set_title(i, title)
+                    self.__auto_update_cbx.observe(self.__on_auto_update_cbx_change, names='value')
+                    self.__auto_save_cbx.observe(self.__on_auto_save_cbx_change, names='value')
+                    self.__apply_btn.on_click(lambda x: self.on_lpy_context_change(self.lpy_context))
+                    self.__save_btn.on_click(lambda x: self.__save_files())
+
+    def __on_auto_update_cbx_change(self, change):
+        self.__auto_update = change['owner'].value
+        self.__apply_btn.disabled = self.__auto_update
+        if self.__auto_update:
+            self.on_lpy_context_change(self.lpy_context)
+
+    def __on_auto_save_cbx_change(self, change):
+        self.__auto_save = change['owner'].value
+        self.__save_btn.disabled = self.__auto_save
+        if self.__auto_save:
+            self.__save_files()
+
+    def on_lpy_context_change(self, context):
+        pass
+
+    def __build_gui(self, obj):
+        path = os.path.normpath(os.path.abspath(self.__filename))
+        files = {
+            path: obj
+        }
+        self.__gather_files(obj, os.path.dirname(path), files)
+        # self.values = [{ 'filename': os.path.basename(key), 'path': key, 'obj': files[key] } for key in files.keys()]
+
+        children = []
+        titles = []
+        for path, obj in files.items():
+            titles.append(os.path.basename(path))
+            item_layout = Layout(
+                margin='20px',
+                flex_flow='row wrap'
             )
-            self.tomls[path] = toml_obj
-            self.__files(toml_obj, os.path.dirname(path), self.tomls)
-            self.values = [{ 'file': os.path.basename(key),'path': key, 'toml': self.tomls[key] } for key in self.tomls.keys()]
+            menu_layout = Layout(
+                margin='20px',
+                flex_flow='row wrap'
+            )
+            # box = VBox((GridBox(layout=grid_layout), Accordion()))
+            schema = ''
+            if 'schema' in obj and obj['schema'] == 'lpy':
+                schema = 'lpy'
+                box_scalars = HBox(layout=item_layout)
+                box_materials = HBox(layout=item_layout)
+                box_functions = HBox(layout=item_layout)
+                box_curves = HBox(layout=item_layout)
+                acc = Accordion([
+                    GridBox(layout=item_layout),
+                    VBox([
+                        HBox(self.__menu('scalars', box_scalars), layout=menu_layout),
+                        box_scalars
+                    ]),
+                    VBox([
+                        HBox(self.__menu('materials', box_materials), layout=menu_layout),
+                        box_materials
+                    ]),
+                    VBox([
+                        HBox(self.__menu('functions', box_functions), layout=menu_layout),
+                        box_functions
+                    ]),
+                    VBox([
+                        HBox(self.__menu('curves', box_curves), layout=menu_layout),
+                        box_curves
+                    ]),
+                ])
+                acc.set_title(0, 'misc')
+                acc.set_title(1, 'scalars')
+                acc.set_title(2, 'materials')
+                acc.set_title(3, 'functions')
+                acc.set_title(4, 'curves')
+                # box = VBox((HBox(layout=Layout(
+                #     width='100%',
+                #     flex_flow='row wrap'
+                # )), Accordion()))
+            for key in obj.keys():
+                self.__widgets(obj[key], acc, key, obj, path, schema)
+            children.append(acc)
 
-            children = []
-            for obj in self.values:
-                layout =  Layout(
-                    width='100%',
-                    grid_template_rows='auto auto',
-                    grid_template_columns='35% 65%'
-                )
-                box = VBox((GridBox(layout=layout), Accordion()))
-                schema = ''
-                if 'schema' in obj['toml'] and obj['toml']['schema'] == 'lpy':
-                    schema = 'lpy'
-                    box = VBox((HBox(layout=Layout(
-                        width='100%',
-                        flex_flow='row wrap'
-                    )), Accordion()))
-                for key in obj['toml'].keys():
-                    self.__widgets(obj['toml'][key], box, key, obj['file'], obj['path'], schema)
-                children.append(box)
+        return (children, titles)
 
-            tab.children = children
-            for i in range(len(tab.children)):
-                tab.set_title(i, self.values[i]['file'])
+    def __menu(self, section, box):
+        btn = Button(description='Add')
+        item = None
+        ddn = Dropdown()
+        if (section == 'scalars'):
+            def add(self):
+                if ddn.value == 'Integer':
+                    item = IntSlider(value=5, min=0, max=10)
+                elif ddn.value == 'Float':
+                    item = FloatSlider(value=0.5, min=0, max=1, step=0.01)
+                elif ddn.value == 'Bool':
+                    item = Checkbox()
+                box.children = (*box.children, item)
+            ddn.options = ['Integer', 'Float', 'Bool']
+        elif (section == 'materials'):
+            def add(self):
+                if ddn.value == 'Color':
+                    item = ColorPicker(value='#eeeeee')
+                box.children = (*box.children, item)
+            ddn.options = ['Color']
+        elif (section == 'functions'):
+            def add(self):
+                if ddn.value == 'NurbsCurve2D':
+                    item = CurveEditor('new', CurveType.NURBS, [[-0.5,0], [-0.25, 0.25], [0.25, -0.25], [0.5,0]], is_function=True)
+                box.children = (*box.children, item)
+            ddn.options = ['NurbsCurve2D']
+        elif (section == 'curves'):
+            def add(self):
+                if ddn.value == 'NurbsCurve2D':
+                    item = CurveEditor('new', CurveType.NURBS, [[-0.5,0], [-0.25, 0.25], [0.25, -0.25], [0.5,0]], is_function=False)
+                elif ddn.value == 'BezierCurve2D':
+                    item = CurveEditor('new', CurveType.BEZIER, [[-0.5,0], [-0.25, 0.25], [0.25, -0.25], [0.5,0]], is_function=False)
+                elif ddn.value == 'PolyLine2D':
+                    item = CurveEditor('new', CurveType.POLY_LINE, [[-0.5,0], [-0.25, 0.25], [0.25, -0.25], [0.5,0]], is_function=False)
+                box.children = (*box.children, item)
+            ddn.options = ['NurbsCurve2D', 'BezierCurve2D', 'PolyLine2D']
 
-        super().__init__([tab], **kwargs)
+        btn.on_click(add if add else lambda _: print('no item assigned'))
+
+        return (btn, ddn)
 
 
-    def __files(self, toml_thing, dirname, tomls={}):
-        if isinstance(toml_thing, (dict, list)):
-            for key in toml_thing:
+
+    def __validate(self, obj):
+        is_valid = False
+        schema_path = os.path.join(os.path.dirname(__file__), 'schema')
+        with io.open(os.path.join(schema_path, 'lpy.json'), 'r') as schema_file:
+            schema = json.loads(schema_file.read())
+            resolver = RefResolver(f'file:///{schema_path}/', schema)
+            try:
+                validate(obj, schema, format_checker=draft7_format_checker, resolver=resolver)
+                is_valid = True
+            except exceptions.ValidationError as e:
+                print('L-Py schema validation failed:', e.message)
+            except exceptions.RefResolutionError as e:
+                print('JSON schema $ref file not found:', e)
+        return is_valid
+
+
+    def __gather_files(self, thing, dirname, files={}):
+        if isinstance(thing, (dict, list)):
+            for key in thing:
                 if isinstance(key, str):
-                    self.__files(toml_thing[key], dirname, tomls)
-        elif isinstance(toml_thing, str) and toml_thing[-5:] == '.toml':
-            path = os.path.normpath(os.path.join(dirname, toml_thing))
-            if path not in tomls:
+                    self.__gather_files(thing[key], dirname, files)
+        elif isinstance(thing, str) and thing[-5:] == '.toml':
+            path = os.path.normpath(os.path.join(dirname, thing))
+            if path not in files:
                 with io.open(path, 'r') as file:
-                    tomls[path] = toml.loads(file.read())
-                    self.__files(tomls[path], os.path.dirname(path), tomls)
+                    files[path] = toml.loads(file.read())
+                    self.__gather_files(files[path], os.path.dirname(path), files)
 
 
     # def __widgets(self, toml, key='', file=None, path=''):
@@ -385,21 +556,25 @@ class ParameterEditorWidget(VBox):
     #         return acc
     #     else:
     #         print(key)
-    #         lbl = widgets.Label(key + ' :')
+    #         txt = widgets.Label(key + ' :')
     #         ipt = widgets.FloatText(toml) if isinstance(toml, (int, float)) else widgets.Text(toml)
     #         ipt.observe(on_change(file, toml, path))
     #         cmt = widgets.Label(toml.trivia.comment[1:].strip())
-    #         return widgets.HBox([lbl, ipt, cmt])
+    #         return widgets.HBox([txt, ipt, cmt])
 
-    def __on_lpy_change(self, change):
-        # print(change)
-        owner = change['owner']
-        if isinstance(owner, CurveEditorWidget):
-            if not self.on_lpy_context_change is None:
-                curve = NurbsCurve2D(Point3Array([Vector3(p[0], p[1], 1) for p in owner.control_points]))
-                if owner.is_function:
-                    curve = QuantisedFunction(curve)
-                self.on_lpy_context_change(owner.name, curve)
+    # def __on_lpy_change(self, change):
+    #     owner = change['owner']
+    #     if isinstance(owner, ColorPicker):
+    #         hex = owner.value[1:] # rgb as hex
+    #         color = [int(v, 16) for v in [hex[i:i+2] for i in range(0, 6, 2)]]
+    #         print(owner.value)
+
+        # if isinstance(owner, CurveEditor):
+        #     if not self.on_lpy_context_change is None:
+        #         curve = NurbsCurve2D(Point3Array([Vector3(p[0], p[1], 1) for p in owner.control_points]))
+        #         if owner.is_function:
+        #             curve = QuantisedFunction(curve)
+        #         self.on_lpy_context_change(owner.name, curve)
 
 
 
@@ -430,23 +605,115 @@ class ParameterEditorWidget(VBox):
             #         print(f'error saving "{key}" {comment} to {path}')
         return fn
 
-    def __widgets(self, toml_thing, box, key='', file=None, path='', schema=''):
-        # print(toml_thing)
-        if isinstance(toml_thing, (dict, list)):
+    def __save_files(self):
+        with io.open(self.__filename, 'w') as file:
+            file.write(json.dumps(self.lpy_context, indent=4))
+
+    def __observe_lpy(self, name, key):
+        def fn(change):
+            owner = change['owner']
+            value = None
+            if isinstance(owner, ColorPicker):
+                rgb = owner.value[1:] # rgb as hex
+                self.lpy_context[key][name]['ambient'] = [int(v, 16) for v in [rgb[i:i+2] for i in range(0, 6, 2)]]
+            elif isinstance(owner, (Checkbox, IntSlider, FloatSlider)):
+                self.lpy_context[key][name]['value'] = owner.value
+            elif isinstance(owner, CurveEditor):
+                self.lpy_context[key][name][owner.curve_type.value[0]] = owner.control_points
+            if not value is None:
+                self.lpy_context[key][name] = value
+
+            if self.__auto_update:
+                self.on_lpy_context_change(self.lpy_context)
+            if self.__auto_save:
+                self.__save_files()
+
+        return fn
+
+    def __widgets(self, thing, box, key='', file=None, path='', schema='', category=''):
+        # print(thing)
+        if isinstance(thing, (dict, list)):
             # print(key)
             if schema == 'lpy':
-                for name in toml_thing.keys():
-                    if 'NurbsCurve2D' in toml_thing[name]:
-                        curve = toml_thing[name]['NurbsCurve2D']
-                        grid = box.children[0]
-                        ipt = CurveEditorWidget(name, curve, key == 'functions')
-                        ipt.observe(self.__on_lpy_change, names='control_points')
-                        # comment = curve.comment if hasattr(curve, 'comment') else ''
-                        # cmt = Text(comment[comment.find('#')+1:].strip(), placeholder='comment', continuous_update=False, layout=Layout(width='auto', height='auto'))
-                        grid.children = (*grid.children, VBox((Label(name), ipt)))
+                if key == 'scalars':
+                    layout = box.children[1].children[1]
+                    for name in thing.keys():
+                        ipt = None
+                        txt = Text(name)
+                        val = None
+                        if isinstance(thing[name]['value'], bool):
+                            val = thing[name]['value']
+                            ipt = Checkbox(value=val)
+                            layout.children = (*layout.children, VBox((txt, ipt)))
+                        elif isinstance(thing[name]['value'], (int, float)):
+                            val = thing[name]['value']
+                            if thing[name]['type'] == 'Integer':
+                                ipt = IntSlider(
+                                    value=val,
+                                    min=thing[name]['min'],
+                                    max=thing[name]['max']
+                                )
+                                layout.children = (*layout.children, VBox((txt, ipt)))
+                            elif thing[name]['type'] == 'Float':
+                                ipt = FloatSlider(
+                                    value=val,
+                                    min=thing[name]['min'],
+                                    max=thing[name]['max'],
+                                    step=thing[name]['step']
+                                )
+                                layout.children = (*layout.children, VBox((txt, ipt)))
+
+                        if not ipt is None and not txt is None:
+                            ipt.observe(self.__observe_lpy(name, key), names='value')
+
+                elif key == 'materials':
+                    layout = box.children[2].children[1]
+                    for name in thing.keys():
+                        ipt = None
+                        txt = Text(name)
+                        val = None
+                        if 'ambient' in thing[name]:
+                            val = thing[name]['ambient']
+                            ipt = ColorPicker(
+                                value='#' + ''.join(format(v, "02x") for v in val),
+                                description='ambient'
+                            )
+                            layout.children = (*layout.children, VBox((txt, ipt)))
+
+                        if not ipt is None and not txt is None:
+                            ipt.observe(self.__observe_lpy(name, key), names='value')
+
+                elif key == 'functions':
+                    layout = box.children[3].children[1]
+                    for name in thing.keys():
+                        ipt = None
+                        txt = Text(name)
+                        if 'NurbsCurve2D' in thing[name]:
+                            control_points = thing[name]['NurbsCurve2D']
+                            ipt = CurveEditor(name, CurveType.NURBS, control_points, key == 'functions')
+                            layout.children = (*layout.children, VBox((txt, ipt)))
+
+                        if not ipt is None and not txt is None:
+                            ipt.observe(self.__observe_lpy(name, key), names='control_points')
+
+
+                elif key == 'curves':
+                    layout = box.children[4].children[1]
+                    for name in thing.keys():
+                        ipt = None
+                        txt = Text(name)
+                        val = None
+                        if 'NurbsCurve2D' in thing[name]:
+                            val = thing[name]['NurbsCurve2D']
+                            ipt = CurveEditor(name, CurveType.NURBS, val, key == 'functions')
+                            layout.children = (*layout.children, VBox((txt, ipt)))
+
+                        if not ipt is None and not txt is None:
+                            ipt.observe(self.__observe_lpy(name, key), names='control_points')
+
             else:
-                for key in toml_thing.keys():
-                    self.__widgets(toml_thing[key], box, key, file, path)
+                for key in thing.keys():
+                    self.__widgets(thing[key], box, key, file, path)
             # pass
             # acc = widgets.Accordion
             # box = widgets.VBox([self.__widgets(toml[key], key, file, path) for key in toml])
@@ -454,8 +721,8 @@ class ParameterEditorWidget(VBox):
             # return acc
         else:
             if key != 'schema':
-                value = toml_thing.val if hasattr(toml_thing, 'comment') else toml_thing
-                comment = toml_thing.comment if hasattr(toml_thing, 'comment') else ''
+                value = thing.val if hasattr(thing, 'comment') else thing
+                comment = thing.comment if hasattr(thing, 'comment') else ''
                 grid = box.children[0]
                 ipt = None
                 layout=Layout(width='auto', height='auto')
