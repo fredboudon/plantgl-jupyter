@@ -29,5 +29,68 @@
             "max": 0.1,
             "step": 0.01
         }
+    },
+    "materials": {
+        "color_1": {
+            "index": 1,
+            "ambient": [
+                83,
+                62,
+                45
+            ],
+            "diffuse": 0.0,
+            "specular": [
+                71,
+                143,
+                159
+            ],
+            "emission": [
+                31,
+                72,
+                219
+            ],
+            "transparency": 0.0,
+            "shininess": 0.7
+        },
+        "color_2": {
+            "index": 2,
+            "ambient": [
+                81,
+                107,
+                46
+            ],
+            "diffuse": 1.0,
+            "specular": [
+                71,
+                143,
+                159
+            ],
+            "emission": [
+                31,
+                72,
+                219
+            ],
+            "transparency": 1.0
+        },
+        "color_4": {
+            "index": 4,
+            "ambient": [
+                183,
+                216,
+                19
+            ],
+            "diffuse": 1.0,
+            "specular": [
+                71,
+                143,
+                159
+            ],
+            "emission": [
+                31,
+                72,
+                219
+            ],
+            "transparency": 1.0
+        }
     }
 }

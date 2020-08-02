@@ -17,7 +17,7 @@ const registerWidgets = (widgetRegistry: IJupyterWidgetRegistry) => {
     widgetRegistry.registerWidget({
         name: MODULE_NAME,
         version: MODULE_VERSION,
-        exports: { ...widgets, ...editors, ...models }
+        exports: { ...widgets, ...editors, ...models } as any
     });
 
 };

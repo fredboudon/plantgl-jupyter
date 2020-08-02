@@ -2,10 +2,39 @@ import '../../css/widget.css';
 import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
+import { VBoxView } from '@jupyter-widgets/controls';
 import * as d3 from 'd3';
 import * as nurbs from 'nurbs';
 import { debounce } from './utilities';
 import { CurveType } from './consts';
+
+export class ParameterEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-parameter-editor');
+    }
+}
+
+export class IntEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-int-editor');
+    }
+}
+
+export class FloatEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-float-editor');
+    }
+}
+
+export class MaterialEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-material-editor');
+    }
+}
 
 export class CurveEditorView extends DOMWidgetView {
 

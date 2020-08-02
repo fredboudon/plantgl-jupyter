@@ -8,18 +8,18 @@
                 92,
                 51
             ],
-            "diffuse": 0.393204,
+            "diffuse": 1.0,
             "specular": [
                 71,
                 143,
                 159
             ],
             "emission": [
-                34,
-                39,
-                57
+                31,
+                72,
+                219
             ],
-            "transparency": 0.58
+            "transparency": 1.0
         }
     },
     "functions": {

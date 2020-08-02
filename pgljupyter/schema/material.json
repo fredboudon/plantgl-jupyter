@@ -3,6 +3,10 @@
     "title": "material",
     "type": "object",
     "properties": {
+        "index": {
+            "type": "integer",
+            "minimum": 0
+        },
         "ambient": {
             "$ref": "color.json"
         },
@@ -22,9 +26,10 @@
             "minimum": 0,
             "maximum": 1
         },
-        "index": {
-            "type": "integer",
-            "minimum": 0
+        "shininess": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
         }
     },
     "required": ["ambient"],

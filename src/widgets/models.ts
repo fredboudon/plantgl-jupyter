@@ -131,6 +131,75 @@ export class ParameterEditorModel extends VBoxModel {
 }
 
 
+export class IntEditorModel extends VBoxModel {
+    defaults(): Backbone.ObjectHash {
+        return {
+            ...super.defaults(),
+            _model_name: IntEditorModel.model_name,
+            _model_module: IntEditorModel.model_module,
+            _model_module_version: IntEditorModel.model_module_version,
+            _view_name: IntEditorModel.view_name,
+            _view_module: IntEditorModel.view_module,
+            _view_module_version: IntEditorModel.view_module_version
+        };
+    }
+
+    static model_name = 'IntEditorModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = 'IntEditorView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+
+export class FloatEditorModel extends VBoxModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: FloatEditorModel.model_name,
+            _model_module: FloatEditorModel.model_module,
+            _model_module_version: FloatEditorModel.model_module_version,
+            _view_name: FloatEditorModel.view_name,
+            _view_module: FloatEditorModel.view_module,
+            _view_module_version: FloatEditorModel.view_module_version
+        };
+    }
+
+    static model_name = 'FloatEditorModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = 'FloatEditorView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+export class MaterialEditorModel extends VBoxModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: MaterialEditorModel.model_name,
+            _model_module: MaterialEditorModel.model_module,
+            _model_module_version: MaterialEditorModel.model_module_version,
+            _view_name: MaterialEditorModel.view_name,
+            _view_module: MaterialEditorModel.view_module,
+            _view_module_version: MaterialEditorModel.view_module_version
+        };
+    }
+
+    static model_name = 'MaterialEditorModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = 'MaterialEditorView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
 export class CurveEditorModel extends DOMWidgetModel {
 
     defaults() {

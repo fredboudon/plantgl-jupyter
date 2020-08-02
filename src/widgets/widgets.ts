@@ -15,7 +15,6 @@ import {
 } from './interfaces';
 import { disposeScene, isDracoFile } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
-import { VBoxView } from '@jupyter-widgets/controls';
 
 export class PGLWidgetView extends DOMWidgetView {
 
@@ -545,12 +544,4 @@ export class LsystemWidgetView extends PGLWidgetView {
         super.remove();
     }
 
-}
-
-
-export class ParameterEditorView extends VBoxView {
-    initialize(parameters) {
-        super.initialize(parameters);
-        this.pWidget.addClass('pgl-parameter-editor');
-      }
 }
