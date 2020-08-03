@@ -24,7 +24,7 @@
         },
         "radinc": {
             "type": "Float",
-            "value": 0.05,
+            "value": 0.09,
             "min": 0.01,
             "max": 0.1,
             "step": 0.01
@@ -55,9 +55,9 @@
         "color_2": {
             "index": 2,
             "ambient": [
-                81,
-                107,
-                46
+                69,
+                86,
+                47
             ],
             "diffuse": 1.0,
             "specular": [
@@ -75,9 +75,9 @@
         "color_4": {
             "index": 4,
             "ambient": [
-                183,
-                216,
-                19
+                245,
+                219,
+                46
             ],
             "diffuse": 1.0,
             "specular": [
@@ -92,5 +92,7 @@
             ],
             "transparency": 1.0
         }
-    }
+    },
+    "functions": {},
+    "curves": {}
 }
