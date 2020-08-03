@@ -32,6 +32,6 @@
             "maximum": 1
         }
     },
-    "required": ["ambient"],
+    "required": ["index", "ambient"],
     "additionalProperties": false
 }

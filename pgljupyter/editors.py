@@ -5,12 +5,13 @@ TODO: Add module docstring
 import os
 import io
 import json
+import re
 import toml
 from pathlib import Path
 from enum import Enum
 
 from ipywidgets.widgets import (
-    register, DOMWidget,  VBox, HBox, Tab, GridBox, Layout, Accordion, Dropdown, Button,
+    register, DOMWidget,  VBox, HBox, Tab, Layout, Accordion, Dropdown, Button,
     FloatText, IntText, Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedFloatText,
     BoundedIntText
 )
@@ -54,11 +55,36 @@ from ._frontend import module_name, module_version
 class CurveType(Enum):
     NURBS = 'NurbsCurve2D',
     BEZIER = 'BezierCurve2D',
-    POLY_LINE = 'PolyLine2D'
+    POLY_LINE = 'Polyline2D'
+
+
+_property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
 
 
 @register
-class CurveEditor(DOMWidget):
+class _CurveEditor(DOMWidget):
+    """TODO: Add docstring here
+    """
+    _model_name = Unicode('_CurveEditorModel').tag(sync=True)
+    _model_module = Unicode(module_name).tag(sync=True)
+    _model_module_version = Unicode(module_version).tag(sync=True)
+    _view_name = Unicode('_CurveEditorView').tag(sync=True)
+    _view_module = Unicode(module_name).tag(sync=True)
+    _view_module_version = Unicode(module_version).tag(sync=True)
+
+    curve_type = UseEnum(CurveType).tag(sync=True, to_json=lambda e, o: e.value)
+    control_points = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=True)
+    is_function = Bool(False).tag(sync=True)
+
+    def __init__(self, curve_type, control_points, is_function=False, **kwargs):
+        self.curve_type = curve_type
+        self.control_points = control_points
+        self.is_function = is_function
+        super().__init__(**kwargs)
+
+
+@register
+class CurveEditor(HBox):
     """TODO: Add docstring here
     """
     _model_name = Unicode('CurveEditorModel').tag(sync=True)
@@ -68,17 +94,42 @@ class CurveEditor(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    name = Unicode().tag(sync=True)
-    curve_type = UseEnum(CurveType).tag(sync=True, to_json=lambda e, o: e.value)
-    control_points = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=True)
-    is_function = Bool(False).tag(sync=True)
+    __text = None
+    __curve_editor = None
+    __validator = None
 
-    def __init__(self, name, curve_type, control_points, is_function=False, **kwargs):
+    name = Unicode('').tag(sync=False)
+    value = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=False)
+
+    def __init__(self, name, validator, curve_type, control_points, is_function=False, **kwargs):
         self.name = name
-        self.curve_type = curve_type
-        self.control_points = control_points
-        self.is_function = is_function
+        self.__validator = validator
+        self.__text = Text(name, description='name')
+        self.__text.continuous_update = False
+        self.__curve_editor = _CurveEditor(curve_type, control_points, is_function)
+        self.__text.observe(self.__on_name_changed, names='value')
+        self.__curve_editor.observe(self.__on_curve_changed, names='control_points')
+        kwargs['children'] = [
+            self.__text,
+            self.__curve_editor
+        ]
+        kwargs['layout'] = Layout(margin='20px 0px')
         super().__init__(**kwargs)
+
+    def __on_name_changed(self, change):
+        if self.__validator(self.__text.value):
+            self.name = self.__text.value
+        else:
+            self.__text.unobserve(self.__on_name_changed, names='value')
+            self.__text.value = change['old']
+            self.__text.observe(self.__on_name_changed, names='value')
+
+    def __on_curve_changed(self, change):
+        self.value = self.__curve_editor.control_points
+
+    @property
+    def curve_type(self):
+        return self.__curve_editor.curve_type.value[0]
 
 
 @register
@@ -96,16 +147,21 @@ class IntEditor(HBox):
     __slider = None
     __min_ipt = None
     __max_ipt = None
+    __validator = None
 
     name = Unicode('').tag(sync=False)
     value = Int(0).tag(sync=False)
 
-    def __init__(self, name, value, min=1, max=10, **kwargs):
+    def __init__(self, name, validator, value, min=1, max=10, **kwargs):
+        self.name = name
+        self.value = value
+        self.__validator = validator
         self.__text = Text(name, description='name')
+        self.__text.continuous_update = False
         self.__slider = IntSlider(value, min, max, description='value')
         self.__min_ipt = IntText(min, description='min')
         self.__max_ipt = IntText(max, description='max')
-        self.value = value
+        self.__text.observe(self.__on_name_changed, names='value')
         self.__slider.observe(self.__on_slider_changed, names='value')
         self.__min_ipt.observe(self.__on_min_changed, names='value')
         self.__max_ipt.observe(self.__on_max_changed, names='value')
@@ -133,6 +189,14 @@ class IntEditor(HBox):
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
 
+    def __on_name_changed(self, change):
+        if self.__validator(self.__text.value):
+            self.name = self.__text.value
+        else:
+            self.__text.unobserve(self.__on_name_changed, names='value')
+            self.__text.value = change['old']
+            self.__text.observe(self.__on_name_changed, names='value')
+
 
 @register
 class FloatEditor(HBox):
@@ -150,18 +214,22 @@ class FloatEditor(HBox):
     __min_ipt = None
     __max_ipt = None
     __step_ipt = None
+    __validator = None
 
     name = Unicode('').tag(sync=False)
     value = Float(0.0).tag(sync=False)
 
-    def __init__(self, name, value, min=0, max=1, step=0.01, **kwargs):
+    def __init__(self, name, validator, value, min=0, max=1, step=0.01, **kwargs):
+        self.name = name
+        self.value = value
+        self.__validator = validator
         self.__text = Text(name, description='name')
+        self.__text.continuous_update = False
         self.__slider = FloatSlider(value, min=min, max=max, step=step, description='value')
         self.__min_ipt = FloatText(min, description='min')
         self.__max_ipt = FloatText(max, description='max')
         self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
-        self.value = value
-
+        self.__text.observe(self.__on_name_changed, names='value')
         self.__slider.observe(self.__on_slider_changed, names='value')
         self.__min_ipt.observe(self.__on_min_changed, names='value')
         self.__max_ipt.observe(self.__on_max_changed, names='value')
@@ -195,6 +263,104 @@ class FloatEditor(HBox):
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
 
+    def __on_name_changed(self, change):
+        if self.__validator(self.__text.value):
+            self.name = self.__text.value
+        else:
+            self.__text.unobserve(self.__on_name_changed, names='value')
+            self.__text.value = change['old']
+            self.__text.observe(self.__on_name_changed, names='value')
+
+
+@register
+class BoolEditor(HBox):
+    """TODO: Add docstring here
+    """
+    _model_name = Unicode('BoolEditorModel').tag(sync=True)
+    _model_module = Unicode(module_name).tag(sync=True)
+    _model_module_version = Unicode(module_version).tag(sync=True)
+    _view_name = Unicode('BoolEditorView').tag(sync=True)
+    _view_module = Unicode(module_name).tag(sync=True)
+    _view_module_version = Unicode(module_version).tag(sync=True)
+
+    __text = None
+    __checkbox = None
+
+    name = Unicode('').tag(sync=False)
+    value = Bool(False).tag(sync=False)
+
+    def __init__(self, name, validator, value, **kwargs):
+        self.name = name
+        self.value = value
+        self.__validator = validator
+        self.__text = Text(name, description='name')
+        self.__text.continuous_update = False
+        self.__text.observe(self.__on_name_changed, names='value')
+        self.__checkbox = Checkbox(value, description='value')
+        self.__checkbox.observe(self.__on_checkbox_changed, names='value')
+        kwargs['children'] = [
+            self.__text,
+            self.__checkbox
+        ]
+        kwargs['layout'] = Layout(margin='20px 0px')
+        super().__init__(**kwargs)
+
+    def __on_checkbox_changed(self, change):
+        self.value = change['new']
+
+    def __on_name_changed(self, change):
+        if self.__validator(self.__text.value):
+            self.name = self.__text.value
+        else:
+            self.__text.unobserve(self.__on_name_changed, names='value')
+            self.__text.value = change['old']
+            self.__text.observe(self.__on_name_changed, names='value')
+
+
+@register
+class StringEditor(HBox):
+    """TODO: Add docstring here
+    """
+    _model_name = Unicode('StringEditorModel').tag(sync=True)
+    _model_module = Unicode(module_name).tag(sync=True)
+    _model_module_version = Unicode(module_version).tag(sync=True)
+    _view_name = Unicode('StringEditorView').tag(sync=True)
+    _view_module = Unicode(module_name).tag(sync=True)
+    _view_module_version = Unicode(module_version).tag(sync=True)
+
+    __text = None
+    __text_2 = None
+
+    name = Unicode('').tag(sync=False)
+    value = Unicode('').tag(sync=False)
+
+    def __init__(self, name, validator, value, **kwargs):
+        self.name = name
+        self.value = value
+        self.__validator = validator
+        self.__text = Text(name, description='name')
+        self.__text.continuous_update = False
+        self.__text.observe(self.__on_name_changed, names='value')
+        self.__text_2 = Text(value, description='value')
+        self.__text_2.observe(self.__on_text_2_changed, names='value')
+        kwargs['children'] = [
+            self.__text,
+            self.__text_2
+        ]
+        kwargs['layout'] = Layout(margin='20px 0px')
+        super().__init__(**kwargs)
+
+    def __on_text_2_changed(self, change):
+        self.value = change['new']
+
+    def __on_name_changed(self, change):
+        if self.__validator(self.__text.value):
+            self.name = self.__text.value
+        else:
+            self.__text.unobserve(self.__on_name_changed, names='value')
+            self.__text.value = change['old']
+            self.__text.observe(self.__on_name_changed, names='value')
+
 
 @register
 class MaterialEditor(HBox):
@@ -207,6 +373,7 @@ class MaterialEditor(HBox):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
+    __text = None
     __index = None
     __ambient = None
     __specular = None
@@ -214,11 +381,29 @@ class MaterialEditor(HBox):
     __diffuse = None
     __transparency = None
     __shininess = None
+    __validator = None
 
-    __cb = None
+    name = Unicode('').tag(sync=False)
+    index = Int().tag(sync=False)
+    ambient = List().tag(sync=False)
+    specular = List().tag(sync=False)
+    emission = List().tag(sync=False)
+    diffuse = Float().tag(sync=False)
+    transparency = Float().tag(sync=False)
+    shininess = Float().tag(sync=False)
 
-    def __init__(self, index, ambient=[80, 80, 80], specular=[40, 40, 40], emission=[0, 0, 0], diffuse=0.75, transparency=0, shininess=0.5, **kwargs):
-
+    def __init__(self, name, validator, index, ambient=[80, 80, 80], specular=[40, 40, 40], emission=[0, 0, 0], diffuse=0.75, transparency=0, shininess=0.5, **kwargs):
+        self.name = name
+        self.index = index
+        self.ambient = ambient
+        self.specular = specular
+        self.emission = emission
+        self.diffuse = diffuse
+        self.transparency = transparency
+        self.shininess = shininess
+        self.__validator = validator
+        self.__text = Text(name, description='name')
+        self.__text.continuous_update = False
         self.__index = BoundedIntText(value=index, description='index', min=0)
         self.__ambient = ColorPicker(value='#' + ''.join(format(v, "02x") for v in ambient), description='ambient')
         self.__specular = ColorPicker(value='#' + ''.join(format(v, "02x") for v in specular), description='specular')
@@ -226,8 +411,17 @@ class MaterialEditor(HBox):
         self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=1)
         self.__transparency = FloatSlider(value=transparency, description='transparency', min=0, max=1)
         self.__shininess = FloatSlider(value=shininess, description='shininess', min=0, max=1)
+        self.__text.observe(self.__on_name_changed, names='value')
+        self.__index.observe(self.__on_index_changed, names='value')
+        self.__ambient.observe(self.__on_ambient_changed, names='value')
+        self.__specular.observe(self.__on_specular_changed, names='value')
+        self.__emission.observe(self.__on_emission_changed, names='value')
+        self.__diffuse.observe(self.__on_diffuse_changed, names='value')
+        self.__transparency.observe(self.__on_transparency_changed, names='value')
+        self.__shininess.observe(self.__on_shininess_changed, names='value')
 
         super().__init__([
+            self.__text,
             self.__index,
             self.__ambient,
             self.__specular,
@@ -237,18 +431,37 @@ class MaterialEditor(HBox):
             self.__shininess
         ], **kwargs)
 
-    def __set_prop_name(self, change, name):
-        change['name'] = name
-        return change
+    def __rgb_to_list(self, rgb):
+        return [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
 
-    def observe__(self, cb):
-        self.__index.observe(lambda change: cb(self.__set_prop_name(change, 'index')), names='value')
-        self.__ambient.observe(lambda change: cb(self.__set_prop_name(change, 'ambient')), names='value')
-        self.__specular.observe(lambda change: cb(self.__set_prop_name(change, 'specular')), names='value')
-        self.__emission.observe(lambda change: cb(self.__set_prop_name(change, 'emission')), names='value')
-        self.__diffuse.observe(lambda change: cb(self.__set_prop_name(change, 'diffuse')), names='value')
-        self.__transparency.observe(lambda change: cb(self.__set_prop_name(change, 'transparency')), names='value')
-        self.__shininess.observe(lambda change: cb(self.__set_prop_name(change, 'shininess')), names='value')
+    def __on_name_changed(self, change):
+        if self.__validator(self.__text.value):
+            self.name = self.__text.value
+        else:
+            self.__text.unobserve(self.__on_name_changed, names='value')
+            self.__text.value = change['old']
+            self.__text.observe(self.__on_name_changed, names='value')
+
+    def __on_index_changed(self, change):
+        self.index = self.__index.value
+
+    def __on_ambient_changed(self, change):
+        self.ambient = self.__rgb_to_list(self.__ambient.value)
+
+    def __on_specular_changed(self, change):
+        self.specular = self.__rgb_to_list(self.__specular.value)
+
+    def __on_emission_changed(self, change):
+        self.emission = self.__rgb_to_list(self.__emission.value)
+
+    def __on_diffuse_changed(self, change):
+        self.diffuse = self.__diffuse.value
+
+    def __on_transparency_changed(self, change):
+        self.transparency = self.__transparency.value
+
+    def __on_shininess_changed(self, change):
+        self.shininess = self.__shininess.value
 
 
 class ParameterEditor(VBox):
@@ -277,7 +490,7 @@ class ParameterEditor(VBox):
 
     def __init__(self, filename, context=None, **kwargs):
 
-        self.load_from_file(filename)
+        self.__load_from_file(filename)
         super().__init__([VBox([
             HBox([
                 self.__apply_btn,
@@ -288,7 +501,7 @@ class ParameterEditor(VBox):
             self.__tab
         ])], **kwargs)
 
-    def load_from_file(self, filename):
+    def __load_from_file(self, filename):
 
         self.__filename = filename
         self.__tab = Tab()
@@ -305,7 +518,7 @@ class ParameterEditor(VBox):
                     obj = json.loads(file.read())
                 except json.JSONDecodeError as e:
                     print('json decode error:', e, self.__filename)
-                if obj is not None and self.__validate(obj):
+                if obj is not None and self.__validate_schema(obj):
                     self.lpy_context = obj
                     children, titles = self.__build_gui(obj)
                     self.__tab .children = children
@@ -360,7 +573,6 @@ class ParameterEditor(VBox):
                 box_functions = HBox(layout=item_layout)
                 box_curves = HBox(layout=item_layout)
                 acc = Accordion([
-                    GridBox(layout=item_layout),
                     VBox([
                         HBox(self.__menu('scalars', box_scalars), layout=menu_layout),
                         box_scalars
@@ -378,11 +590,10 @@ class ParameterEditor(VBox):
                         box_curves
                     ]),
                 ])
-                acc.set_title(0, 'misc')
-                acc.set_title(1, 'scalars')
-                acc.set_title(2, 'materials')
-                acc.set_title(3, 'functions')
-                acc.set_title(4, 'curves')
+                acc.set_title(0, 'scalars')
+                acc.set_title(1, 'materials')
+                acc.set_title(2, 'functions')
+                acc.set_title(3, 'curves')
                 # box = VBox((HBox(layout=Layout(
                 #     width='100%',
                 #     flex_flow='row wrap'
@@ -394,46 +605,131 @@ class ParameterEditor(VBox):
         return (children, titles)
 
     def __menu(self, section, box):
-        btn = Button(description='Add')
-        ddn = Dropdown()
-        if (section == 'scalars'):
-            def add(self):
-                if ddn.value == 'Integer':
-                    item = IntEditor(f'parameter_{len(box.children)}', 1)
-                elif ddn.value == 'Float':
-                    item = FloatEditor(f'parameter_{len(box.children)}', 0)
-                elif ddn.value == 'Bool':
-                    item = Checkbox()
-                box.children = (*box.children, item)
-            ddn.options = ['Integer', 'Float', 'Bool']
-        elif (section == 'materials'):
-            def add(self):
-                if ddn.value == 'Color':
-                    item = MaterialEditor(index=len(box.children))
-                box.children = (*box.children, item)
-            ddn.options = ['Color']
-        elif (section == 'functions'):
-            def add(self):
-                if ddn.value == 'NurbsCurve2D':
-                    item = CurveEditor('new', CurveType.NURBS, [[0, 0], [0.25, 0.25], [0.75, -0.25], [1, 0]], is_function=True)
-                box.children = (*box.children, item)
-            ddn.options = ['NurbsCurve2D']
-        elif (section == 'curves'):
-            def add(self):
-                if ddn.value == 'NurbsCurve2D':
-                    item = CurveEditor('new', CurveType.NURBS, [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]])
-                elif ddn.value == 'BezierCurve2D':
-                    item = CurveEditor('new', CurveType.BEZIER, [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]])
-                elif ddn.value == 'PolyLine2D':
-                    item = CurveEditor('new', CurveType.POLY_LINE, [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]])
-                box.children = (*box.children, item)
-            ddn.options = ['NurbsCurve2D', 'BezierCurve2D', 'PolyLine2D']
+        btn_add = Button(description='Add')
+        ddn_add = Dropdown()
+        btn_del = Button(description='Delete')
+        ddn_del = Dropdown()
 
-        btn.on_click(add if add else lambda _: print('no item assigned'))
+        ddn_del.options = self.lpy_context[section].keys()
 
-        return (btn, ddn)
+        def fn_del(self):
+            if ddn_del.value:
+                del self.lpy_context[section][ddn_del.value]
+                box.children = [child for child in box.children if child.name is not ddn_del.value]
+                ddn_del.options = ddn_del.options = self.lpy_context[section].keys()
+                if self.__auto_save:
+                    self.__save_files()
 
-    def __validate(self, obj):
+        if section == 'scalars':
+
+            def fn_add(self):
+                name = f'{ddn_add.value}_{len(box.children)}'
+                while name in self.lpy_context[section]:
+                    name = f'{ddn_add.value}_{len(box.children) + 1}'
+                if ddn_add.value == 'Integer':
+                    item = IntEditor(name, self.__validate_name, 1)
+                    self.lpy_context[section][name] = {
+                        'type': 'Integer',
+                        'value': 5,
+                        'min': 1,
+                        'max': 10
+                    }
+                elif ddn_add.value == 'Float':
+                    item = FloatEditor(name, self.__validate_name, 0.5)
+                    self.lpy_context[section][name] = {
+                        'type': 'Float',
+                        'value': 0.5,
+                        'min': 0,
+                        'max': 1
+                    }
+                elif ddn_add.value == 'Bool':
+                    item = BoolEditor(name, self.__validate_name, True)
+                    self.lpy_context[section][name] = {
+                        'value': True
+                    }
+                box.children = (*box.children, item)
+                item.observe(self.__observe_lpy(name, section))
+                ddn_del.options = self.lpy_context[section].keys()
+                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                    self.__save_files()
+            ddn_add.options = ['Integer', 'Float', 'Bool']
+
+        elif section == 'materials':
+            ddn_del.options = self.lpy_context[section].keys()
+
+            def fn_add(self):
+                name = f'{ddn_add.value}_{len(box.children)}'
+                while name in self.lpy_context[section]:
+                    name = f'{ddn_add.value}_{len(box.children) + 1}'
+                if ddn_add.value == 'Color':
+                    item = MaterialEditor(name, self.__validate_name, index=len(box.children))
+                    self.lpy_context[section][name] = {
+                        'index': len(box.children),
+                        'ambient': item.ambient
+                    }
+                box.children = (*box.children, item)
+                item.observe(self.__observe_lpy(name, section))
+                ddn_del.options = self.lpy_context[section].keys()
+                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                    self.__save_files()
+            ddn_add.options = ['Color']
+
+        elif section == 'functions':
+            def fn_add(self):
+                name = f'{ddn_add.value}_{len(box.children)}'
+                val = [[0, 0], [0.25, 0.25], [0.75, -0.25], [1, 0]]
+                while name in self.lpy_context['functions']:
+                    name = f'{ddn_add.value}_{len(box.children) + 1}'
+                if ddn_add.value == 'NurbsCurve2D':
+                    item = CurveEditor(name, self.__validate_name, CurveType.NURBS, val, is_function=True)
+                    self.lpy_context[section][name] = {
+                        ddn_add.value: val
+                    }
+                box.children = (*box.children, item)
+                item.observe(self.__observe_lpy(name, section))
+                ddn_del.options = self.lpy_context[section].keys()
+                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                    self.__save_files()
+            ddn_add.options = ['NurbsCurve2D']
+
+        elif section == 'curves':
+            def fn_add(self):
+                name = f'{ddn_add.value}_{len(box.children)}'
+                val = [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]]
+                while name in self.lpy_context['curves']:
+                    name = f'{ddn_add.value}_{len(box.children) + 1}'
+                if ddn_add.value == 'NurbsCurve2D':
+                    item = CurveEditor(name, self.__validate_name, CurveType.NURBS, val)
+                elif ddn_add.value == 'BezierCurve2D':
+                    item = CurveEditor(name, self.__validate_name, CurveType.BEZIER, val)
+                elif ddn_add.value == 'Polyline2D':
+                    item = CurveEditor(name, self.__validate_name, CurveType.POLY_LINE, val)
+                self.lpy_context[section][name] = {
+                    ddn_add.value: val
+                }
+                box.children = (*box.children, item)
+                item.observe(self.__observe_lpy(name, section))
+                ddn_del.options = self.lpy_context[section].keys()
+                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                    self.__save_files()
+            ddn_add.options = ['NurbsCurve2D', 'BezierCurve2D', 'Polyline2D']
+
+        btn_add.on_click(lambda x: fn_add(self))
+        btn_del.on_click(lambda x: fn_del(self))
+
+        return (btn_add, ddn_add, btn_del, ddn_del)
+
+    def __validate_name(self, name):
+        if not _property_name_regex.match(name):
+            return False
+        if name in self.lpy_context:
+            return False
+        for key in self.lpy_context.keys():
+            if name in self.lpy_context[key]:
+                return False
+        return True
+
+    def __validate_schema(self, obj):
         is_valid = False
         schema_path = os.path.join(os.path.dirname(__file__), 'schema')
         with io.open(os.path.join(schema_path, 'lpy.json'), 'r') as schema_file:
@@ -521,20 +817,27 @@ class ParameterEditor(VBox):
         return fn
 
     def __save_files(self):
-        with io.open(self.__filename, 'w') as file:
-            file.write(json.dumps(self.lpy_context, indent=4))
+        if self.__validate_schema(self.lpy_context):
+            with io.open(self.__filename, 'w') as file:
+                file.write(json.dumps(self.lpy_context, indent=4))
 
     def __observe_lpy(self, name, key):
         def fn(change):
             owner = change['owner']
+            name = owner.name
             prop = change['name']
-            if isinstance(owner, ColorPicker):
-                rgb = owner.value[1:]  # rgb as hex
-                self.lpy_context[key][name][prop] = [int(v, 16) for v in [rgb[i:i+2] for i in range(0, 6, 2)]]
-            elif isinstance(owner, CurveEditor):
-                self.lpy_context[key][name][owner.curve_type.value[0]] = owner.control_points
+            obj = self.lpy_context[key] if len(key) > 0 else self.lpy_context[name]
+            if prop == 'name':
+                obj[change['new']] = obj.pop(change['old'])
             else:
-                self.lpy_context[key][name][prop] = owner.value
+                new = change['new']
+                if isinstance(owner, CurveEditor):
+                    obj[name][owner.curve_type] = new
+                else:
+                    if isinstance(obj[name], dict):
+                        obj[name][prop] = new
+                    else:
+                        obj[name] = new
 
             if self.__auto_update:
                 self.on_lpy_context_change(self.lpy_context)
@@ -549,93 +852,72 @@ class ParameterEditor(VBox):
             # print(key)
             if schema == 'lpy':
                 if key == 'scalars':
-                    layout = box.children[1].children[1]
+                    layout = box.children[0].children[1]
                     for name in thing.keys():
                         ipt = None
-                        txt = Text(name)
                         val = None
                         if isinstance(thing[name]['value'], bool):
                             val = thing[name]['value']
-                            ipt = Checkbox(value=val)
-                            layout.children = (*layout.children, VBox((txt, ipt)))
+                            ipt = BoolEditor(name, self.__validate_name, val)
+                            layout.children = (*layout.children, ipt)
                         elif isinstance(thing[name]['value'], (int, float)):
                             val = thing[name]['value']
                             if thing[name]['type'] == 'Integer':
                                 ipt = IntEditor(
                                     name,
+                                    self.__validate_name,
                                     value=val,
                                     min=thing[name]['min'],
                                     max=thing[name]['max']
                                 )
-                                # ipt = IntSlider(
-                                #     value=val,
-                                #     min=thing[name]['min'],
-                                #     max=thing[name]['max']
-                                # )
                                 layout.children = (*layout.children, ipt)
                             elif thing[name]['type'] == 'Float':
                                 ipt = FloatEditor(
                                     name,
+                                    self.__validate_name,
                                     value=val,
                                     min=thing[name]['min'],
                                     max=thing[name]['max'],
                                     step=thing[name]['step']
                                 )
-                                # ipt = FloatSlider(
-                                #     value=val,
-                                #     min=thing[name]['min'],
-                                #     max=thing[name]['max'],
-                                #     step=thing[name]['step']
-                                # )
                                 layout.children = (*layout.children, ipt)
 
-                        if ipt is not None and txt is not None:
+                        if ipt is not None:
                             ipt.observe(self.__observe_lpy(name, key), names='value')
 
                 elif key == 'materials':
+                    layout = box.children[1].children[1]
+                    for name in thing.keys():
+                        ipt = MaterialEditor(name, self.__validate_name, **thing[name])
+                        layout.children = (*layout.children, ipt)
+
+                        if ipt is not None:
+                            ipt.observe(self.__observe_lpy(name, key))
+
+                elif key == 'functions':
                     layout = box.children[2].children[1]
                     for name in thing.keys():
                         ipt = None
-                        txt = Text(name)
-                        val = None
-                        if 'ambient' in thing[name]:
-                            # val = thing[name]['ambient']
-                            # ipt = ColorPicker(
-                            #     value='#' + ''.join(format(v, "02x") for v in val),
-                            #     description='ambient'
-                            # )
-                            ipt = MaterialEditor(**thing[name])
-                            layout.children = (*layout.children, VBox((txt, ipt)))
+                        if 'NurbsCurve2D' in thing[name]:
+                            val = thing[name]['NurbsCurve2D']
+                            ipt = CurveEditor(name, self.__validate_name, CurveType.NURBS, val, is_function=True)
+                            layout.children = (*layout.children, ipt)
 
-                        if ipt is not None and txt is not None:
-                            ipt.observe__(self.__observe_lpy(name, key))
+                        if ipt is not None:
+                            ipt.observe(self.__observe_lpy(name, key), names=['name', 'value'])
 
-                elif key == 'functions':
+                elif key == 'curves':
                     layout = box.children[3].children[1]
                     for name in thing.keys():
                         ipt = None
-                        txt = Text(name)
-                        if 'NurbsCurve2D' in thing[name]:
-                            control_points = thing[name]['NurbsCurve2D']
-                            ipt = CurveEditor(name, CurveType.NURBS, control_points, key == 'functions')
-                            layout.children = (*layout.children, VBox((txt, ipt)))
-
-                        if ipt is not None and txt is not None:
-                            ipt.observe(self.__observe_lpy(name, key), names='control_points')
-
-                elif key == 'curves':
-                    layout = box.children[4].children[1]
-                    for name in thing.keys():
-                        ipt = None
-                        txt = Text(name)
                         val = None
                         if 'NurbsCurve2D' in thing[name]:
                             val = thing[name]['NurbsCurve2D']
-                            ipt = CurveEditor(name, CurveType.NURBS, val, key == 'functions')
-                            layout.children = (*layout.children, VBox((txt, ipt)))
+                            ipt = CurveEditor(name, self.__validate_name, CurveType.NURBS, val)
+                            layout.children = (*layout.children, ipt)
 
-                        if ipt is not None and txt is not None:
-                            ipt.observe(self.__observe_lpy(name, key), names='control_points')
+                        if ipt is not None:
+                            ipt.observe(self.__observe_lpy(name, key), names=['name', 'value'])
 
             else:
                 for key in thing.keys():

@@ -29,6 +29,20 @@ export class FloatEditorView extends VBoxView {
     }
 }
 
+export class BoolEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-bool-editor');
+    }
+}
+
+export class StringEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-string-editor');
+    }
+}
+
 export class MaterialEditorView extends VBoxView {
     initialize(parameters) {
         super.initialize(parameters);
@@ -36,7 +50,14 @@ export class MaterialEditorView extends VBoxView {
     }
 }
 
-export class CurveEditorView extends DOMWidgetView {
+export class CurveEditorView extends VBoxView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-curve-editor');
+    }
+}
+
+export class _CurveEditorView extends DOMWidgetView {
 
     width = 250;
     height = 250;
@@ -54,7 +75,7 @@ export class CurveEditorView extends DOMWidgetView {
     render() {
 
         super.render();
-        this.pWidget.addClass('pgl-curve-editor');
+        // this.pWidget.addClass('pgl-curve-editor');
         this.svg = d3.select(this.el)
             .append('svg')
             .classed('pgl-curve-editor-svg', true)

@@ -114,9 +114,9 @@ mwc-icon-button-toggle, mwc-icon-button {
     --mdc-icon-button-ripple-opacity: 0
 }
 
-.pgl-curve-editor {
+/* .pgl-curve-editor {
     margin: 10px 10px 10px 10px;
-}
+} */
 
 .pgl-curve-editor-svg {
     width: 450px;
@@ -125,7 +125,7 @@ mwc-icon-button-toggle, mwc-icon-button {
     overflow: visible;
     background-color: #f5f5f5;
     display: block;
-    margin: auto;
+    margin: auto 0px auto auto;
 }
 
 .pgl-curve-editor-svg .grid {
