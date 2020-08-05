@@ -39,7 +39,8 @@ jstargets = [
 package_data_spec = {
     name: [
         'nbextension/static/*.*js*',
-        'labextension/*.tgz'
+        'labextension/*.tgz',
+        'schema/*.json'
     ]
 }
 
@@ -71,7 +72,7 @@ setup_args = dict(
     url             = 'https://github.com//pgljupyter',
     license         = 'BSD',
     platforms       = "Linux, Mac OS X, Windows",
-    keywords        = ['Jupyter', 'Widgets', 'IPython'],
+    keywords        = ['Jupyter', 'Widgets', 'IPython', 'L-Py', 'PlantGL'],
     classifiers     = [
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
