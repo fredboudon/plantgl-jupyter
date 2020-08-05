@@ -13,6 +13,8 @@
 
 .pgl-widget {
     box-sizing: border-box;
+    min-width: 400px;
+    min-height: 400px;
 }
 
 .pgl-resizable{
@@ -141,12 +143,12 @@ mwc-icon-button-toggle, mwc-icon-button {
 }
 
 .pgl-curve-editor-svg .curve {
-    stroke: orange;
+    stroke: #f57c24;
     fill: none;
     stroke-width: 2;
 }
 
 .pgl-curve-editor-svg .point {
-    fill: orange;
+    fill: #f57c24;
     cursor: pointer;
 }

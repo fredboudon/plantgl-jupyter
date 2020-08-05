@@ -15,5 +15,5 @@ export const SCALES: {[key:number]: number} = {
 export const enum CurveType {
     NURBS = 'NurbsCurve2D',
     BEZIER = 'BezierCurve2D',
-    POLY_LINE = 'PolyLine2D'
+    POLY_LINE = 'Polyline2D'
 }

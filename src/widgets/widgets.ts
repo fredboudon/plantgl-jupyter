@@ -232,11 +232,13 @@ export class PGLWidgetView extends DOMWidgetView {
     }
 
     resizeDisplay(width, height) {
-        this.camera.aspect = width / height;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(width, height);
-        this.renderer.render(this.scene, this.camera);
-        this.orbitControl.update();
+        if (width > 0 && height > 0) {
+            this.camera.aspect = width / height;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(width, height);
+            this.renderer.render(this.scene, this.camera);
+            this.orbitControl.update();
+        }
     }
 
     processPhosphorMessage(msg) {

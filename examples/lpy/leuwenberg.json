@@ -3,28 +3,28 @@
     "scalars": {
         "leafduration": {
             "type": "Integer",
-            "value": 2,
+            "value": 8,
             "min": 1,
             "max": 10,
             "step": 1
         },
         "leafold": {
             "type": "Integer",
-            "value": 2,
+            "value": 3,
             "min": 1,
             "max": 10,
             "step": 1
         },
         "maxorder": {
             "type": "Integer",
-            "value": 3,
+            "value": 6,
             "min": 1,
             "max": 10,
             "step": 1
         },
         "radinc": {
             "type": "Float",
-            "value": 0.09,
+            "value": 0.04,
             "min": 0.01,
             "max": 0.1,
             "step": 0.01
@@ -34,9 +34,9 @@
         "color_1": {
             "index": 1,
             "ambient": [
-                83,
-                62,
-                45
+                96,
+                77,
+                62
             ],
             "diffuse": 0.0,
             "specular": [
@@ -55,9 +55,9 @@
         "color_2": {
             "index": 2,
             "ambient": [
-                69,
-                86,
-                47
+                194,
+                81,
+                115
             ],
             "diffuse": 1.0,
             "specular": [
@@ -75,9 +75,9 @@
         "color_4": {
             "index": 4,
             "ambient": [
-                245,
-                219,
-                46
+                225,
+                160,
+                20
             ],
             "diffuse": 1.0,
             "specular": [
@@ -94,5 +94,26 @@
         }
     },
     "functions": {},
-    "curves": {}
+    "curves": {
+        "BezierCurve2D_0": {
+            "BezierCurve2D": [
+                [
+                    -0.5,
+                    0
+                ],
+                [
+                    -0.25,
+                    0.25
+                ],
+                [
+                    0.25,
+                    -0.25
+                ],
+                [
+                    0.5,
+                    0
+                ]
+            ]
+        }
+    }
 }

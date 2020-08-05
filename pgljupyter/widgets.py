@@ -41,7 +41,7 @@ def scene_to_json(x, obj):
 
 
 def to_scene(obj):
-    scene = lpy.Scene()
+    scene = pgl.Scene()
     if obj is None:
         pass
     elif isinstance(obj, pgl.Scene):

@@ -15,42 +15,49 @@ export class ParameterEditorView extends VBoxView {
     }
 }
 
-export class IntEditorView extends VBoxView {
+export class _EditorView extends VBoxView {
     initialize(parameters) {
         super.initialize(parameters);
-        this.pWidget.addClass('pgl-int-editor');
+        this.pWidget.addClass('pgl-editor');
     }
 }
 
-export class FloatEditorView extends VBoxView {
-    initialize(parameters) {
-        super.initialize(parameters);
-        this.pWidget.addClass('pgl-float-editor');
-    }
-}
-
-export class BoolEditorView extends VBoxView {
+export class BoolEditorView extends _EditorView {
     initialize(parameters) {
         super.initialize(parameters);
         this.pWidget.addClass('pgl-bool-editor');
     }
 }
 
-export class StringEditorView extends VBoxView {
+export class IntEditorView extends _EditorView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-int-editor');
+    }
+}
+
+export class FloatEditorView extends _EditorView {
+    initialize(parameters) {
+        super.initialize(parameters);
+        this.pWidget.addClass('pgl-float-editor');
+    }
+}
+
+export class StringEditorView extends _EditorView {
     initialize(parameters) {
         super.initialize(parameters);
         this.pWidget.addClass('pgl-string-editor');
     }
 }
 
-export class MaterialEditorView extends VBoxView {
+export class MaterialEditorView extends _EditorView {
     initialize(parameters) {
         super.initialize(parameters);
         this.pWidget.addClass('pgl-material-editor');
     }
 }
 
-export class CurveEditorView extends VBoxView {
+export class CurveEditorView extends _EditorView {
     initialize(parameters) {
         super.initialize(parameters);
         this.pWidget.addClass('pgl-curve-editor');
@@ -62,11 +69,10 @@ export class _CurveEditorView extends DOMWidgetView {
     width = 250;
     height = 250;
     margin = 15;
-    svg = null;
     name = '';
     isFunction = false;
     curveType: CurveType;
-    controlPoints = [];
+    controlPoints: number[][] = [];
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -76,61 +82,17 @@ export class _CurveEditorView extends DOMWidgetView {
 
         super.render();
         // this.pWidget.addClass('pgl-curve-editor');
-        this.svg = d3.select(this.el)
+        const svg = d3.select(this.el)
             .append('svg')
             .classed('pgl-curve-editor-svg', true)
             .style('width', this.width)
             .style('height', this.height);
         this.name = this.model.get('name');
         this.isFunction = this.model.get('is_function');
-        this.controlPoints = this.model.get('control_points');
+        this.controlPoints = this.model.get('control_points').slice();
         this.curveType = this.model.get('curve_type');
 
-        this.onControlPointsChanged();
-        this.listenTo(this.model, 'change:control_points', () => {
-            const p1 = this.model.get('control_points');
-            const p0 = this.controlPoints;
-            // test if point data has changed
-            if (p1.length !== p0.length || p1.some((p, i) => p[0] !== p0[i][0] || p[1] !== p0[i][1])) {
-                this.controlPoints = p1;
-                this.onControlPointsChanged();
-            }
-        });
-
-    }
-
-    onControlPointsChanged() {
-
-        this.svg.selectAll('g').remove();
-
-        const controlPoints = this.controlPoints;
-        const isFunction = this.isFunction;
-
-        const width = this.width;
-        const height = this.height;
-        const margin = this.margin;
-
-        const evaluate = (points) => {
-            const curve = nurbs({
-                points,
-                degree: 3,
-                boundary: 'clamped'
-            });
-            const x0 = curve.domain[0][0];
-            const x1 = curve.domain[0][1];
-            const n = (width + height) / 4;
-            const curveSamples = [];
-            for (let i = 0; i < n; i++) {
-                const t0 = x0 + ((x1 - x0) / (n - 1) * i);
-                curveSamples.push(curve.evaluate([], t0));
-            }
-            return curveSamples
-        };
-
-        const curveSamples = evaluate(controlPoints);
-
-
-        const [minx, miny, maxx, maxy] = [...controlPoints, ...curveSamples].reduce((m, p) => {
+        const [minx, miny, maxx, maxy] = this.controlPoints.reduce((m, p) => {
             m[0] = p[0] < m[0] ? p[0] : m[0];
             m[1] = p[1] < m[1] ? p[1] : m[1];
             m[2] = p[0] > m[2] ? p[0] : m[2];
@@ -142,42 +104,35 @@ export class _CurveEditorView extends DOMWidgetView {
 
         const xScale = d3.scaleLinear()
             .domain(domain)
-            .range([margin, width - margin]);
+            .range([this.margin, this.width - this.margin]);
         const yScale = d3.scaleLinear()
             .domain(domain)
-            .range([height - margin, margin]);
+            .range([this.height - this.margin, this.margin]);
 
         const lineGenerator = d3.line()
             .x(d => xScale(d[0]))
             .y(d => yScale(d[1]))
             .curve(d3.curveLinear);
 
-        const dx = ((width / 2) - (xScale(maxx) + xScale(minx)) / 2);
-        const dy = ((height / 2) - (yScale(maxy) + yScale(miny)) / 2);
+        const dx = ((this.width / 2) - (xScale(maxx) + xScale(minx)) / 2);
+        const dy = ((this.height / 2) - (yScale(maxy) + yScale(miny)) / 2);
 
-        const g = this.svg.append('g')
+        const g = svg.append('g')
             .attr('transform', `translate(${dx},${dy})`);
 
-        d3.zoom()(g);
+        g.append('path')
+            .classed('grid', true)
+            .attr('d', lineGenerator([[0, Math.min(minx, miny)], [0, Math.max(maxx, maxy)]]));
 
         g.append('path')
             .classed('grid', true)
-            .attr('d', lineGenerator([[0, maxy], [0, miny]]));
+            .attr('d', lineGenerator([[Math.min(minx, miny), 0], [Math.max(maxx, maxy), 0]]));
 
-        g.append('path')
-            .classed('grid', true)
-            .attr('d', lineGenerator([[minx, 0], [maxx, 0]]));
+        const ctrlPath = g.append('path').classed('line', true);
+        const curvePath = g.append('path').classed('curve', true);
 
-        const ctrlPath = g.append('path')
-            .classed('line', true)
-            .attr('d', lineGenerator(controlPoints));
-
-        const curvePath = g.append('path')
-            .classed('curve', true)
-            .attr('d', lineGenerator(curveSamples));
-
-        g.selectAll('.point')
-            .data(controlPoints)
+        const circles = g.selectAll('.point')
+            .data(this.controlPoints)
             .enter()
             .append('circle')
             .classed('point', true)
@@ -185,34 +140,85 @@ export class _CurveEditorView extends DOMWidgetView {
             .attr('cx', d => xScale(d[0]))
             .attr('cy', d => yScale(d[1]))
 
-        const updateModel = debounce((points) => {
-            this.model.set('control_points', points, { silent: false });
+        this.onControlPointsChanged(g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
+        this.listenTo(this.model, 'change:control_points', () => {
+            const controlPoints = this.model.get('control_points');
+            if (controlPoints !== this.controlPoints) {
+                this.controlPoints = controlPoints.slice();
+                this.onControlPointsChanged(g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
+            }
+        });
+
+    }
+
+    onControlPointsChanged(g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator) {
+
+        const isFunction = this.isFunction;
+        const width = this.width;
+        const height = this.height;
+        const margin = this.margin;
+
+        const draw = () => {
+            switch (this.curveType) {
+                case CurveType.NURBS:
+                    ctrlPath.attr('d', lineGenerator(this.controlPoints));
+                    const curve = nurbs({
+                        points: this.controlPoints,
+                        degree: 3,
+                        boundary: 'clamped'
+                    });
+                    const x0 = curve.domain[0][0];
+                    const x1 = curve.domain[0][1];
+                    const n = (width + height) / 4;
+                    const curveSamples = [];
+                    for (let i = 0; i < n; i++) {
+                        const t0 = x0 + ((x1 - x0) / (n - 1) * i);
+                        curveSamples.push(curve.evaluate([], t0));
+                    }
+                    curvePath.attr('d', lineGenerator(curveSamples));
+                    break;
+                case CurveType.BEZIER:
+                    ctrlPath.attr('d', lineGenerator(this.controlPoints));
+                    curvePath.attr('d', this.controlPoints.slice(1).reduce((d, p, i, a) => {
+                        d += ` ${xScale(p[0])} ${yScale(p[1])}${i === a.length - 1 ? '' : ','}`;
+                        return d;
+                    }, `M ${xScale(this.controlPoints[0][0])} ${yScale(this.controlPoints[0][1])} C`));
+                    break;
+                case CurveType.POLY_LINE:
+                    curvePath.attr('d', lineGenerator(this.controlPoints));
+                    break;
+                default:
+                    break;
+            }
+
+            circles.data(this.controlPoints)
+                .attr('cx', d => xScale(d[0]))
+                .attr('cy', d => yScale(d[1]))
+        }
+
+        draw();
+
+        const updateModel = debounce(points => {
+            this.model.set('control_points', points);
             this.touch();
         }, 200);
 
-        this.svg.selectAll('circle')
-            .call( // @ts-ignore
-                d3.drag()
-                    .on('drag', function (d, i) {
+        circles.call( // @ts-ignore
+            d3.drag().on('drag', (d, i) => {
+                const tx = d3.event.x + dx;
+                const ty = d3.event.y + dy;
 
-                        const tx = d3.event.x + dx;
-                        const ty = d3.event.y + dy;
+                if (tx > width - margin || tx < margin || ty > height - margin || ty < margin) {
+                    return;
+                }
+                const x = isFunction && (i === 0 || i === this.controlPoints.length - 1) ? this.controlPoints[i][0] : xScale.invert(d3.event.x);
+                const y = yScale.invert(d3.event.y);
+                this.controlPoints[i] = [x, y];
 
-                        if (tx > width - margin || tx < margin || ty > height - margin || ty < margin) {
-                            return;
-                        }
-                        const x = isFunction && (i === 0 || i === controlPoints.length - 1) ? controlPoints[i][0] : xScale.invert(d3.event.x);
-                        const y = yScale.invert(d3.event.y);
-                        controlPoints[i] = [x, y];
-
-                        curvePath.attr('d', lineGenerator(evaluate(controlPoints)));
-                        ctrlPath.attr('d', lineGenerator(controlPoints));
-
-                        // @ts-ignore
-                        d3.select(this).attr('cx', d.x = xScale(x)).attr('cy', d.y = d3.event.y);
-                        updateModel(controlPoints.slice());
-                    })
-            );
+                draw();
+                updateModel(this.controlPoints = this.controlPoints.slice());
+            })
+        );
 
     }
 
