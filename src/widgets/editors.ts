@@ -81,7 +81,7 @@ export class _CurveEditorView extends DOMWidgetView {
     render() {
 
         super.render();
-        // this.pWidget.addClass('pgl-curve-editor');
+        this.pWidget.addClass('pgl-_curve-editor');
         const svg = d3.select(this.el)
             .append('svg')
             .classed('pgl-curve-editor-svg', true)

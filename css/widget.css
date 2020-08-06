@@ -121,9 +121,8 @@ mwc-icon-button-toggle, mwc-icon-button {
 } */
 
 .pgl-curve-editor-svg {
-    width: 450px;
-    max-width: 100%;
-    height: auto;
+    width: 250px;
+    height: 250px;
     overflow: visible;
     background-color: #f5f5f5;
     display: block;

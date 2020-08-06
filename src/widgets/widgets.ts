@@ -3,7 +3,7 @@ import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
 import * as THREE from 'three';
-import geomDecoder from './bgeom-decoder';
+import decoder from './bgeom-decoder';
 // import dracoDecoder from './draco-decoder';
 import { PGLControls, LsystemControls } from './controls';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -11,7 +11,8 @@ import {
     IScene,
     IPGLControlsState,
     ILsystemControlsState,
-    ILsystemScene
+    ILsystemScene,
+    ITaskResult
 } from './interfaces';
 import { disposeScene, isDracoFile } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
@@ -301,7 +302,7 @@ export class SceneWidgetView extends PGLWidgetView {
             const scene = scenes[i];
             if(!this.scene.getObjectByName(scene.id)) {
                 const { id, data, position, scale } = scene;
-                geomDecoder.decode({ data: data.buffer, userData: { position, scale, id } })
+                decoder.decode({ data: data.buffer, userData: { position, scale, id } })
                     .then(result => {
                         const scene = new THREE.Scene();
                         const { results, userData: { position, scale, id } } = result;
@@ -337,7 +338,8 @@ export class LsystemWidgetView extends PGLWidgetView {
 
     unit: LsystemUnit = LsystemUnit.M;
     controls: LsystemControls = null;
-    cache: {[key:number]: THREE.Mesh[]} = {};
+    queue: {[key:number]: ITaskResult} = {};
+    no = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -378,7 +380,6 @@ export class LsystemWidgetView extends PGLWidgetView {
                 if (animate) {
                     const pyFeedMax = Math.ceil(this.controls.state.derivationLength / 10);
                     const animation = (step) => {
-                        // console.log('animation', step, this.controls.state.pyFeed);
                         if (this.controls.state.animate) {
                             this.controls.state.busy++;
                             this.controls.state.pyFeed++;
@@ -395,12 +396,16 @@ export class LsystemWidgetView extends PGLWidgetView {
                                 }
                                 setTimeout(() => {
                                     next(step + 1);
-                                }, 100);
+                                }, 10);
                             }
                         }
                     }
                     const next = this.controls.state.derivationStep + 1;
                     animation(next >= this.controls.state.derivationLength ? 0 : next);
+                } else {
+                    this.controls.state.busy -= Object.keys(this.queue).length;
+                    this.queue = {};
+                    decoder.abort(this.model.model_id);
                 }
             },
             onDeriveClicked: (step: number) => {
@@ -415,7 +420,8 @@ export class LsystemWidgetView extends PGLWidgetView {
                 this.send({ rewind: true });
                 this.removeScenes();
                 this.renderer.render(this.scene, this.camera);
-                this.cache = [];
+                this.queue = {};
+                this.no = 0;
             }
         }, controlsEl);
         if (initialState.animate) {
@@ -447,15 +453,13 @@ export class LsystemWidgetView extends PGLWidgetView {
         });
     }
 
-    getFromCache() {
-        setTimeout(() => {
-            const step = this.controls.state.derivationStep + 1;
-            const mesh = this.cache[step];
-            // console.log('getFromCache', step, Object.keys(this.cache));
-            if (mesh) {
-                delete this.cache[step];
-                this.setScene(step, mesh);
-                this.controls.state.derivationStep = step;
+    getFromQueue(no) {
+        setTimeout((no) => {
+            const decoded = this.queue[no];
+            if (decoded) {
+                delete this.queue[no];
+                this.setScene(decoded.userData.step, decoded.results);
+                this.controls.state.derivationStep = decoded.userData.step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
                 }
@@ -464,55 +468,44 @@ export class LsystemWidgetView extends PGLWidgetView {
                     this.model.set('animate', false);
                     this.touch();
                 }
-                if (this.cache[step + 1]) {
-                    this.getFromCache();
+                if (this.queue[no + 1]) {
+                    this.getFromQueue(no + 1);
                 }
             }
-        }, 500);
+        }, 10, no);
     }
 
     decode(scene: ILsystemScene) {
-        if (isDracoFile(scene.data.buffer)) {
-            // dracoDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
-            //     .then(res => {
-            //         const { results, userData: { step } } = res;
-            //         if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
-            //             this.cache[step] = results;
-            //         } else {
-            //             this.addScene(step, results);
-            //             this.controls.state.derivationStep = step;
-            //             this.controls.state.busy--;
-            //             if (this.cache[step + 1]) {
-            //                 this.getFromCache();
-            //             }
-            //         }
-            //     })
-            //     .catch(err => console.log(err));
-        } else {
-            geomDecoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep } })
-                .then(res => {
-                    const { results, userData: { step } } = res;
-                    if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
-                        this.cache[step] = results;
-                    } else {
-                        this.setScene(step, results);
-                        this.controls.state.derivationStep = step;
-                        if (this.controls.state.busy > 0) {
-                            this.controls.state.busy--;
-                        }
-                        if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
-                            this.controls.state.animate = false;
-                            this.model.set('animate', false);
-                            this.touch();
-                        }
-                        if (this.cache[step + 1]) {
-                            this.getFromCache();
-                        }
+        decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
+            .then(res => {
+                // TODO: use increasing number for a seq. of tasks and not step
+                const { results, userData: { step, no } } = res;
+                if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
+                    this.queue[no] = res;
+                } else {
+                    this.setScene(step, results);
+                    this.controls.state.derivationStep = step;
+                    if (this.controls.state.busy > 0) {
+                        this.controls.state.busy--;
                     }
-                    // console.log('decoded', step);
-                })
-                .catch(err => console.log(err));
-        }
+                    if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                        this.controls.state.animate = false;
+                        this.model.set('animate', false);
+                        this.touch();
+                    }
+                    if (this.queue[no + 1]) {
+                        this.getFromQueue(no + 1);
+                    }
+                }
+            })
+            .catch(err => {
+                if (err.abort) {
+                    this.controls.state.busy--;
+                    this.controls.state.derivationStep = err.userData.step;
+                } else {
+                    console.log(err)
+                }
+            });
     }
 
     setScene(step: number, meshs, position = [0, 0, 0]) {

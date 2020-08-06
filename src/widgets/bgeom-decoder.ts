@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { IDecodingTask, ITaskData, ITaskResult, IGeom } from './interfaces';
 import { merge } from './utilities';
 
-let MAX_WORKER = 5;
+let MAX_WORKER = 10;
 const workers: Map<Worker, IDecodingTask[]> = new Map();
 const getWorker = (): Worker => {
 
@@ -30,54 +30,56 @@ const getWorker = (): Worker => {
                     tasks.forEach(task => task.reject());
                 }
             } else {
-                const { resolve, reject, userData } = workers.get(this).shift();
-                if (evt.data.error) {
-                    reject({ error: evt.data.error, userData});
-                } else {
+                if (workers.get(this).length) {
+                    const { resolve, reject, userData } = workers.get(this).shift();
+                    if (evt.data.error) {
+                        reject({ error: evt.data.error, userData});
+                    } else {
 
-                    const data = evt.data as IGeom[];
-                    let meshs = [];
+                        const data = evt.data as IGeom[];
+                        let meshs = [];
 
-                    const geometries = data.filter(d => !d.isInstanced);
+                        const geometries = data.filter(d => !d.isInstanced);
 
-                    if (geometries.length > 0) {
-                        const geometry = merge(geometries);
-                        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-                            side: THREE.DoubleSide,
-                            shadowSide: THREE.BackSide,
-                            vertexColors: true,
-                            roughness: 0.7
-                        }));
-                        mesh.castShadow = true;
-                        mesh.receiveShadow = true;
-                        meshs.push(mesh);
-                    }
-
-                    meshs = [...meshs, ...data.filter(d => d.isInstanced).map(d => {
-                        const geometry = new THREE.BufferGeometry();
-                        const instances = new Float32Array(d.instances);
-                        const material = new THREE.MeshStandardMaterial({
-                            side: THREE.DoubleSide,
-                            shadowSide: THREE.BackSide,
-                            roughness: 0.7,
-                            vertexColors: true
-                        });
-
-                        geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(d.index), 1));
-                        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(d.position), 3));
-                        geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(d.color), 3, true));
-                        geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
-
-                        const mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
-                        for (let i = 0; i < instances.length / 16; i++) {
-                            mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));
+                        if (geometries.length > 0) {
+                            const geometry = merge(geometries);
+                            const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+                                side: THREE.DoubleSide,
+                                shadowSide: THREE.BackSide,
+                                vertexColors: true,
+                                roughness: 0.7
+                            }));
+                            mesh.castShadow = true;
+                            mesh.receiveShadow = true;
+                            meshs.push(mesh);
                         }
-                        mesh.castShadow = true;
-                        mesh.receiveShadow = true;
-                        return mesh;
-                    })];
 
-                    resolve({ results: meshs, userData });
+                        meshs = [...meshs, ...data.filter(d => d.isInstanced).map(d => {
+                            const geometry = new THREE.BufferGeometry();
+                            const instances = new Float32Array(d.instances);
+                            const material = new THREE.MeshStandardMaterial({
+                                side: THREE.DoubleSide,
+                                shadowSide: THREE.BackSide,
+                                roughness: 0.7,
+                                vertexColors: true
+                            });
+
+                            geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(d.index), 1));
+                            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(d.position), 3));
+                            geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(d.color), 3, true));
+                            geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
+
+                            const mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
+                            for (let i = 0; i < instances.length / 16; i++) {
+                                mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));
+                            }
+                            mesh.castShadow = true;
+                            mesh.receiveShadow = true;
+                            return mesh;
+                        })];
+
+                        resolve({ results: meshs, userData });
+                    }
                 }
             }
 
@@ -113,15 +115,25 @@ const getWorker = (): Worker => {
 
 class Decoder {
 
-    decode = async (task: ITaskData): Promise<ITaskResult> => {
-
+    decode(task: ITaskData, bucketID: string = ''): Promise<ITaskResult> {
         const worker = getWorker();
         return new Promise((resolve, reject) => {
-            workers.get(worker).push({ resolve, reject, ...task });
+            workers.get(worker).push({ bucketID, resolve, reject, ...task });
             if ((worker as any).initialized) {
                 worker.postMessage(task.data);
             }
         });
+    }
+
+    abort(bucketID: string) {
+        let tasks: IDecodingTask[] = [];
+        for (const worker of workers.keys()) {
+            tasks = [...tasks, ...workers.get(worker).filter(task => task.bucketID === bucketID)];
+            workers.set(worker, workers.get(worker).filter(task => task.bucketID !== bucketID));
+        }
+        // reject in order
+        tasks.sort((a, b) => b.userData.no - a.userData.no)
+            .forEach(task => task.reject({ abort: true, userData: task.userData }))
     }
 
 };

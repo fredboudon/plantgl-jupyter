@@ -13,7 +13,10 @@ from enum import Enum
 from pathlib import Path
 
 from ipywidgets.widgets import DOMWidget, register
-from traitlets import Unicode, Instance, Bytes, Int, Float, Tuple, Dict, Bool, List, UseEnum
+from traitlets import (
+    observe, Unicode, Instance,
+    Bytes, Int, Float, Tuple, Dict, Bool, List, UseEnum
+)
 
 import openalea.plantgl.all as pgl
 import openalea.lpy as lpy
@@ -247,6 +250,13 @@ class LsystemWidget(PGLWidget):
 
         return ''.join(codes)
 
+    # @observe('animate')
+    # def on_animate_changed(self, change):
+    #     # print('on_animate_changed', change['old'], change['new'])
+    #     if change['old'] and not change['new']:
+    #         print('__do_abort')
+    #         # __do_abort = True
+
     def __on_custom_msg(self, widget, content, buffers):
         if 'derive' in content:
             step = content['derive']
@@ -276,6 +286,7 @@ class LsystemWidget(PGLWidget):
             self.__set_scene(0)
 
     def __set_scene(self, step):
+        # print('__set_scene', step)
         scene = self.__lsystem.sceneInterpretation(self.__trees[step])
         serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
@@ -295,6 +306,7 @@ class LsystemWidget(PGLWidget):
     def __derive(self, step):
         if step < self.derivationLength:
             while True:
+                # print('__derive', step)
                 if step == len(self.__trees) - 1:
                     self.__set_scene(step)
                     break

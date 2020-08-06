@@ -11,6 +11,7 @@ export interface ILsystemScene extends IScene {
 }
 
 export interface IDecodingTask extends ITaskData {
+    bucketID: string;
     reject(arg?: any): any;
     resolve(arg: ITaskResult): any;
 }
