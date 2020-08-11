@@ -362,7 +362,7 @@ class MaterialEditor(_Editor):
             self.__ambient,
             self.__specular,
             self.__emission,
-            self.__diffuse,
+            # self.__diffuse, # diffuse not available in three.js
             self.__transparency,
             self.__shininess
         ]
@@ -404,10 +404,10 @@ class ParameterEditor(VBox):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    __auto_update = False
+    __auto_apply = False
     __auto_save = False
     __tab = Tab()
-    __auto_update_cbx = Checkbox(description='Auto apply')
+    __auto_apply_cbx = Checkbox(description='Auto apply')
     __auto_save_cbx = Checkbox(description='Auto save')
     __apply_btn = Button(description='Apply changes')
     __save_btn = Button(description='Save changes')
@@ -423,10 +423,8 @@ class ParameterEditor(VBox):
         self.__load_from_file(filename)
         super().__init__([VBox([
             HBox([
-                self.__apply_btn,
-                self.__auto_update_cbx,
-                self.__save_btn,
-                self.__auto_save_cbx
+                HBox((self.__apply_btn, self.__auto_apply_cbx)),
+                HBox((self.__save_btn, self.__auto_save_cbx))
             ], layout=Layout(flex_flow='row wrap')),
             self.__tab
         ])], **kwargs)
@@ -454,15 +452,15 @@ class ParameterEditor(VBox):
                     self.__tab .children = children
                     for i, title in enumerate(titles):
                         self.__tab .set_title(i, title)
-                    self.__auto_update_cbx.observe(self.__on_auto_update_cbx_change, names='value')
+                    self.__auto_apply_cbx.observe(self.__on_auto_apply_cbx_change, names='value')
                     self.__auto_save_cbx.observe(self.__on_auto_save_cbx_change, names='value')
                     self.__apply_btn.on_click(lambda x: self.on_lpy_context_change(self.lpy_context))
                     self.__save_btn.on_click(lambda x: self.__save_files())
 
-    def __on_auto_update_cbx_change(self, change):
-        self.__auto_update = change['owner'].value
-        self.__apply_btn.disabled = self.__auto_update
-        if self.__auto_update:
+    def __on_auto_apply_cbx_change(self, change):
+        self.__auto_apply = change['owner'].value
+        self.__apply_btn.disabled = self.__auto_apply
+        if self.__auto_apply:
             self.on_lpy_context_change(self.lpy_context)
 
     def __on_auto_save_cbx_change(self, change):
@@ -550,6 +548,8 @@ class ParameterEditor(VBox):
                 ddn_del.options = ddn_del.options = self.lpy_context[section].keys()
                 if self.__auto_save:
                     self.__save_files()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.lpy_context)
 
         if section == 'scalars':
 
@@ -587,6 +587,9 @@ class ParameterEditor(VBox):
                 ddn_del.options = self.lpy_context[section].keys()
                 if self.__auto_save and self.__validate_schema(self.lpy_context):
                     self.__save_files()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.lpy_context)
+
             ddn_add.options = ['Integer', 'Float', 'Bool']
 
         elif section == 'materials':
@@ -603,11 +606,14 @@ class ParameterEditor(VBox):
                     }
                     item = MaterialEditor(**new, name=name, validator=self.__validate_name)
                     self.lpy_context[section][name] = new
+                    print(self.lpy_context[section])
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(name, section))
                 ddn_del.options = self.lpy_context[section].keys()
                 if self.__auto_save and self.__validate_schema(self.lpy_context):
                     self.__save_files()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.lpy_context)
             ddn_add.options = ['Color']
 
         elif section == 'functions':
@@ -628,6 +634,8 @@ class ParameterEditor(VBox):
                 ddn_del.options = self.lpy_context[section].keys()
                 if self.__auto_save and self.__validate_schema(self.lpy_context):
                     self.__save_files()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.lpy_context)
             ddn_add.options = ['NurbsCurve2D']
 
         elif section == 'curves':
@@ -648,12 +656,17 @@ class ParameterEditor(VBox):
                 ddn_del.options = self.lpy_context[section].keys()
                 if self.__auto_save and self.__validate_schema(self.lpy_context):
                     self.__save_files()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.lpy_context)
             ddn_add.options = ['NurbsCurve2D', 'BezierCurve2D', 'Polyline2D']
 
         btn_add.on_click(lambda x: fn_add(self))
         btn_del.on_click(lambda x: fn_del(self))
 
-        return (btn_add, ddn_add, btn_del, ddn_del)
+        return (
+            HBox((btn_add, ddn_add)),
+            HBox((btn_del, ddn_del))
+        )
 
     def __validate_name(self, name):
         if not _property_name_regex.match(name):
@@ -787,7 +800,7 @@ class ParameterEditor(VBox):
                     else:
                         obj[name] = new
 
-            if self.__auto_update:
+            if self.__auto_apply:
                 self.on_lpy_context_change(self.lpy_context)
             if self.__auto_save:
                 self.__save_files()

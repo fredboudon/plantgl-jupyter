@@ -221,11 +221,10 @@ class LsystemWidget(PGLWidget):
                             context[name] = scalar['value']
                     elif key == 'materials':
                         for name, material in value.items():
-                            context[name] = pgl.Material(
-                                name=name,
-                                ambient=material['ambient']
-                            )
-                            context.turtle.setMaterial(material['index'], context[name])
+                            m = dict(material)
+                            index = m.pop('index')
+                            context[name] = pgl.Material(**m)
+                            context.turtle.setMaterial(index, context[name])
                     elif key == 'functions':
                         for name, function in value.items():
                             if 'NurbsCurve2D' in function:

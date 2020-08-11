@@ -1,0 +1,28 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js" integrity="sha256-Cgzy2ei2ByMo4NSgGeGXjjsbBTWjF6NgoeEbqqC5dYU=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.101.1/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+  <script type="module">
+      import PGL from '../build/pgl-debug.js';
+      fetch('../build/pgl-debug.wasm')
+        .then(res => res.arrayBuffer())
+        .then(buffer => {
+          PGL({ wasmBinary: new Uint8Array(buffer) })
+            .then(pgl => {
+                fetch('./fspm_logo.bgeom')
+                    .then(res => res.arrayBuffer())
+                    .then(buffer => {
+                      const geoms = pgl.parse(new Uint8Array(buffer));
+                      console.log(geoms);
+                    });
+            });
+      });
+  </script>
+</body>
+</html>

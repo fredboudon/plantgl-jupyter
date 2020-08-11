@@ -11,29 +11,39 @@ namespace PGLJS
 
 class TriangleSet {
     public:
-        TriangleSet(PGL::TriangleSetPtr triangleSet, uchar_t red, uchar_t green, uchar_t blue);
+        TriangleSet(PGL::TriangleSetPtr triangleSet, PGL::MaterialPtr material);
         TriangleSet();
         ~TriangleSet();
 
         bool isInstanced();
+        uint32_t noOfInstances();
 
         uint32_t indexSize();
         uint32_t pointSize();
-        uint32_t normalSize();
+        // uint32_t normalSize();
         uint32_t colorSize();
         uint32_t instanceMatrixSize();
 
         uint32_t* indexData();
         real_t* pointData();
-        real_t* normalData();
+        // real_t* normalData();
         uchar_t* colorData();
         real_t* instanceMatrixData();
 
+        PGL::Material* getMaterialForInstance(uint_t i);
+
+        bool hasMaterialPerInstance = false;
         std::vector<PGL::Matrix4> instances;
         std::vector<PGL::Color3> instancesColors;
+        std::vector<PGL::MaterialPtr> instancesMaterials;
 
     private:
         PGL::TriangleSetPtr _triangleSet;
+        uint32_t* _indexData = nullptr;
+        real_t* _pointData = nullptr;
+        // real_t* _normalData = nullptr;
+        uchar_t* _colorData = nullptr;
+        real_t* _instanceMatrixData = nullptr;
 };
 
 class Tesselator : public PGL::Action
@@ -121,9 +131,7 @@ class Tesselator : public PGL::Action
         PGL::MatrixStack __modelmatrix;
         PGL::MatrixStack __texturematrix;
 
-        int __red = 255;
-        int __green = 255;
-        int __blue = 255;
+        PGL::MaterialPtr __material;
 
         template<class T> bool discretize(T * geom);
         template<class T> bool tesselate(T * geom);

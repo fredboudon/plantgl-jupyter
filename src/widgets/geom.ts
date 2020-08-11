@@ -45,9 +45,9 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
 
         this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.5));
 
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 0.7));
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
         this.ligths[0].position.set(0, 0, 1);
-        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 0.7));
+        this.ligths.push(new THREE.DirectionalLight(0xFFFFFF, 1));
         this.ligths[1].position.set(0, 0, -1);
         this.scene.add(...this.ligths);
 

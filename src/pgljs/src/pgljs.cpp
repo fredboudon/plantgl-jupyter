@@ -46,19 +46,34 @@
 namespace PGLJS
 {
 
-TriangleSet::TriangleSet(TriangleSetPtr triangleSet, uchar_t red, uchar_t green, uchar_t blue) :
+TriangleSet::TriangleSet(TriangleSetPtr triangleSet, PGL::MaterialPtr material) :
     _triangleSet(triangleSet) {
-        _triangleSet->computeNormalList(true);
-        instancesColors.push_back(PGL::Color3(red, green, blue));
+        // _triangleSet->computeNormalList(true);
+        // instancesColors.push_back(PGL::Color3(red, green, blue));
+        instancesMaterials.push_back(material);
     };
 TriangleSet::TriangleSet() {};
 
 TriangleSet::~TriangleSet() {
     instancesColors.clear();
+    instancesMaterials.clear();
+    if (_indexData) delete[] _indexData;
+    if (_pointData) delete[] _pointData;
+    // if (_normalData) delete[] _normalData;
+    if (_colorData) delete[] _colorData;
+    if (_instanceMatrixData) delete[] _instanceMatrixData;
 };
 
 bool TriangleSet::isInstanced() {
     return (bool)(instances.size() - 1);
+}
+
+uint32_t TriangleSet::noOfInstances() {
+    return instances.size();
+}
+
+PGL::Material* TriangleSet::getMaterialForInstance(uint_t i) {
+    return instancesMaterials.at(i).get();
 }
 
 uint32_t TriangleSet::indexSize() {
@@ -69,9 +84,9 @@ uint32_t TriangleSet::pointSize() {
     return _triangleSet->getPointListSize() * 3;
 };
 
-uint32_t TriangleSet::normalSize() {
-    return _triangleSet->getNormalList()->size() * 3;
-};
+// uint32_t TriangleSet::normalSize() {
+//     return _triangleSet->getNormalList()->size() * 3;
+// };
 
 uint32_t TriangleSet::colorSize() {
     // vertex colors in threejs instanced geometry not possible out of the box
@@ -83,26 +98,33 @@ uint32_t TriangleSet::instanceMatrixSize() {
 };
 
 uint32_t* TriangleSet::indexData() {
-    return _triangleSet->getIndexList()->data();
+    if (_indexData) return _indexData;
+    _indexData = _triangleSet->getIndexList()->data();
+    return _indexData;
 };
 
 real_t* TriangleSet::pointData() {
+    if (_pointData) return _pointData;
     if (isInstanced()) {
-        return _triangleSet->getPointList()->data();
+        _pointData =_triangleSet->getPointList()->data();
     } else {
         PGL::Transformation3DPtr transform(new PGL::Transform4(instances.at(0)));
         PGL::TriangleSetPtr transformed = dynamic_pointer_cast<PGL::TriangleSet>(_triangleSet->transform(transform)).get();
-        return transformed->getPointList()->data();
+        _pointData = transformed->getPointList()->data();
     }
+    return _pointData;
 };
 
-real_t* TriangleSet::normalData() {
-    return _triangleSet->getNormalList()->data();
-};
+// real_t* TriangleSet::normalData() {
+//     if (_normalData) return _normalData;
+//     _normalData = _triangleSet->getNormalList()->data();
+//     return _normalData;
+// };
 
 uchar_t* TriangleSet::colorData() {
+    if (_colorData) return _colorData;
 
-    uchar_t* rgb = new uchar_t[colorSize()];
+    uchar_t* _colorData = new uchar_t[colorSize()];
 
     if (isInstanced()) {
         uint_t size = instancesColors.size();
@@ -111,9 +133,9 @@ uchar_t* TriangleSet::colorData() {
             uchar_t red = color.getRed();
             uchar_t green = color.getGreen();
             uchar_t blue = color.getBlue();
-            rgb[i * 3 + 0] = red;
-            rgb[i * 3 + 1] = green;
-            rgb[i * 3 + 2] = blue;
+            _colorData[i * 3 + 0] = red;
+            _colorData[i * 3 + 1] = green;
+            _colorData[i * 3 + 2] = blue;
         }
     } else {
         // TODO: Implement color per vertex
@@ -123,28 +145,29 @@ uchar_t* TriangleSet::colorData() {
         uchar_t green = color.getGreen();
         uchar_t blue = color.getBlue();
         for (uint_t i = 0; i < size; i++) {
-            rgb[i * 3 + 0] = red;
-            rgb[i * 3 + 1] = green;
-            rgb[i * 3 + 2] = blue;
+            _colorData[i * 3 + 0] = red;
+            _colorData[i * 3 + 1] = green;
+            _colorData[i * 3 + 2] = blue;
         }
     }
 
-    return rgb;
+    return _colorData;
 };
 
 real_t* TriangleSet::instanceMatrixData() {
 
+    if (_instanceMatrixData) return _instanceMatrixData;
     uint_t size = instances.size();
-    real_t* data = new real_t[size * 16];
+    real_t* _instanceMatrixData = new real_t[size * 16];
 
     for (uint_t i = 0; i < size; i++) {
         real_t* m = instances.at(i).getData();
         for (uint_t j = 0; j < 16; j++) {
-            data[i * 16 + j] = *(m++);
+            _instanceMatrixData[i * 16 + j] = *(m++);
         }
     }
 
-    return data;
+    return _instanceMatrixData;
 };
 
 #define GEOM_ASSERT_OBJ(obj)
@@ -399,9 +422,11 @@ bool Tesselator::process(PGL::IFS* ifs) {
 bool Tesselator::process(PGL::Material* material) {
     GEOM_ASSERT_OBJ(material);
 
-    __red = int(material->getAmbient().getRed());
-    __green = int(material->getAmbient().getGreen());
-    __blue = int(material->getAmbient().getBlue());
+    __material = PGL::MaterialPtr(material);
+
+    // __red = int(material->getAmbient().getRed());
+    // __green = int(material->getAmbient().getGreen());
+    // __blue = int(material->getAmbient().getBlue());
 
     return true;
 }
@@ -410,6 +435,8 @@ bool Tesselator::process(PGL::ImageTexture* texture) {
     GEOM_ASSERT_OBJ(texture);
 
     CHECK_APPEARANCE(texture);
+
+    __material = PGL::MaterialPtr(new PGL::Material());
 
     return true;
 }
@@ -420,11 +447,7 @@ bool Tesselator::process(PGL::Texture2D* texture) {
     CHECK_APPEARANCE(texture);
 
     const PGL::Color4 color = texture->getBaseColor();
-    __red = int(color.getRed());
-    __green = int(color.getGreen());
-    __blue = int(color.getBlue());
-
-    UPDATE_APPEARANCE(texture);
+    __material = PGL::MaterialPtr(new PGL::Material(PGL::Color3(color[0], color[1], color[2])));
 
     return true;
 }
@@ -572,14 +595,19 @@ bool Tesselator::process(PGL::TriangleSet* triangleSet)
     if (it == triangleMap.end()) {
         // PGL::Transformation3DPtr transform(new PGL::Transform4(__modelmatrix.getMatrix()));
         // PGL::TriangleSetPtr set = dynamic_pointer_cast<PGL::TriangleSet>(triangleSet->transform(transform)).get();
-        auto set = new TriangleSet(triangleSet, __red, __green, __blue);
+        auto set = new TriangleSet(triangleSet, __material);
         triangles.push_back(set);
         set->instances.push_back(__modelmatrix.getMatrix());
         triangleMap.insert(std::pair<const size_t, TriangleSet*>(id, set));
     } else {
+        if (!it->second->hasMaterialPerInstance) {
+            PGL::Material* m0 = it->second->instancesMaterials.at(0).get();
+            it->second->hasMaterialPerInstance = !(m0->isSimilar(*__material.get()));
+        }
         // std::cout << "instance of " << id << std::endl;
         it->second->instances.push_back(__modelmatrix.getMatrix());
-        it->second->instancesColors.push_back(PGL::Color3(__red, __green, __blue));
+        // it->second->instancesColors.push_back(PGL::Color3(__red, __green, __blue));
+        it->second->instancesMaterials.push_back(__material);
     }
 
     return true;

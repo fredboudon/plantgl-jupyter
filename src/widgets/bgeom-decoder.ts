@@ -1,7 +1,9 @@
 import pgljs from '../pgljs/dist/index.js';
 import * as THREE from 'three';
-import { IDecodingTask, ITaskData, ITaskResult, IGeom } from './interfaces';
+import { IDecodingTask, ITaskData, ITaskResult, IGeom, IMaterial } from './interfaces';
 import { merge } from './utilities';
+import { group } from 'console';
+import { access } from 'fs';
 
 let MAX_WORKER = 10;
 const workers: Map<Worker, IDecodingTask[]> = new Map();
@@ -37,37 +39,115 @@ const getWorker = (): Worker => {
                     } else {
 
                         const data = evt.data as IGeom[];
-                        let meshs = [];
+                        let meshs: THREE.Mesh[] = [];
 
-                        const geometries = data.filter(d => !d.isInstanced);
-
-                        if (geometries.length > 0) {
-                            const geometry = merge(geometries);
-                            const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-                                side: THREE.DoubleSide,
-                                shadowSide: THREE.BackSide,
-                                vertexColors: true,
-                                roughness: 0.7
-                            }));
-                            mesh.castShadow = true;
-                            mesh.receiveShadow = true;
-                            meshs.push(mesh);
-                        }
-
-                        meshs = [...meshs, ...data.filter(d => d.isInstanced).map(d => {
+                        meshs.push(...data.filter(d => !d.isInstanced).map(d => {
                             const geometry = new THREE.BufferGeometry();
-                            const instances = new Float32Array(d.instances);
-                            const material = new THREE.MeshStandardMaterial({
+                            const material0 = d.materials[0];
+                            const material = new THREE.MeshPhongMaterial({
                                 side: THREE.DoubleSide,
                                 shadowSide: THREE.BackSide,
-                                roughness: 0.7,
-                                vertexColors: true
+                                color: new THREE.Color(...material0.ambient.map(c => c / 255)),
+                                emissive: new THREE.Color(...material0.emission.map(c => c / 255)),
+                                specular: new THREE.Color(...material0.specular.map(c => c / 255)),
+                                shininess: material0.shininess * 100,
+                                transparent: material0.transparency > 0,
+                                opacity: 1 - material0.transparency,
+                                vertexColors: false
                             });
-
                             geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(d.index), 1));
                             geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(d.position), 3));
-                            geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(d.color), 3, true));
-                            geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
+                            // geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(colors), 3, true, 1));
+                            // geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
+                            geometry.computeVertexNormals();
+
+                            const mesh = new THREE.Mesh(geometry, material);
+                            mesh.castShadow = true;
+                            mesh.receiveShadow = true;
+                            return mesh;
+                        }));
+
+                        // group instanced geometries by material if there are multiple materials
+                        // TODO: Move to c++, introduce material ID?
+                        const grouped = data.filter(d => d.isInstanced && d.materials.length > 1).map(d => {
+                            return [d, d.materials.reduce((grouped: { m: IMaterial, i: number[] }[], m, j) => {
+                                const group = grouped.find(group => {
+                                    return !(group.m.transparency !== m.transparency ||
+                                        group.m.shininess !== m.shininess ||
+                                        group.m.ambient.join('') !== m.ambient.join('') ||
+                                        group.m.specular.join('') !== m.specular.join('') ||
+                                        group.m.emission.join('') !== m.emission.join(''));
+                                });
+                                if (group) {
+                                    group.i.push(j);
+                                } else {
+                                    grouped.push({ m, i: [j]})
+                                }
+                                return grouped;
+                            }, [])];
+                        });
+
+                        meshs.push(...grouped.reduce((a: THREE.Mesh[], b: any) => {
+                            const len = 16 * 4; // instance matrix in bytes
+                            const geom = b[0];
+                            const groups: { m: IMaterial, i: number[] }[] = b[1];
+                            groups.forEach(group => {
+                                const geometry = new THREE.BufferGeometry();
+                                const instances = group.i.reduce((a: Float32Array, j, i) => {
+                                    a.set(new Float32Array(geom.instances.slice(j * len, j * len + len)), i * 16);
+                                    return a;
+                                }, new Float32Array(group.i.length * 64));
+
+                                const material0 = group.m;
+                                const material = new THREE.MeshPhongMaterial({
+                                    side: THREE.DoubleSide,
+                                    shadowSide: THREE.BackSide,
+                                    color: new THREE.Color(...material0.ambient.map(c => c / 255)),
+                                    emissive: new THREE.Color(...material0.emission.map(c => c / 255)),
+                                    specular: new THREE.Color(...material0.specular.map(c => c / 255)),
+                                    shininess: material0.shininess * 100,
+                                    transparent: material0.transparency > 0,
+                                    opacity: 1 - material0.transparency,
+                                    vertexColors: false
+                                });
+                                geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(geom.index), 1));
+                                geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
+                                // geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(colors), 3, true, 1));
+                                // geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
+                                geometry.computeVertexNormals();
+
+                                const mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
+                                for (let i = 0; i < instances.length / 16; i++) {
+                                    mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));
+                                }
+                                mesh.castShadow = true;
+                                mesh.receiveShadow = true;
+                                a.push(mesh);
+                            });
+
+                            return a;
+                        }, []));
+
+                        meshs.push(...data.filter(d => d.isInstanced && d.materials.length === 1).map(d => {
+                            const geometry = new THREE.BufferGeometry();
+                            const instances = new Float32Array(d.instances);
+                            const material0 = d.materials[0];
+                            const material = new THREE.MeshPhongMaterial({
+                                side: THREE.DoubleSide,
+                                shadowSide: THREE.BackSide,
+                                color: new THREE.Color(...material0.ambient.map(c => c / 255)),
+                                emissive: new THREE.Color(...material0.emission.map(c => c / 255)),
+                                specular: new THREE.Color(...material0.specular.map(c => c / 255)),
+                                shininess: material0.shininess * 100,
+                                transparent: material0.transparency > 0,
+                                opacity: 1 - material0.transparency,
+                                vertexColors: false
+                            });
+                            geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(d.index), 1));
+                            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(d.position), 3));
+                            // geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Uint8Array(colors), 3, true, 1));
+                            // geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(d.normal), 3));
+                            geometry.computeVertexNormals();
 
                             const mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
                             for (let i = 0; i < instances.length / 16; i++) {
@@ -76,7 +156,7 @@ const getWorker = (): Worker => {
                             mesh.castShadow = true;
                             mesh.receiveShadow = true;
                             return mesh;
-                        })];
+                        }));
 
                         resolve({ results: meshs, userData });
                     }
@@ -132,7 +212,7 @@ class Decoder {
             workers.set(worker, workers.get(worker).filter(task => task.bucketID !== bucketID));
         }
         // reject in order
-        tasks.sort((a, b) => b.userData.no - a.userData.no)
+        tasks.sort((a, b) => a.userData.no - b.userData.no)
             .forEach(task => task.reject({ abort: true, userData: task.userData }))
     }
 

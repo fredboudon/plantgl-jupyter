@@ -25,21 +25,30 @@ function merge(geoms: IGeom[]): THREE.BufferGeometry {
     const idx = new Uint32Array(len.idx);
     const pos = new Float32Array(len.pos);
     const col = new Uint8Array(len.pos);
-    const nrl = new Float32Array(len.pos);
+    // const nrl = new Float32Array(len.pos);
     let offset_idx = 0;
     let offset_pos = 0;
 
     for (let i = 0; i < geoms.length; i++) {
-        const geom_idx = new Uint32Array(geoms[i].index);
-        const geom_pos = new Float32Array(geoms[i].position);
-        const geom_nrl = new Float32Array(geoms[i].normal);
-        const geom_col = new Uint8Array(geoms[i].color);
+        const geom = geoms[i];
+        const geom_idx = new Uint32Array(geom.index);
+        const geom_pos = new Float32Array(geom.position);
+        // const geom_nrl = new Float32Array(geoms[i].normal);
+        // const geom_col = new Uint8Array(geoms[i].color);
+        // in non instanced geoms we have currently only one material
+        const ambient = geom.materials[0].ambient;
+        const geom_col = new Uint8Array(geom.position.byteLength / 4);
+        for (let c = 0; c < len.pos; c += 3) {
+            geom_col[c] = ambient[0];
+            geom_col[c + 1] = ambient[1];
+            geom_col[c + 2] = ambient[2];
+        }
         for (let j = 0; j < geom_idx.length; j++) {
             idx[j + offset_idx] = geom_idx[j] + offset_pos;
         }
         pos.set(geom_pos, offset_pos * 3);
         col.set(geom_col, offset_pos * 3);
-        nrl.set(geom_nrl, offset_pos * 3);
+        // nrl.set(geom_nrl, offset_pos * 3);
         offset_pos += geom_pos.length / 3;
         offset_idx += geom_idx.length;
     }
@@ -48,7 +57,8 @@ function merge(geoms: IGeom[]): THREE.BufferGeometry {
     geometry.setIndex(new THREE.BufferAttribute(idx, 1));
     geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
-    geometry.setAttribute('normal', new THREE.BufferAttribute(nrl, 3));
+    // geometry.setAttribute('normal', new THREE.BufferAttribute(nrl, 3));
+    geometry.computeVertexNormals();
 
     return geometry;
 

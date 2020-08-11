@@ -1,2 +1,2 @@
-debug
+debug/*wasm*
 node_modules

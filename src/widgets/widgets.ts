@@ -111,14 +111,14 @@ export class PGLWidgetView extends DOMWidgetView {
 
         this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.4));
 
-        const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 1.1);
+        const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.75);
         lightBottom.position.set(0, -z_size, 0);
         this.scene.add(lightBottom);
-        const lightTop = new THREE.DirectionalLight(0xFFFFFF, 1.1);
+        const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.75);
         lightTop.position.set(0, z_size, 0);
         this.scene.add(lightTop);
 
-        this.light = new THREE.DirectionalLight(0xFFFFFF, 1.1);
+        this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
         this.light.shadow.bias = -0.001;
         this.light.castShadow = true;
         this.light.position.set(x_size / 2, y_size / 2, Math.max(x_size, y_size) / 2);
@@ -288,15 +288,13 @@ export class SceneWidgetView extends PGLWidgetView {
 
     render() {
         super.render();
-        this.scene_changed();
-        this.listenTo(this.model, 'change:scenes', this.scene_changed);
+        this.setScenes(this.model.get('scenes') as IScene[]);
+        this.listenTo(this.model, 'change:scenes', () => {
+            this.setScenes(this.model.get('scenes') as IScene[]);
+        });
     }
 
-    scene_changed() {
-        this.addScenes(this.model.get('scenes') as IScene[]);
-    }
-
-    addScenes(scenes: IScene[]) {
+    setScenes(scenes: IScene[]) {
 
         for (let i = 0; i < scenes.length; i++) {
             const scene = scenes[i];

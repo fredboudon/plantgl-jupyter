@@ -68,11 +68,21 @@ export enum LsystemUnit {
     MM = 3
 }
 
+export interface IMaterial {
+    ambient: number[],
+    specular: number[],
+    emission: number[],
+    diffuse: number,
+    shininess: number,
+    transparency: number
+}
+
 export interface IGeom {
     index: ArrayBuffer,
-    color: ArrayBuffer,
+    // color: ArrayBuffer,
     position: ArrayBuffer,
-    normal: ArrayBuffer,
+    // normal: ArrayBuffer,
     instances: ArrayBuffer
     isInstanced: boolean,
+    materials: IMaterial[]
 }

@@ -17,10 +17,10 @@ self.onmessage = function (evt) {
                 }
                 const meshs = pgl.parse(data);
                 postMessage(meshs, meshs.reduce((arr, mesh) =>  {
-                    arr.push(mesh.color);
+                    // arr.push(mesh.color);
                     arr.push(mesh.index);
                     arr.push(mesh.position);
-                    arr.push(mesh.normal);
+                    // arr.push(mesh.normal);
                     if (mesh.instances.byteLength) {
                         arr.push(mesh.instances);
                     }

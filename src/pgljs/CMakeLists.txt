@@ -55,8 +55,6 @@ file(GLOB_RECURSE pgl_sources
 set(DEBUG_FLAGS
   "-s ALLOW_MEMORY_GROWTH=1"
   "--memory-init-file 0"
-  "-s PRECISE_F32=0"
-  "-s WASM=1"
   "-DPGL_CORE_WITHOUT_QT"
   "-DPGL_USE_FLOAT"
   "-s ASSERTIONS=1"
@@ -68,8 +66,6 @@ set(DEBUG_FLAGS
   set(RELEASE_FLAGS
   "-s ALLOW_MEMORY_GROWTH=1"
   "--memory-init-file 0"
-  "-s PRECISE_F32=0"
-  "-s WASM=1"
   "-DPGL_CORE_WITHOUT_QT"
   "-DPGL_USE_FLOAT"
   "-s ASSERTIONS=0"
@@ -84,10 +80,9 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_EXE_LINKER_FLAGS
-    "-s INITIAL_MEMORY=16MB\
+    "-s INITIAL_MEMORY=8MB\
     -s ALLOW_MEMORY_GROWTH=1\
     -s ASSERTIONS=2\
-    -s PRECISE_F32=0\
     -s EXPORT_ES6=1\
     -s USE_ES6_IMPORT_META=0\
     -s MODULARIZE=1\
@@ -96,12 +91,11 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     -s LLD_REPORT_UNDEFINED\
     -s DISABLE_EXCEPTION_CATCHING=0\
     -g4\
-    --source-map-base http://localhost:5000/debug/"
+    --source-map-base http://localhost:5000/build/"
   )
 else()
   set(CMAKE_EXE_LINKER_FLAGS
-    "-s INITIAL_MEMORY=16MB\
-    -s PRECISE_F32=0\
+    "-s INITIAL_MEMORY=8MB\
     -s ALLOW_MEMORY_GROWTH=1\
     -s EXPORT_ES6=1\
     -s USE_ES6_IMPORT_META=0\
@@ -135,7 +129,11 @@ set_property(SOURCE ${pgljs_sources}
     PROPERTY OBJECT_DEPENDS ${CMAKE_BINARY_DIR}/glue.cpp)
 
 add_executable(pgljs src/pgljs_glue_wrapper.cpp ${pgljs_sources} ${pgl_sources})
-set_target_properties(pgljs PROPERTIES OUTPUT_NAME pgl)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  set_target_properties(pgljs PROPERTIES OUTPUT_NAME pgl-debug)
+else()
+  set_target_properties(pgljs PROPERTIES OUTPUT_NAME pgl)
+endif()
 
 em_link_pre_js(pgljs src/pre.js)
 em_link_post_js(pgljs
