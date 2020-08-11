@@ -26,7 +26,7 @@ RUN cd /build/plantgl-jupyter && \
     jupyter nbextension enable --sys-prefix --py pgljupyter && \
     jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
     jupyter labextension install --no-build . && \
-    jupyter lab build --minimize=False --dev-build=False && \
+    jupyter lab build --minimize=True --dev-build=False && \
     jupyter lab clean && \
     jlpm cache clean && \
     npm cache clean --force && \
