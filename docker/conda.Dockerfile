@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
     apt-get clean && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
+    conda update jupyterlab && \
     conda install --freeze-installed -y -c fredboudon 'openalea.lpy>=3.4.0' && \
     conda clean -y --all --force-pkgs-dirs
 
