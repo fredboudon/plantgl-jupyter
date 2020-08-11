@@ -1,5 +1,5 @@
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab&filepath=examples/lpy/leuwenberg.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab&filepath=lpy/leuwenberg/leuwenberg.ipynb)
 
 # pgljupyter
 
