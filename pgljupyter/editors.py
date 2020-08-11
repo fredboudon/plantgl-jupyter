@@ -437,10 +437,11 @@ class ParameterEditor(VBox):
         with io.open(self.__filename, 'r') as file:
             obj = None
             if Path(self.__filename).suffix == '.toml':
-                try:
-                    obj = toml.loads(file.read(), decoder=toml.TomlPreserveCommentDecoder())
-                except toml.TomlDecodeError as e:
-                    print('toml decode error:', e, self.__filename)
+                pass
+                # try:
+                #     obj = toml.loads(file.read(), decoder=toml.TomlPreserveCommentDecoder())
+                # except toml.TomlDecodeError as e:
+                #     print('toml decode error:', e, self.__filename)
             elif Path(self.__filename).suffix == '.json':
                 try:
                     obj = json.loads(file.read())
