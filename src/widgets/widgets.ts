@@ -3,8 +3,7 @@ import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
 import * as THREE from 'three';
-import decoder from './bgeom-decoder';
-// import dracoDecoder from './draco-decoder';
+import decoder from './decoder';
 import { PGLControls, LsystemControls } from './controls';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
