@@ -84,5 +84,5 @@ export interface IGeom {
     // normal: ArrayBuffer,
     instances: ArrayBuffer
     isInstanced: boolean,
-    materials: IMaterial[]
+    material: IMaterial
 }

@@ -7,5 +7,5 @@ export default args => ({
     output: [
         { file: `build/worker.js`, format: 'es', preferConst: true }
     ],
-    plugins: args.configDebug ? [nodeResolve(), commonjs()] : [terser({ output: { quote_style: 1 } }), nodeResolve(), commonjs()]
+    plugins: args.configDebug ? [nodeResolve(), commonjs()] : [terser(), nodeResolve(), commonjs()]
 });

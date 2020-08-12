@@ -496,8 +496,8 @@ export class LsystemWidgetView extends PGLWidgetView {
                 }
             })
             .catch(err => {
+                this.controls.state.busy--;
                 if (err.abort) {
-                    this.controls.state.busy--;
                     this.controls.state.derivationStep = err.userData.step;
                 } else {
                     console.log(err)

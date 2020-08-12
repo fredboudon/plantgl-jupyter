@@ -1,4 +1,4 @@
-FROM emscripten/emsdk:1.39.19 as build
+FROM emscripten/emsdk:2.0.0 as build
 SHELL [ "/bin/bash", "-c" ]
 WORKDIR /build
 COPY . ./plantgl-jupyter

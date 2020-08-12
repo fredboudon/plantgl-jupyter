@@ -107,7 +107,7 @@ endif()
 
 set(idl ${CMAKE_CURRENT_SOURCE_DIR}/src/pgljs.webidl)
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE}
+execute_process(COMMAND python
     ${EMSCRIPTEN_ROOT}/tools/webidl_binder.py
     ${idl} ${CMAKE_BINARY_DIR}/glue)
 
@@ -129,11 +129,7 @@ set_property(SOURCE ${pgljs_sources}
     PROPERTY OBJECT_DEPENDS ${CMAKE_BINARY_DIR}/glue.cpp)
 
 add_executable(pgljs src/pgljs_glue_wrapper.cpp ${pgljs_sources} ${pgl_sources})
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-  set_target_properties(pgljs PROPERTIES OUTPUT_NAME pgl-debug)
-else()
-  set_target_properties(pgljs PROPERTIES OUTPUT_NAME pgl)
-endif()
+set_target_properties(pgljs PROPERTIES OUTPUT_NAME pgl)
 
 em_link_pre_js(pgljs src/pre.js)
 em_link_post_js(pgljs

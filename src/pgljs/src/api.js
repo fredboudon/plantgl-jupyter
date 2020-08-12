@@ -1,7 +1,7 @@
 
 function parse (bgeom) {
 
-    const data = [];
+    const triangleSets = [];
     if (!(bgeom instanceof Uint8Array)) {
         bgeom = new Uint8Array(bgeom);
     }
@@ -60,7 +60,7 @@ function parse (bgeom) {
         // const normal = Module['HEAPF32'].buffer.slice(normalPtr.ptr, normalPtr.ptr + normalSize * 4);
         // const color = Module['HEAPU8'].buffer.slice(colorPtr.ptr, colorPtr.ptr + colorSize);
 
-        data.push({
+        triangleSets.push({
             index, position, materials, instances, isInstanced
         });
 
@@ -68,7 +68,7 @@ function parse (bgeom) {
 
     Module.destroy(tesselator);
     FS.unlink('/' + filename);
-    return data;
+    return triangleSets;
 }
 
 Module['parse'] = parse;

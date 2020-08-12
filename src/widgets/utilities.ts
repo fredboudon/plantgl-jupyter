@@ -36,18 +36,18 @@ function merge(geoms: IGeom[]): THREE.BufferGeometry {
         // const geom_nrl = new Float32Array(geoms[i].normal);
         // const geom_col = new Uint8Array(geoms[i].color);
         // in non instanced geoms we have currently only one material
-        const ambient = geom.materials[0].ambient;
-        const geom_col = new Uint8Array(geom.position.byteLength / 4);
-        for (let c = 0; c < len.pos; c += 3) {
-            geom_col[c] = ambient[0];
-            geom_col[c + 1] = ambient[1];
-            geom_col[c + 2] = ambient[2];
-        }
+        // const ambient = geom.materials[0].ambient;
+        // const geom_col = new Uint8Array(geom.position.byteLength / 4);
+        // for (let c = 0; c < len.pos; c += 3) {
+        //     geom_col[c] = ambient[0];
+        //     geom_col[c + 1] = ambient[1];
+        //     geom_col[c + 2] = ambient[2];
+        // }
         for (let j = 0; j < geom_idx.length; j++) {
             idx[j + offset_idx] = geom_idx[j] + offset_pos;
         }
         pos.set(geom_pos, offset_pos * 3);
-        col.set(geom_col, offset_pos * 3);
+        // col.set(geom_col, offset_pos * 3);
         // nrl.set(geom_nrl, offset_pos * 3);
         offset_pos += geom_pos.length / 3;
         offset_idx += geom_idx.length;
@@ -56,7 +56,7 @@ function merge(geoms: IGeom[]): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
     geometry.setIndex(new THREE.BufferAttribute(idx, 1));
     geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
+    // geometry.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
     // geometry.setAttribute('normal', new THREE.BufferAttribute(nrl, 3));
     geometry.computeVertexNormals();
 
