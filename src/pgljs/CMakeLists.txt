@@ -107,7 +107,7 @@ endif()
 
 set(idl ${CMAKE_CURRENT_SOURCE_DIR}/src/pgljs.webidl)
 
-execute_process(COMMAND python
+execute_process(COMMAND ${PYTHON_EXECUTABLE}
     ${EMSCRIPTEN_ROOT}/tools/webidl_binder.py
     ${idl} ${CMAKE_BINARY_DIR}/glue)
 
