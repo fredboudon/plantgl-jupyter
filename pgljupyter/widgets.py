@@ -9,19 +9,20 @@ import os
 import inspect
 import textwrap
 import zlib
+import json
 from enum import Enum
 from pathlib import Path
 
 from ipywidgets.widgets import DOMWidget, register
 from traitlets import (
-    observe, Unicode, Instance,
+    Unicode, Instance,
     Bytes, Int, Float, Tuple, Dict, Bool, List, UseEnum
 )
 
 import openalea.plantgl.all as pgl
 import openalea.lpy as lpy
 
-from .editors import ParameterEditor
+from .editors import ParameterEditor, make_default_lpy_context
 from ._frontend import module_name, module_version
 
 
@@ -164,7 +165,7 @@ class LsystemWidget(PGLWidget):
     }).tag(sync=True, to_json=scene_to_json)
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
-    editor = None
+    __editor = None
     __codes = []
     __derivationStep = 0
     __lsystem = None
@@ -179,9 +180,9 @@ class LsystemWidget(PGLWidget):
             raise ValueError('No L-Py code found')
         # if a json file with the same name is present load context from the json file
         if Path(self.__filename[0:-3] + 'json').is_file():
-            self.editor = ParameterEditor(self.__filename[0:-3] + 'json')
-            self.editor.on_lpy_context_change = self.__on_lpy_context_change
-            self.__on_lpy_context_change(self.editor.lpy_context)
+            self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
+            self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+            self.__on_lpy_context_change(self.__editor.lpy_context)
         else:
             self.__initialize_lsystem()
             self.__set_scene(0)
@@ -192,6 +193,18 @@ class LsystemWidget(PGLWidget):
         self.on_msg(self.__on_custom_msg)
 
         super().__init__(**kwargs)
+
+    @property
+    def editor(self):
+        filename = self.__filename[0:-3] + 'json'
+        if self.__editor is None and not Path(filename).exists():
+            lpy_context = make_default_lpy_context()
+            if ParameterEditor.validate_schema(lpy_context):
+                with io.open(filename, 'w') as file:
+                    file.write(json.dumps(lpy_context, indent=4))
+                self.__editor = ParameterEditor(filename)
+                self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+        return self.__editor
 
     def __initialize_lsystem(self):
         self.__lsystem.filename = self.__filename

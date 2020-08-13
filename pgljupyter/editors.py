@@ -51,6 +51,17 @@ from ._frontend import module_name, module_version
 #         }
 #     return json
 
+
+def make_default_lpy_context():
+    return {
+        'schema': 'lpy',
+        'scalars': {},
+        'materials': {},
+        'functions': {},
+        'curves': {}
+    }
+
+
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
 
 
@@ -447,7 +458,7 @@ class ParameterEditor(VBox):
                     obj = json.loads(file.read())
                 except json.JSONDecodeError as e:
                     print('json decode error:', e, self.__filename)
-                if obj is not None and self.__validate_schema(obj):
+                if obj is not None and ParameterEditor.validate_schema(obj):
                     self.lpy_context = obj
                     children, titles = self.__build_gui(obj)
                     self.__tab .children = children
@@ -586,7 +597,7 @@ class ParameterEditor(VBox):
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(name, section))
                 ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
                     self.__save_files()
                 if self.__auto_apply:
                     self.on_lpy_context_change(self.lpy_context)
@@ -611,7 +622,7 @@ class ParameterEditor(VBox):
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(name, section))
                 ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
                     self.__save_files()
                 if self.__auto_apply:
                     self.on_lpy_context_change(self.lpy_context)
@@ -633,7 +644,7 @@ class ParameterEditor(VBox):
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(name, section))
                 ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
                     self.__save_files()
                 if self.__auto_apply:
                     self.on_lpy_context_change(self.lpy_context)
@@ -655,7 +666,7 @@ class ParameterEditor(VBox):
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(name, section))
                 ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and self.__validate_schema(self.lpy_context):
+                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
                     self.__save_files()
                 if self.__auto_apply:
                     self.on_lpy_context_change(self.lpy_context)
@@ -679,7 +690,8 @@ class ParameterEditor(VBox):
                 return False
         return True
 
-    def __validate_schema(self, obj):
+    @staticmethod
+    def validate_schema(obj):
         # TODO: load files only once
         is_valid = False
         schema_path = os.path.join(os.path.dirname(__file__), 'schema')
@@ -768,7 +780,7 @@ class ParameterEditor(VBox):
         return fn
 
     def __save_files(self):
-        if self.__validate_schema(self.lpy_context):
+        if ParameterEditor.validate_schema(self.lpy_context):
             with io.open(self.__filename, 'w') as file:
                 file.write(json.dumps(self.lpy_context, indent=4))
 
