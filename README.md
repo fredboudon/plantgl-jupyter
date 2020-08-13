@@ -5,6 +5,17 @@
 
 PlantGL & L-Py jupyter widgets
 
+## pip
+
+```bash
+conda create -y -n pgljupyter -c fredboudon -c conda-forge \
+    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
+conda activate pgljupyter
+pip install pgljupyter
+jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
+jupyter lab build && jupyter lab
+```
+
 ## Build, install and run from source
 
  - install lpy, plantgl, jupyterlab, widgets and widgetsextension

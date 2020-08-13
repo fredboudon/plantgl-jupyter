@@ -48,51 +48,53 @@ data_files_spec = [
     ('share/jupyter/nbextensions/pgljupyter',
         nb_path, '*.js*'),
     ('share/jupyter/lab/extensions', lab_path, '*.tgz'),
-    ('etc/jupyter/nbconfig/notebook.d' , HERE, 'pgljupyter.json')
+    ('etc/jupyter/nbconfig/notebook.d', HERE, 'pgljupyter.json')
 ]
 
+cmdclass = create_cmdclass(
+    'jsdeps',
+    package_data_spec=package_data_spec,
+    data_files_spec=data_files_spec
+)
 
-cmdclass = create_cmdclass('jsdeps', package_data_spec=package_data_spec,
-    data_files_spec=data_files_spec)
 cmdclass['jsdeps'] = combine_commands(
     install_npm(HERE, build_cmd='build:all'),
     ensure_targets(jstargets),
 )
 
-
 setup_args = dict(
-    name            = name,
-    description     = 'PlantGL jupyter widget',
-    version         = version,
-    scripts         = glob(pjoin('scripts', '*')),
-    cmdclass        = cmdclass,
-    packages        = find_packages(),
-    author          = 'Jan Vaillant',
-    author_email    = 'jan.vaillant@cirad.fr',
-    url             = 'https://github.com//pgljupyter',
-    license         = 'BSD',
-    platforms       = "Linux, Mac OS X, Windows",
-    keywords        = ['Jupyter', 'Widgets', 'IPython', 'L-Py', 'PlantGL'],
-    classifiers     = [
+    name=name,
+    description='PlantGL jupyter widget',
+    version=version,
+    scripts=glob(pjoin('scripts', '*')),
+    cmdclass=cmdclass,
+    packages=find_packages(),
+    author='Jan Vaillant',
+    author_email='jan.vaillant@cirad.fr',
+    url='https://github.com/jvail/plantgl-jupyter',
+    license='Cecill',
+    platforms="Linux, Mac OS X, Windows",
+    keywords=['Jupyter', 'Widgets', 'IPython', 'L-Py', 'PlantGL'],
+    classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: CeCILL',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Framework :: Jupyter',
     ],
-    include_package_data = True,
-    install_requires = [
+    include_package_data=True,
+    install_requires=[
+        'jupyterlab>=2.2.0'
         'ipywidgets>=7.5.0',
         'toml>=0.10.1',
         'jsonschema>="3.2.0',
+        'openalea.lpy>="3.4.0',
+        'openalea.plantgl>="3.4.0'
     ],
-    extras_require = {
-        'test': [
-            'pytest>=3.6',
-            'pytest-cov',
-            'nbval',
-        ],
+    python_requires='>=3.7',
+    extras_require={
+        'test': [],
         'examples': [
             # Any requirements for the examples to run
         ],
@@ -107,8 +109,7 @@ setup_args = dict(
             'pypandoc',
         ],
     },
-    entry_points = {
-    },
+    entry_points={}
 )
 
 if __name__ == '__main__':

@@ -13,23 +13,29 @@ include pgljupyter/labextension/*.tgz
 include pgljupyter/schema/*.json
 
 # Documentation
-graft docs
+#graft docs
 exclude docs/\#*
 prune docs/build
 prune docs/gh-pages
 prune docs/dist
 
 # Examples
-graft examples
+#graft examples
 
 # Tests
-graft tests
-prune tests/build
+prune tests
 
 # Javascript files
 graft pgljupyter/nbextension
 graft src
+prune src/pgljs/node_modules
+prune src/pgljs/plantgl
+prune src/pgljs/debug
+prune src/pgljs/build
+prune src/pgljs/dist
 prune **/node_modules
+prune *.js.map
+prune examples
 prune coverage
 prune lib
 
