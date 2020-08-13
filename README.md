@@ -56,7 +56,7 @@ npm run build:pgljs && npm run build
 pip install -e .
 jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
 jupyter nbextension enable --sys-prefix --py pgljupyter
-jupyter labextension install . --minimize=False --dev-build=False
+jupyter labextension install .
 jupyter lab clean
 ```
 
