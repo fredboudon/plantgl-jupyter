@@ -1,9 +1,6 @@
 import pgljs from '../pgljs/dist/index.js';
 import * as THREE from 'three';
-import { IDecodingTask, ITaskData, ITaskResult, IGeom, IMaterial } from './interfaces';
-import { merge } from './utilities';
-import { group } from 'console';
-import { access } from 'fs';
+import { IDecodingTask, ITaskData, ITaskResult, IGeom } from './interfaces';
 
 let MAX_WORKER = 10;
 const workers: Map<Worker, IDecodingTask[]> = new Map();
@@ -26,10 +23,9 @@ const getWorker = (): Worker => {
                     (this as any).initialized = true;
                 } else {
                     // console.log('terminate on error');
-                    const tasks = workers.get(this);
-                    worker.terminate();
+                    workers.get(this).forEach(task => task.reject({ err: 'initialization failed', userData: task.userData }));
+                    this.terminate();
                     workers.delete(this);
-                    tasks.forEach(task => task.reject());
                 }
             } else {
                 if (workers.get(this).length) {

@@ -11,7 +11,6 @@ import {
     ILsystemControlsState,
     ILsystemControlsHandlers
 } from './interfaces';
-import { stat } from 'fs';
 
 // TODO refactor handlers
 

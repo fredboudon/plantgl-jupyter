@@ -13,7 +13,7 @@ import {
     ILsystemScene,
     ITaskResult
 } from './interfaces';
-import { disposeScene, isDracoFile } from './utilities';
+import { disposeScene } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
