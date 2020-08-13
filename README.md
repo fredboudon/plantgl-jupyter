@@ -5,7 +5,7 @@
 
 PlantGL & L-Py jupyter widgets
 
-## Install with pip (inside conda env)
+## Install with pip - inside conda env
 
 ```bash
 conda create -y -n pgljupyter -c fredboudon -c conda-forge \
