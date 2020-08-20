@@ -1,7 +1,7 @@
 const path = require('path');
 const version = require('./package.json').version;
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const TerserPlugin = require('terser-webpack-plugin');
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// const TerserPlugin = require('terser-webpack-plugin');
 
 // Custom webpack rules
 const rules = [
@@ -46,12 +46,15 @@ module.exports = [
     module: {
       rules: rules
     },
-    devtool: 'source-map',
+    devtool: '',
     externals,
     resolve,
     performance: {
       hints: false
-    }
+    },
+    plugins: [
+      // new BundleAnalyzerPlugin()
+    ]
   },
 
   /**
@@ -84,20 +87,6 @@ module.exports = [
     resolve,
     performance: {
       hints: false
-    },
-    optimization: {
-      minimize: true,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            ecma: 8,
-            warnings: true,
-            parse: {},
-            compress: {},
-            mangle: false
-          }
-        })
-      ],
     }
   },
 
@@ -118,7 +107,7 @@ module.exports = [
     module: {
       rules: rules
     },
-    devtool: 'source-map',
+    devtool: '',
     externals,
     resolve,
     performance: {
