@@ -7,7 +7,6 @@ import random as rd
 
 maxduration = lambda order : int(10./(order+1))+3  # life time of an apex
 branch_angle = lambda order : 60+30*((maxorder-order)/maxorder) # branching angle
-nb_axes = lambda order : rd.randint(3,5)  # number of axe at a ramification
 up_angle = lambda t,order : 7        # up angle for lateral branches
 
 # number total of iterations of the system
@@ -30,9 +29,8 @@ A(t,o) :
      produce I(1,0.5)L(0,t)A(t+1,o)
   else:
       # produce a whorl of sympodial branches
-      nbaxe = nb_axes(o)
-      for i in range(nbaxe):
-        nproduce [/(360*i/nbaxe)&(branch_angle(o))B(0,o+1)]
+      for i in range(nb_axes):
+        nproduce [/(360*i/nb_axes)&(branch_angle(o))B(0,o+1)]
       produce T
 
 
@@ -43,9 +41,8 @@ B(t,o) :
     produce ^(up_angle(t,o))I(1,0.1)L(0,t)B(t+1,o)
   else:
     # produce a whorl of sympodial branches
-    nbaxe = nb_axes(o)
-    for i in range(nbaxe):
-      nproduce [/(360*i/nbaxe)&(branch_angle(o))B(0,o+1)]
+    for i in range(nb_axes):
+      nproduce [/(360*i/nb_axes)&(branch_angle(o))B(0,o+1)]
     produce T
 
 L(t,n) :

@@ -28,6 +28,13 @@
             "min": 0.01,
             "max": 0.1,
             "step": 0.01
+        },
+        "nb_axes": {
+            "type": "Integer",
+            "value": 3,
+            "min": 1,
+            "max": 7,
+            "step": 1
         }
     },
     "materials": {
@@ -55,9 +62,9 @@
         "color_2": {
             "index": 2,
             "ambient": [
-                242,
-                2,
-                74
+                25,
+                87,
+                23
             ],
             "diffuse": 1.0,
             "specular": [
@@ -105,26 +112,5 @@
         }
     },
     "functions": {},
-    "curves": {
-        "BezierCurve2D_0": {
-            "BezierCurve2D": [
-                [
-                    -0.5,
-                    0
-                ],
-                [
-                    -0.25,
-                    0.25
-                ],
-                [
-                    0.25,
-                    -0.25
-                ],
-                [
-                    0.5,
-                    0
-                ]
-            ]
-        }
-    }
+    "curves": {}
 }

@@ -288,11 +288,12 @@ class LsystemWidget(PGLWidget):
             self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
         if len(self.__codes) < 2:
             raise ValueError('No L_Py code found')
-        # if a json file with the same name is present load context from the json file
-        if Path(self.__filename[0:-3] + 'json').is_file():
-            self.editor = ParameterEditor(self.__filename[0:-3] + 'json')
-            self.editor.on_lpy_context_change = self.__on_lpy_context_change
-            self.__on_lpy_context_change(self.editor.lpy_context)
+        if self.__editor is not None:
+            self.__on_lpy_context_change(self.__editor.lpy_context)
+        elif Path(self.__filename[0:-3] + 'json').is_file():
+            self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
+            self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+            self.__on_lpy_context_change(self.__editor.lpy_context)
         else:
             self.__initialize_lsystem()
             self.__set_scene(0)
