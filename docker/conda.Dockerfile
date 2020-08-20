@@ -14,10 +14,7 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
     jupyter lab clean && \
     jlpm cache clean && \
     npm cache clean --force && \
-    cd / && \
-    rm -fr /build && \
-    rm -fr /tmp/* && \
-    chmod 777 /opt/conda/share/jupyter/lab/settings/build_config.json
+    rm -fr /tmp/*
 
 USER 1000
 WORKDIR $HOME
