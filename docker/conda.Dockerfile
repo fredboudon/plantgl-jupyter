@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
     conda update -y jupyterlab && \
-    conda install --freeze-installed -y -c fredboudon -c conda-forge openalea.lpy openalea.plantgl && \
+    conda install --freeze-installed -y -c fredboudon -c conda-forge openalea.lpy && \
     jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
     pip3 install pgljupyter --no-cache && \
     jupyter lab build && \
