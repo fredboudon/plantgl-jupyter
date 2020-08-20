@@ -85,7 +85,7 @@ setup_args = dict(
     ],
     include_package_data=True,
     install_requires=[
-        'jupyterlab>=2.2.0'
+        'jupyterlab>=2.2.0',
         'ipywidgets>=7.5.0',
         'toml>=0.10.1',
         'jsonschema>="3.2.0',
