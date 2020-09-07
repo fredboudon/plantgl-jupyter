@@ -138,20 +138,21 @@ export class _CurveEditorView extends DOMWidgetView {
             .classed('point', true)
             .attr('r', 10)
             .attr('cx', d => xScale(d[0]))
-            .attr('cy', d => yScale(d[1]))
+            .attr('cy', d => yScale(d[1]));
 
-        this.onControlPointsChanged(g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
+        this.onControlPointsChanged(svg, g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
         this.listenTo(this.model, 'change:control_points', () => {
             const controlPoints = this.model.get('control_points');
-            if (controlPoints !== this.controlPoints) {
+            if (controlPoints && (controlPoints.length !== this.controlPoints.length ||
+                this.controlPoints.some((p, i) => p[0] !== controlPoints[i][0] || p[1] !== controlPoints[i][1]))) {
                 this.controlPoints = controlPoints.slice();
-                this.onControlPointsChanged(g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
+                this.onControlPointsChanged(svg, g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
             }
         });
 
     }
 
-    onControlPointsChanged(g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator) {
+    onControlPointsChanged(svg, g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator) {
 
         const isFunction = this.isFunction;
         const width = this.width;
@@ -161,10 +162,11 @@ export class _CurveEditorView extends DOMWidgetView {
         const draw = () => {
             switch (this.curveType) {
                 case CurveType.NURBS:
+                case CurveType.BEZIER:
                     ctrlPath.attr('d', lineGenerator(this.controlPoints));
                     const curve = nurbs({
                         points: this.controlPoints,
-                        degree: 3,
+                        degree: this.curveType === CurveType.NURBS ? 3 : this.controlPoints.length - 1,
                         boundary: 'clamped'
                     });
                     const x0 = curve.domain[0][0];
@@ -177,13 +179,6 @@ export class _CurveEditorView extends DOMWidgetView {
                     }
                     curvePath.attr('d', lineGenerator(curveSamples));
                     break;
-                case CurveType.BEZIER:
-                    ctrlPath.attr('d', lineGenerator(this.controlPoints));
-                    curvePath.attr('d', this.controlPoints.slice(1).reduce((d, p, i, a) => {
-                        d += ` ${xScale(p[0])} ${yScale(p[1])}${i === a.length - 1 ? '' : ','}`;
-                        return d;
-                    }, `M ${xScale(this.controlPoints[0][0])} ${yScale(this.controlPoints[0][1])} C`));
-                    break;
                 case CurveType.POLY_LINE:
                     curvePath.attr('d', lineGenerator(this.controlPoints));
                     break;
@@ -193,7 +188,7 @@ export class _CurveEditorView extends DOMWidgetView {
 
             circles.data(this.controlPoints)
                 .attr('cx', d => xScale(d[0]))
-                .attr('cy', d => yScale(d[1]))
+                .attr('cy', d => yScale(d[1]));
         }
 
         draw();
@@ -203,22 +198,83 @@ export class _CurveEditorView extends DOMWidgetView {
             this.touch();
         }, 200);
 
-        circles.call( // @ts-ignore
-            d3.drag().on('drag', (d, i) => {
-                const tx = d3.event.x + dx;
-                const ty = d3.event.y + dy;
 
-                if (tx > width - margin || tx < margin || ty > height - margin || ty < margin) {
+        const drag = () => {
+            circles.on('.drag', null);
+            circles.call( // @ts-ignore
+                d3.drag().on('drag', (d, i) => {
+                    const tx = d3.event.x + dx;
+                    const ty = d3.event.y + dy;
+
+                    if (tx > width - margin || tx < margin || ty > height - margin || ty < margin) {
+                        return;
+                    }
+                    const x = isFunction && (i === 0 || i === this.controlPoints.length - 1) ? this.controlPoints[i][0] : xScale.invert(d3.event.x);
+                    const y = yScale.invert(d3.event.y);
+                    this.controlPoints[i] = [x, y];
+
+                    draw();
+                    updateModel(this.controlPoints = this.controlPoints.slice());
+                })
+            );
+        };
+
+        drag();
+
+        const click = () => {
+            circles.on('.dblclick', null);
+            circles.on('dblclick', (d, i) => {
+                d3.event.stopPropagation();
+                d3.event.preventDefault();
+                if (isFunction && (i === 0 || i === this.controlPoints.length - 1)) {
                     return;
                 }
-                const x = isFunction && (i === 0 || i === this.controlPoints.length - 1) ? this.controlPoints[i][0] : xScale.invert(d3.event.x);
-                const y = yScale.invert(d3.event.y);
-                this.controlPoints[i] = [x, y];
+                if (this.controlPoints.length > 4) {
+                    this.controlPoints.splice(i, 1);
+                    circles.data(this.controlPoints).exit().remove();
+                    draw();
+                    drag();
+                    this.model.unset('control_points');
+                    this.model.set('control_points', this.controlPoints = this.controlPoints.slice());
+                    this.touch();
+                }
+            });
+        };
 
+        click();
+
+        svg.on('dblclick', () => {
+            d3.event.stopPropagation();
+            d3.event.preventDefault();
+            const add = (i, p) => {
+                this.controlPoints.splice(i, 0, p);
+                circles.remove();
+                circles = g.selectAll('.point')
+                    .data(this.controlPoints)
+                    .enter()
+                    .append('circle')
+                    .classed('point', true)
+                    .attr('r', 10)
+                    .attr('cx', d => xScale(d[0]))
+                    .attr('cy', d => yScale(d[1]));
                 draw();
-                updateModel(this.controlPoints = this.controlPoints.slice());
-            })
-        );
+                drag();
+                click();
+                this.model.unset('control_points');
+                this.model.set('control_points', this.controlPoints = this.controlPoints.slice());
+                this.touch();
+            };
+            const x = xScale.invert(d3.event.offsetX - dx);
+            const y = yScale.invert(d3.event.offsetY - dy);
+            let pi = 0;
+            for (let i = this.controlPoints.length - 1; i >= 0; i--) {
+                if (this.controlPoints[i][0] < x) {
+                    pi = i + 1;
+                    break;
+                }
+            }
+            add(pi, [x, y]);
+        });
 
     }
 
