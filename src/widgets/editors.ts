@@ -229,7 +229,7 @@ export class _CurveEditorView extends DOMWidgetView {
                 if (isFunction && (i === 0 || i === this.controlPoints.length - 1)) {
                     return;
                 }
-                if (this.controlPoints.length > 4) {
+                if (this.controlPoints.length > (this.curveType === CurveType.POLY_LINE ? 2 : 4)) {
                     this.controlPoints.splice(i, 1);
                     circles.data(this.controlPoints).exit().remove();
                     draw();
