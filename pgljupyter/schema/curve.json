@@ -5,31 +5,38 @@
         {
             "type": "object",
             "properties": {
-                "NurbsCurve2D": {
+                "name": {
+                    "type": "string",
+                    "pattern": "^[^\\d\\W]\\w*\\Z"
+                },
+                "type": {
+                    "enum": ["NurbsCurve2D"]
+                },
+                "points": {
                     "$ref": "pointarray.json"
+                },
+                "is_function": {
+                    "type": "boolean"
                 }
             },
-            "required": ["NurbsCurve2D"],
+            "required": ["name", "type", "points", "is_function"],
             "additionalProperties": false
         },
         {
             "type": "object",
             "properties": {
-                "BezierCurve2D": {
+                "name": {
+                    "type": "string",
+                    "pattern": "^[^\\d\\W]\\w*\\Z"
+                },
+                "type": {
+                    "enum": ["BezierCurve2D", "Polyline2D"]
+                },
+                "points": {
                     "$ref": "pointarray.json"
                 }
             },
-            "required": ["BezierCurve2D"],
-            "additionalProperties": false
-        },
-        {
-            "type": "object",
-            "properties": {
-                "Polyline2D": {
-                    "$ref": "pointarray.json"
-                }
-            },
-            "required": ["Polyline2D"],
+            "required": ["name", "type", "points"],
             "additionalProperties": false
         }
     ]

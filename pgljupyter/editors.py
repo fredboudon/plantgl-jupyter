@@ -51,14 +51,38 @@ from ._frontend import module_name, module_version
 #         }
 #     return json
 
-
+# should be moved to lpy
 def make_default_lpy_context():
     return {
         'schema': 'lpy',
-        'scalars': {},
-        'materials': {},
-        'functions': {},
-        'curves': {}
+        'version': '1.1',
+        'options': {
+            'compilation': {
+                'setMandatoryDeclaration': False,
+                'setWarnWithSharpModule': True,
+                'setCompiler': 0,
+                'setOptimizationLevel': 1
+            },
+            'matching': {
+                'setModuleMatchingMethod': 2,
+                'setInheritanceModuleMatchingActivated': True,
+                'setStringMatchingMethod': 1
+            },
+            'processing': {
+                'setReturnIfNoMatching': False,
+                'enableAxiomDecomposition': False,
+                'setWarnOnError': True,
+                'enablePathInfoCache': True,
+                'setTurtleInIntepretation': True,
+                'setMulticoreProcessing': False,
+                'setBracketMappingOptimLevel': False
+            },
+            'interaction': {
+                'setSelectionAlwaysRequired': False
+            }
+        },
+        'parameters': [],
+        'materials': []
     }
 
 
@@ -110,13 +134,13 @@ class _CurveEditor(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    curve_type = Unicode('').tag(sync=True)
-    control_points = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=True)
+    type = Unicode('').tag(sync=True)
+    points = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=True)
     is_function = Bool(False).tag(sync=True)
 
-    def __init__(self, curve_type, control_points, is_function=False, **kwargs):
-        self.curve_type = curve_type
-        self.control_points = control_points
+    def __init__(self, type, points, is_function=False, **kwargs):
+        self.type = type
+        self.points = points
         self.is_function = is_function
         super().__init__(**kwargs)
 
@@ -133,16 +157,16 @@ class CurveEditor(_Editor):
 
     value = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=False)
 
-    def __init__(self, control_points, curve_type, is_function=False, **kwargs):
-        self.__curve_editor = _CurveEditor(curve_type, control_points, is_function)
-        self.__curve_editor.observe(self.__on_curve_changed, names='control_points')
+    def __init__(self, **kwargs):
+        self.__curve_editor = _CurveEditor(**kwargs)
+        self.__curve_editor.observe(self.__on_curve_changed, names='points')
         kwargs['children'] = [
             self.__curve_editor
         ]
         super().__init__(**kwargs)
 
     def __on_curve_changed(self, change):
-        self.value = self.__curve_editor.control_points
+        self.value = self.__curve_editor.points
 
     @property
     def _curve_type(self):
@@ -169,7 +193,7 @@ class FloatEditor(_Editor):
 
     def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
 
-        self.value = value
+        self.value = float(value)
 
         self.__slider = FloatSlider(value, min=min, max=max, step=step, description='value')
         self.__min_ipt = FloatText(min, description='min')
@@ -230,7 +254,7 @@ class IntEditor(_Editor):
 
     def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
 
-        self.value = value
+        self.value = int(value)
         self.__slider = IntSlider(value, min, max, description='value')
         self.__min_ipt = IntText(min, description='min')
         self.__max_ipt = IntText(max, description='max')
@@ -422,6 +446,7 @@ class ParameterEditor(VBox):
     __auto_save_cbx = Checkbox(description='Auto save')
     __apply_btn = Button(description='Apply changes')
     __save_btn = Button(description='Save changes')
+    __add_category_btn = Button(description='Add category')
 
     # values = List([]).tag(sync=False)
     # widget = Instance(VBox).tag(sync=True, **widget_serialization)
@@ -435,7 +460,8 @@ class ParameterEditor(VBox):
         super().__init__([VBox([
             HBox([
                 HBox((self.__apply_btn, self.__auto_apply_cbx)),
-                HBox((self.__save_btn, self.__auto_save_cbx))
+                HBox((self.__save_btn, self.__auto_save_cbx)),
+                self.__add_category_btn,
             ], layout=Layout(flex_flow='row wrap')),
             self.__tab
         ])], **kwargs)
@@ -468,6 +494,24 @@ class ParameterEditor(VBox):
                     self.__auto_save_cbx.observe(self.__on_auto_save_cbx_change, names='value')
                     self.__apply_btn.on_click(lambda x: self.on_lpy_context_change(self.lpy_context))
                     self.__save_btn.on_click(lambda x: self.__save_files())
+                    self.__add_category_btn.on_click(lambda x: self.__add_category())
+
+    def __add_category(self):
+        item_layout = Layout(
+            margin='20px',
+            flex_flow='row wrap'
+        )
+        menu_layout = Layout(
+            margin='20px',
+            flex_flow='row wrap'
+        )
+        acc = self.__tab.children[0]
+        box = HBox(layout=item_layout)
+        acc.children = (*acc.children, VBox([
+            HBox(self.__menu('', box), layout=menu_layout),
+            box
+        ]))
+        acc.set_title(len(acc.children) - 1, 'category')
 
     def __on_auto_apply_cbx_change(self, change):
         self.__auto_apply = change['owner'].value
@@ -505,41 +549,54 @@ class ParameterEditor(VBox):
                 flex_flow='row wrap'
             )
             # box = VBox((GridBox(layout=grid_layout), Accordion()))
-            schema = ''
+
             if 'schema' in obj and obj['schema'] == 'lpy':
-                schema = 'lpy'
-                box_scalars = HBox(layout=item_layout)
+                box_options = HBox(layout=item_layout)
                 box_materials = HBox(layout=item_layout)
-                box_functions = HBox(layout=item_layout)
-                box_curves = HBox(layout=item_layout)
-                acc = Accordion([
+                acc_items = [
                     VBox([
-                        HBox(self.__menu('scalars', box_scalars), layout=menu_layout),
-                        box_scalars
+                        HBox(self.__menu('options', box_options), layout=menu_layout),
+                        box_options
                     ]),
                     VBox([
                         HBox(self.__menu('materials', box_materials), layout=menu_layout),
                         box_materials
-                    ]),
-                    VBox([
-                        HBox(self.__menu('functions', box_functions), layout=menu_layout),
-                        box_functions
-                    ]),
-                    VBox([
+                    ])
+                ]
+                for category in obj['parameters']:
+                    box_scalars = HBox(layout=item_layout)
+                    box_curves = HBox(layout=item_layout)
+                    for scalar in category['scalars']:
+                        ipt = None
+                        if isinstance(scalar['value'], bool):
+                            ipt = BoolEditor(**scalar, validator=self.__validate_name)
+                        elif isinstance(scalar['value'], (int, float)):
+                            if scalar['type'] == 'Integer':
+                                ipt = IntEditor(**scalar, validator=self.__validate_name)
+                            elif scalar['type'] == 'Float':
+                                ipt = FloatEditor(**scalar, validator=self.__validate_name)
+                        if ipt is not None:
+                            box_scalars.children = (*box_scalars.children, ipt)
+                            # ipt.observe(self.__observe_lpy(name, key))
+                    for curve in category['curves']:
+                        ipt = CurveEditor(**curve, validator=self.__validate_name)
+                        box_curves.children = (*box_curves.children, ipt)
+
+                        # ipt.observe(self.__observe_lpy(name, key))
+
+                    acc_items.append(VBox([
+                        HBox(self.__menu('scalars', box_scalars), layout=menu_layout),
+                        box_scalars,
                         HBox(self.__menu('curves', box_curves), layout=menu_layout),
                         box_curves
-                    ]),
-                ])
-                acc.set_title(0, 'scalars')
+                    ]))
+
+                acc = Accordion(acc_items)
+                acc.set_title(0, 'options')
                 acc.set_title(1, 'materials')
-                acc.set_title(2, 'functions')
-                acc.set_title(3, 'curves')
-                # box = VBox((HBox(layout=Layout(
-                #     width='100%',
-                #     flex_flow='row wrap'
-                # )), Accordion()))
-            for key in obj.keys():
-                self.__widgets(obj[key], acc, key, obj, path, schema)
+                for i, category in enumerate(obj['parameters']):
+                    acc.set_title(i + 2, category['name'])
+
             children.append(acc)
 
         return (children, titles)
@@ -550,130 +607,138 @@ class ParameterEditor(VBox):
         btn_del = Button(description='Delete')
         ddn_del = Dropdown()
 
-        ddn_del.options = self.lpy_context[section].keys()
+        # ddn_del.options = self.lpy_context[section].keys()
 
-        def fn_del(self):
-            if ddn_del.value:
-                name = box.children[ddn_del.index].name
-                del self.lpy_context[section][name]
-                box.children = [child for child in box.children if child.name is not name]
-                ddn_del.options = ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save:
-                    self.__save_files()
-                if self.__auto_apply:
-                    self.on_lpy_context_change(self.lpy_context)
+        # def fn_del(self):
+        #     if ddn_del.value:
+        #         name = box.children[ddn_del.index].name
+        #         del self.lpy_context[section][name]
+        #         box.children = [child for child in box.children if child.name is not name]
+        #         ddn_del.options = ddn_del.options = self.lpy_context[section].keys()
+        #         if self.__auto_save:
+        #             self.__save_files()
+        #         if self.__auto_apply:
+        #             self.on_lpy_context_change(self.lpy_context)
 
         if section == 'scalars':
 
             def fn_add(self):
                 name = f'{ddn_add.value}_{len(box.children)}'
-                while name in self.lpy_context[section]:
-                    name = f'{ddn_add.value}_{len(box.children) + 1}'
+                # while name in self.lpy_context[section]:
+                #     name = f'{ddn_add.value}_{len(box.children) + 1}'
                 if ddn_add.value == 'Integer':
                     new = {
+                        'name': name,
                         'type': 'Integer',
                         'value': 5,
                         'min': 1,
                         'max': 10,
                         'step': 1
                     }
-                    self.lpy_context[section][name] = new
-                    item = IntEditor(**new, name=name, validator=self.__validate_name)
+                    item = IntEditor(**new, validator=self.__validate_name)
                 elif ddn_add.value == 'Float':
                     new = {
+                        'name': name,
                         'type': 'Float',
                         'value': 0.5,
                         'min': 0,
                         'max': 1,
                         'step': 0.1
                     }
-                    self.lpy_context[section][name] = new
-                    item = FloatEditor(**new, name=name, validator=self.__validate_name)
+                    item = FloatEditor(**new, validator=self.__validate_name)
                 elif ddn_add.value == 'Bool':
-                    item = BoolEditor(True, name=name, validator=self.__validate_name)
-                    self.lpy_context[section][name] = {
+                    new = {
+                        'name': name,
                         'value': True
                     }
+                    item = BoolEditor(**new, validator=self.__validate_name)
+
+                # self.lpy_context['parameters'][section].append(new)
                 box.children = (*box.children, item)
-                item.observe(self.__observe_lpy(name, section))
-                ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                    self.__save_files()
-                if self.__auto_apply:
-                    self.on_lpy_context_change(self.lpy_context)
+                # item.observe(self.__observe_lpy(name, section))
+                # ddn_del.options = self.lpy_context[section].keys()
+                # if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
+                #     self.__save_files()
+                # if self.__auto_apply:
+                #     self.on_lpy_context_change(self.lpy_context)
 
             ddn_add.options = ['Integer', 'Float', 'Bool']
 
-        elif section == 'materials':
-            ddn_del.options = self.lpy_context[section].keys()
+        # elif section == 'materials':
+        #     ddn_del.options = self.lpy_context[section].keys()
 
-            def fn_add(self):
-                name = f'{ddn_add.value}_{len(box.children)}'
-                while name in self.lpy_context[section]:
-                    name = f'{ddn_add.value}_{len(box.children) + 1}'
-                if ddn_add.value == 'Color':
-                    new = {
-                        'index': len(box.children),
-                        'ambient': [80, 80, 80]
-                    }
-                    item = MaterialEditor(**new, name=name, validator=self.__validate_name)
-                    self.lpy_context[section][name] = new
-                    print(self.lpy_context[section])
-                box.children = (*box.children, item)
-                item.observe(self.__observe_lpy(name, section))
-                ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                    self.__save_files()
-                if self.__auto_apply:
-                    self.on_lpy_context_change(self.lpy_context)
-            ddn_add.options = ['Color']
+        #     def fn_add(self):
+        #         name = f'{ddn_add.value}_{len(box.children)}'
+        #         while name in self.lpy_context[section]:
+        #             name = f'{ddn_add.value}_{len(box.children) + 1}'
+        #         if ddn_add.value == 'Color':
+        #             new = {
+        #                 'index': len(box.children),
+        #                 'ambient': [80, 80, 80]
+        #             }
+        #             item = MaterialEditor(**new, name=name, validator=self.__validate_name)
+        #             self.lpy_context[section][name] = new
+        #             print(self.lpy_context[section])
+        #         box.children = (*box.children, item)
+        #         item.observe(self.__observe_lpy(name, section))
+        #         ddn_del.options = self.lpy_context[section].keys()
+        #         if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
+        #             self.__save_files()
+        #         if self.__auto_apply:
+        #             self.on_lpy_context_change(self.lpy_context)
+        #     ddn_add.options = ['Color']
 
-        elif section == 'functions':
-            def fn_add(self):
-                name = f'{ddn_add.value}_{len(box.children)}'
-                if ddn_add.value == 'NurbsCurve2D':
-                    val = [[-0.5, 0], [-0.25, 0.25], [0, -0.25], [0.25, 0.25], [0.5, 0]]
-                else:
-                    val = [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]]
-                while name in self.lpy_context['functions']:
-                    name = f'{ddn_add.value}_{len(box.children) + 1}'
-                item = CurveEditor(val, ddn_add.value, is_function=True, name=name, validator=self.__validate_name)
-                self.lpy_context[section][name] = {
-                    ddn_add.value: val
-                }
-                box.children = (*box.children, item)
-                item.observe(self.__observe_lpy(name, section))
-                ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                    self.__save_files()
-                if self.__auto_apply:
-                    self.on_lpy_context_change(self.lpy_context)
-            ddn_add.options = ['NurbsCurve2D']
+        # elif section == 'functions':
+        #     def fn_add(self):
+        #         name = f'{ddn_add.value}_{len(box.children)}'
+        #         if ddn_add.value == 'NurbsCurve2D':
+        #             val = [[-0.5, 0], [-0.25, 0.25], [0, -0.25], [0.25, 0.25], [0.5, 0]]
+        #         else:
+        #             val = [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]]
+        #         while name in self.lpy_context['functions']:
+        #             name = f'{ddn_add.value}_{len(box.children) + 1}'
+        #         item = CurveEditor(val, ddn_add.value, is_function=True, name=name, validator=self.__validate_name)
+        #         self.lpy_context[section][name] = {
+        #             ddn_add.value: val
+        #         }
+        #         box.children = (*box.children, item)
+        #         item.observe(self.__observe_lpy(name, section))
+        #         ddn_del.options = self.lpy_context[section].keys()
+        #         if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
+        #             self.__save_files()
+        #         if self.__auto_apply:
+        #             self.on_lpy_context_change(self.lpy_context)
+        #     ddn_add.options = ['NurbsCurve2D']
 
         elif section == 'curves':
             def fn_add(self):
                 name = f'{ddn_add.value}_{len(box.children)}'
-                if ddn_add.value == 'NurbsCurve2D':
-                    val = [[-0.5, 0], [-0.25, 0.25], [0, -0.25], [0.25, 0.25], [0.5, 0]]
-                else:
-                    val = [[-0.5, 0], [-0.25, 0.25], [0.25, -0.25], [0.5, 0]]
-                while name in self.lpy_context['curves']:
-                    name = f'{ddn_add.value}_{len(box.children) + 1}'
-                item = CurveEditor(val, ddn_add.value, name=name, validator=self.__validate_name, )
-                self.lpy_context[section][name] = {
-                    ddn_add.value: val
+                new = {
+                    'name': name,
+                    'type': 'NurbsCurve2D' if ddn_add.value == 'Function' else ddn_add.value,
+                    'points': [],
+                    'is_function': ddn_add.value == 'Function'
                 }
+                if ddn_add.value == 'Function':
+                    new['points'] = [[0, 0], [0.25, 0], [0.5, 0], [0.75, 0], [1, 0]]
+                else:
+                    new['points'] = [[-0.5, 0], [-0.25, 0], [0, 0], [0.25, 0], [0.5, 0]]
+
+                item = CurveEditor(**new, validator=self.__validate_name, )
+                # self.lpy_context[section][name] = {
+                #     ddn_add.value: val
+                # }
                 box.children = (*box.children, item)
-                item.observe(self.__observe_lpy(name, section))
-                ddn_del.options = self.lpy_context[section].keys()
-                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                    self.__save_files()
-                if self.__auto_apply:
-                    self.on_lpy_context_change(self.lpy_context)
-            ddn_add.options = ['NurbsCurve2D', 'BezierCurve2D', 'Polyline2D']
+                # item.observe(self.__observe_lpy(name, section))
+                # ddn_del.options = self.lpy_context[section].keys()
+                # if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
+                #     self.__save_files()
+                # if self.__auto_apply:
+                #     self.on_lpy_context_change(self.lpy_context)
+            ddn_add.options = ['NurbsCurve2D', 'BezierCurve2D', 'Polyline2D', 'Function']
 
         btn_add.on_click(lambda x: fn_add(self))
-        btn_del.on_click(lambda x: fn_del(self))
+        # btn_del.on_click(lambda x: fn_del(self))
 
         return (
             HBox((btn_add, ddn_add)),

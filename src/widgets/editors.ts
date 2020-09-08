@@ -89,8 +89,8 @@ export class _CurveEditorView extends DOMWidgetView {
             .style('height', this.height);
         this.name = this.model.get('name');
         this.isFunction = this.model.get('is_function');
-        this.controlPoints = this.model.get('control_points').slice();
-        this.curveType = this.model.get('curve_type');
+        this.controlPoints = this.model.get('points').slice();
+        this.curveType = this.model.get('type');
 
         const [minx, miny, maxx, maxy] = this.controlPoints.reduce((m, p) => {
             m[0] = p[0] < m[0] ? p[0] : m[0];
@@ -141,8 +141,8 @@ export class _CurveEditorView extends DOMWidgetView {
             .attr('cy', d => yScale(d[1]));
 
         this.onControlPointsChanged(svg, g, dx, dy, xScale, yScale, ctrlPath, curvePath, circles, lineGenerator);
-        this.listenTo(this.model, 'change:control_points', () => {
-            const controlPoints = this.model.get('control_points');
+        this.listenTo(this.model, 'change:points', () => {
+            const controlPoints = this.model.get('points');
             if (controlPoints && (controlPoints.length !== this.controlPoints.length ||
                 this.controlPoints.some((p, i) => p[0] !== controlPoints[i][0] || p[1] !== controlPoints[i][1]))) {
                 this.controlPoints = controlPoints.slice();
@@ -194,7 +194,7 @@ export class _CurveEditorView extends DOMWidgetView {
         draw();
 
         const updateModel = debounce(points => {
-            this.model.set('control_points', points);
+            this.model.set('points', points);
             this.touch();
         }, 200);
 
@@ -234,8 +234,8 @@ export class _CurveEditorView extends DOMWidgetView {
                     circles.data(this.controlPoints).exit().remove();
                     draw();
                     drag();
-                    this.model.unset('control_points');
-                    this.model.set('control_points', this.controlPoints = this.controlPoints.slice());
+                    this.model.unset('points');
+                    this.model.set('points', this.controlPoints = this.controlPoints.slice());
                     this.touch();
                 }
             });
@@ -260,17 +260,26 @@ export class _CurveEditorView extends DOMWidgetView {
                 draw();
                 drag();
                 click();
-                this.model.unset('control_points');
-                this.model.set('control_points', this.controlPoints = this.controlPoints.slice());
+                this.model.unset('points');
+                this.model.set('points', this.controlPoints = this.controlPoints.slice());
                 this.touch();
             };
-            const x = xScale.invert(d3.event.offsetX - dx);
+            let x = xScale.invert(d3.event.offsetX - dx);
             const y = yScale.invert(d3.event.offsetY - dy);
             let pi = 0;
             for (let i = this.controlPoints.length - 1; i >= 0; i--) {
                 if (this.controlPoints[i][0] < x) {
                     pi = i + 1;
                     break;
+                }
+            }
+            if (this.isFunction) {
+                if (pi === 0) {
+                    pi = 1;
+                    x = this.controlPoints[1][0] / 2;
+                } else if (pi === this.controlPoints.length) {
+                    pi = pi - 1;
+                    x = (this.controlPoints[this.controlPoints.length - 2][0] + 1) / 2;
                 }
             }
             add(pi, [x, y]);

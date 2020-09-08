@@ -1,0 +1,74 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "options",
+    "type": "object",
+    "properties": {
+        "compilation": {
+            "type": "object",
+            "properties": {
+                "setMandatoryDeclaration": {
+                    "type": "boolean"
+                },
+                "setWarnWithSharpModule": {
+                    "type": "boolean"
+                },
+                "setCompiler": {
+                    "type": "number"
+                },
+                "setOptimizationLevel": {
+                    "type": "number"
+                }
+            }
+        },
+        "matching": {
+            "type": "object",
+            "properties": {
+                "setModuleMatchingMethod": {
+                    "type": "number"
+                },
+                "setInheritanceModuleMatchingActivated": {
+                    "type": "boolean"
+                },
+                "setStringMatchingMethod": {
+                    "type": "number"
+                }
+            }
+        },
+        "processing": {
+            "type": "object",
+            "properties": {
+                "setReturnIfNoMatching": {
+                    "type": "boolean"
+                },
+                "enableAxiomDecomposition": {
+                    "type": "boolean"
+                },
+                "setWarnOnError": {
+                    "type": "boolean"
+                },
+                "enablePathInfoCache": {
+                    "type": "boolean"
+                },
+                "setTurtleInIntepretation": {
+                    "type": "boolean"
+                },
+                "setMulticoreProcessing": {
+                    "type": "boolean"
+                },
+                "setBracketMappingOptimLevel": {
+                    "type": "number"
+                }
+            }
+        },
+        "interaction": {
+            "type": "object",
+            "properties": {
+                "setSelectionAlwaysRequired": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "required": ["compilation", "matching", "processing", "interaction"],
+    "additionalProperties": false
+}
