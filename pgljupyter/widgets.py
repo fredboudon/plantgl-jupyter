@@ -227,29 +227,51 @@ class LsystemWidget(PGLWidget):
 
     def __initialisation_function(self, context_obj):
         def build_context(context_obj, context):
-            for key, value in context_obj.items():
-                if isinstance(value, dict):
-                    if key == 'scalars':
-                        for name, scalar in value.items():
-                            context[name] = scalar['value']
-                    elif key == 'materials':
-                        for name, material in value.items():
-                            m = dict(material)
-                            index = m.pop('index')
-                            context[name] = pgl.Material(**m)
-                            context.turtle.setMaterial(index, context[name])
-                    elif key == 'functions':
-                        for name, function in value.items():
-                            if 'NurbsCurve2D' in function:
-                                points = function['NurbsCurve2D']
-                                context[name] = pgl.QuantisedFunction(
-                                    pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
-                                )
-                    elif key == 'curves':
-                        for name, curve in value.items():
-                            if 'NurbsCurve2D' in curve:
-                                points = curve['NurbsCurve2D']
-                                context[name] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
+            for material in context_obj['materials']:
+                material = dict(material)
+                index = material.pop('index')
+                name = material.pop('name')
+                context[name] = pgl.Material(**material)
+                context.turtle.setMaterial(index, context[name])
+            for catergory in context_obj['parameters']:
+                if catergory['enabled']:
+                    for scalar in catergory['scalars']:
+                        context[scalar['name']] = scalar['value']
+                    for curve in catergory['curves']:
+                        if curve['is_function']:
+                            context[curve['name']] = pgl.QuantisedFunction(
+                                pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                            )
+                        elif curve['type'] == 'NurbsCurve2D':
+                            context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                        elif curve['type'] == 'BezierCurve2D':
+                            context[curve['name']] = pgl.BezierCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                        elif curve['type'] == 'Polyline2D':
+                            context[curve['name']] = pgl.Polyline2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+
+            # for key, value in context_obj.items():
+            #     if isinstance(value, dict):
+            #         if key == 'scalars':
+            #             for name, scalar in value.items():
+            #                 context[name] = scalar['value']
+            #         elif key == 'materials':
+            #             for name, material in value.items():
+            #                 m = dict(material)
+            #                 index = m.pop('index')
+            #                 context[name] = pgl.Material(**m)
+            #                 context.turtle.setMaterial(index, context[name])
+            #         elif key == 'functions':
+            #             for name, function in value.items():
+            #                 if 'NurbsCurve2D' in function:
+            #                     points = function['NurbsCurve2D']
+            #                     context[name] = pgl.QuantisedFunction(
+            #                         pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
+            #                     )
+            #         elif key == 'curves':
+            #             for name, curve in value.items():
+            #                 if 'NurbsCurve2D' in curve:
+            #                     points = curve['NurbsCurve2D']
+            #                     context[name] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
 
         codes = [
             '\n__lpy_code_version__ = 1.1',

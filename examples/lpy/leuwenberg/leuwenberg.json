@@ -1,44 +1,64 @@
 {
     "schema": "lpy",
-    "scalars": {
-        "leafduration": {
-            "type": "Integer",
-            "value": 3,
-            "min": 1,
-            "max": 10,
-            "step": 1
-        },
-        "leafold": {
-            "type": "Integer",
-            "value": 2,
-            "min": 1,
-            "max": 10,
-            "step": 1
-        },
-        "maxorder": {
-            "type": "Integer",
-            "value": 5,
-            "min": 1,
-            "max": 10,
-            "step": 1
-        },
-        "radinc": {
-            "type": "Float",
-            "value": 0.02,
-            "min": 0.01,
-            "max": 0.1,
-            "step": 0.01
-        },
-        "nb_axes": {
-            "type": "Integer",
-            "value": 3,
-            "min": 1,
-            "max": 7,
-            "step": 1
-        }
+    "version": "1.1",
+    "options": {
+        "compilation": {},
+        "matching": {},
+        "processing": {},
+        "interaction": {}
     },
-    "materials": {
-        "color_1": {
+    "parameters": [
+        {
+            "name": "leaf",
+            "enabled": true,
+            "scalars": [
+                {
+                    "name": "leafduration",
+                    "type": "Integer",
+                    "value": 3,
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                {
+                    "name": "leafold",
+                    "type": "Integer",
+                    "value": 2,
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                {
+                    "name": "maxorder",
+                    "type": "Integer",
+                    "value": 5,
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                {
+                    "name": "radinc",
+                    "type": "Float",
+                    "value": 0.02,
+                    "min": 0.01,
+                    "max": 0.1,
+                    "step": 0.01
+                },
+                {
+                    "name": "nb_axes",
+                    "type": "Integer",
+                    "value": 3,
+                    "min": 1,
+                    "max": 7,
+                    "step": 1
+                }
+            ],
+            "curves": []
+        }
+    ],
+    "materials": [
+        {
+            "name": "color_1",
             "index": 1,
             "ambient": [
                 91,
@@ -59,7 +79,8 @@
             "transparency": 0.0,
             "shininess": 0.2
         },
-        "color_2": {
+        {
+            "name": "color_2",
             "index": 2,
             "ambient": [
                 25,
@@ -80,7 +101,18 @@
             "transparency": 0.0,
             "shininess": 0.2
         },
-        "color_4": {
+        {
+            "name": "color_3",
+            "index": 3,
+            "ambient": [
+                15,
+                196,
+                219
+            ],
+            "shininess": 0.2
+        },
+        {
+            "name": "color_4",
             "index": 4,
             "ambient": [
                 225,
@@ -100,17 +132,6 @@
             ],
             "transparency": 0.0,
             "shininess": 0.2
-        },
-        "Color_3": {
-            "index": 3,
-            "ambient": [
-                15,
-                196,
-                219
-            ],
-            "shininess": 0.2
         }
-    },
-    "functions": {},
-    "curves": {}
+    ]
 }

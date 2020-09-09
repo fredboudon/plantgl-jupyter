@@ -3,6 +3,10 @@
     "title": "material",
     "type": "object",
     "properties": {
+        "name": {
+            "type": "string",
+            "pattern": "^[^\\d\\W]\\w*\\Z"
+        },
         "index": {
             "type": "integer",
             "minimum": 0
@@ -32,6 +36,6 @@
             "maximum": 1
         }
     },
-    "required": ["index", "ambient"],
+    "required": ["name", "index", "ambient"],
     "additionalProperties": false
 }
