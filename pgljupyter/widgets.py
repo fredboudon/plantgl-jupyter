@@ -171,6 +171,7 @@ class LsystemWidget(PGLWidget):
     __lsystem = None
 
     def __init__(self, filename, options={}, unit=Unit.m, animate=False, dump='', **kwargs):
+
         self.__filename = filename if filename.endswith('.lpy') else filename + '.lpy'
         self.__lsystem = lpy.Lsystem()
         with io.open(self.__filename, 'r') as file:

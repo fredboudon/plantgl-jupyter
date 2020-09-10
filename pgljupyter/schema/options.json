@@ -4,69 +4,16 @@
     "type": "object",
     "properties": {
         "compilation": {
-            "type": "object",
-            "properties": {
-                "setMandatoryDeclaration": {
-                    "type": "boolean"
-                },
-                "setWarnWithSharpModule": {
-                    "type": "boolean"
-                },
-                "setCompiler": {
-                    "type": "number"
-                },
-                "setOptimizationLevel": {
-                    "type": "number"
-                }
-            }
+            "type": "object"
         },
         "matching": {
-            "type": "object",
-            "properties": {
-                "setModuleMatchingMethod": {
-                    "type": "number"
-                },
-                "setInheritanceModuleMatchingActivated": {
-                    "type": "boolean"
-                },
-                "setStringMatchingMethod": {
-                    "type": "number"
-                }
-            }
+            "type": "object"
         },
         "processing": {
-            "type": "object",
-            "properties": {
-                "setReturnIfNoMatching": {
-                    "type": "boolean"
-                },
-                "enableAxiomDecomposition": {
-                    "type": "boolean"
-                },
-                "setWarnOnError": {
-                    "type": "boolean"
-                },
-                "enablePathInfoCache": {
-                    "type": "boolean"
-                },
-                "setTurtleInIntepretation": {
-                    "type": "boolean"
-                },
-                "setMulticoreProcessing": {
-                    "type": "boolean"
-                },
-                "setBracketMappingOptimLevel": {
-                    "type": "number"
-                }
-            }
+            "type": "object"
         },
         "interaction": {
-            "type": "object",
-            "properties": {
-                "setSelectionAlwaysRequired": {
-                    "type": "boolean"
-                }
-            }
+            "type": "object"
         }
     },
     "required": ["compilation", "matching", "processing", "interaction"],

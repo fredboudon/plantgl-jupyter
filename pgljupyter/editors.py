@@ -16,6 +16,7 @@ from ipywidgets.widgets import (
     BoundedIntText
 )
 from traitlets import Unicode, List, Float, Bool, Int
+import openalea.lpy as lpy
 
 from ._frontend import module_name, module_version
 
@@ -53,33 +54,15 @@ from ._frontend import module_name, module_version
 
 # should be moved to lpy
 def make_default_lpy_context():
+
     return {
         'schema': 'lpy',
         'version': '1.1',
         'options': {
-            'compilation': {
-                'setMandatoryDeclaration': False,
-                'setWarnWithSharpModule': True,
-                'setCompiler': 0,
-                'setOptimizationLevel': 1
-            },
-            'matching': {
-                'setModuleMatchingMethod': 2,
-                'setInheritanceModuleMatchingActivated': True,
-                'setStringMatchingMethod': 1
-            },
-            'processing': {
-                'setReturnIfNoMatching': False,
-                'enableAxiomDecomposition': False,
-                'setWarnOnError': True,
-                'enablePathInfoCache': True,
-                'setTurtleInIntepretation': True,
-                'setMulticoreProcessing': False,
-                'setBracketMappingOptimLevel': False
-            },
-            'interaction': {
-                'setSelectionAlwaysRequired': False
-            }
+            'compilation': {},
+            'matching': {},
+            'processing': {},
+            'interaction': {}
         },
         'parameters': [],
         'materials': []
@@ -447,6 +430,7 @@ class ParameterEditor(VBox):
     __apply_btn = Button(description='Apply changes')
     __save_btn = Button(description='Save changes')
     __add_category_btn = Button(description='Add category')
+    __add_category_txt = Text(placeholder='category name')
 
     # values = List([]).tag(sync=False)
     # widget = Instance(VBox).tag(sync=True, **widget_serialization)
@@ -456,12 +440,13 @@ class ParameterEditor(VBox):
 
     def __init__(self, filename, context=None, **kwargs):
 
+        make_default_lpy_context()
         self.__load_from_file(filename)
         super().__init__([VBox([
             HBox([
                 HBox((self.__apply_btn, self.__auto_apply_cbx)),
                 HBox((self.__save_btn, self.__auto_save_cbx)),
-                self.__add_category_btn,
+                HBox((self.__add_category_btn, self.__add_category_txt))
             ], layout=Layout(flex_flow='row wrap')),
             self.__tab
         ])], **kwargs)
@@ -494,9 +479,32 @@ class ParameterEditor(VBox):
                     self.__auto_save_cbx.observe(self.__on_auto_save_cbx_change, names='value')
                     self.__apply_btn.on_click(lambda x: self.on_lpy_context_change(self.lpy_context))
                     self.__save_btn.on_click(lambda x: self.__save_files())
-                    self.__add_category_btn.on_click(lambda x: self.__add_category())
+                    self.__add_category_btn.on_click(lambda x: self.__add_category(self.__add_category_txt.value.strip()))
 
-    def __add_category(self):
+    def __del_category(self, name):
+        self_ = self
+
+        def delete(self):
+            for i, category in enumerate(self_.lpy_context['parameters']):
+                if category['name'] == name:
+                    no_categories = len(self_.lpy_context['parameters'])
+                    self_.lpy_context['parameters'].pop(i)
+                    acc = self_.__tab.children[0]
+                    children = list(acc.children)
+                    titles = [acc.get_title(c) for c in range(len(acc.children))]
+                    titles.pop(i + len(children) - no_categories)
+                    children.pop(i + len(children) - no_categories)
+                    for j, title in enumerate(titles):
+                        acc.set_title(j, title)
+                    acc.children = children
+                    if self_.__auto_save:
+                        self_.__save_files()
+                    break
+        return delete
+
+    def __add_category(self, name):
+        if len(name) == 0 or len([c for c in self.lpy_context['parameters'] if c['name'] == name]):
+            return
         item_layout = Layout(
             margin='20px',
             flex_flow='row wrap'
@@ -506,12 +514,27 @@ class ParameterEditor(VBox):
             flex_flow='row wrap'
         )
         acc = self.__tab.children[0]
-        box = HBox(layout=item_layout)
+        box_scalars = HBox(layout=item_layout)
+        box_curves = HBox(layout=item_layout)
+        btn_delete = Button(description='Delete category')
+        btn_delete.on_click(self.__del_category(name))
+
         acc.children = (*acc.children, VBox([
-            HBox(self.__menu('', box), layout=menu_layout),
-            box
+            HBox([btn_delete], layout=menu_layout),
+            HBox(self.__menu('scalars', box_scalars, name), layout=menu_layout),
+            box_scalars,
+            HBox(self.__menu('curves', box_curves, name), layout=menu_layout),
+            box_curves
         ]))
-        acc.set_title(len(acc.children) - 1, 'category')
+        acc.set_title(len(acc.children) - 1, name)
+        self.lpy_context['parameters'].append({
+            'name': name,
+            'enabled': True,
+            'scalars': [],
+            'curves': []
+        })
+        if self.__auto_save:
+            self.__save_files()
 
     def __on_auto_apply_cbx_change(self, change):
         self.__auto_apply = change['owner'].value
@@ -562,7 +585,7 @@ class ParameterEditor(VBox):
 
                 acc_items = [
                     VBox([
-                        HBox(self.__menu('options', box_options), layout=menu_layout),
+                        HBox((), layout=menu_layout),
                         box_options
                     ]),
                     VBox([
@@ -591,7 +614,10 @@ class ParameterEditor(VBox):
                         box_curves.children = (*box_curves.children, ipt)
                         ipt.observe(self.__observe_lpy('curves', category['name']))
 
+                    btn_delete = Button(description='Delete category')
+                    btn_delete.on_click(self.__del_category(category['name']))
                     acc_items.append(VBox([
+                        HBox([btn_delete], layout=menu_layout),
                         HBox(self.__menu('scalars', box_scalars, category['name']), layout=menu_layout),
                         box_scalars,
                         HBox(self.__menu('curves', box_curves, category['name']), layout=menu_layout),
