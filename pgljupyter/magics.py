@@ -16,4 +16,4 @@ class PGLMagics(Magics):
         sizes = args.size.split(',')
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
-        return SceneWidget([], size_display=size_display)
+        return LsystemWidget('', size_display=size_display)
