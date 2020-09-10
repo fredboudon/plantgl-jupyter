@@ -1,17 +1,15 @@
-from IPython.core import magic_arguments
-from IPython.core.magic import (Magics, magics_class, line_magic,
-                                cell_magic, line_cell_magic)
-import openalea.plantgl.all as pgl
+from IPython.core.magic_arguments import magic_arguments, argument
+from IPython.core.magic import Magics, magics_class, cell_magic
 
-from .widgets import SceneWidget, LsystemWidget
+from .widgets import LsystemWidget
 
 
 @magics_class
-class PglMagics(Magics):
+class PGLMagics(Magics):
 
     @cell_magic
-    @magic_arguments.magic_arguments()
-    @magic_arguments.argument('--size', '-s')
+    @magic_arguments()
+    @argument('--size', '-s')
     def lpy(self, line, cell):
 
         args = magic_arguments.parse_argstring(self.lpy, line)
