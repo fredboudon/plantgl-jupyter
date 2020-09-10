@@ -6,3 +6,5 @@ tests/
 dist/*.tar.gz
 dist/*.wheel
 examples
+src/pgljs/plantgl
+src/pgljs/build

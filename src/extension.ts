@@ -10,4 +10,7 @@
 // dynamically.
 (window as any).__webpack_public_path__ = document.querySelector('body')!.getAttribute('data-base-url') + 'nbextensions/pgljupyter';
 
-export * from './index';
+export * from './version';
+export * from './widgets/widgets';
+export * from './widgets/editors';
+export * from './widgets/models';

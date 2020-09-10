@@ -1,12 +1,12 @@
 import {
     DOMWidgetModel, ISerializers
 } from '@jupyter-widgets/base';
-
+import { VBoxModel } from '@jupyter-widgets/controls';
 import {
     MODULE_NAME, MODULE_VERSION
 } from '../version';
 
-import { LsystemUnit } from './types';
+import { LsystemUnit } from './interfaces';
 
 export class PGLWidgetModel extends DOMWidgetModel {
 
@@ -47,17 +47,17 @@ export class SceneWidgetModel extends DOMWidgetModel {
             _view_name: SceneWidgetModel.view_name,
             _view_module: SceneWidgetModel.view_module,
             _view_module_version: SceneWidgetModel.view_module_version,
-            scene: null
+            scenes: null
         };
     }
 
     static serializers: ISerializers = {
         ...DOMWidgetModel.serializers,
-        scene: {
-            serialize: (scene, model) => {
-                return Object.keys(model.views).length ? scene : undefined;
+        scenes: {
+            serialize: (scenes, model) => {
+                return Object.keys(model.views).length ? scenes : undefined;
             }, // async serialization?
-            deserialize: scene => scene
+            deserialize: scenes => scenes
         }
     }
 
@@ -81,9 +81,7 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             _view_name: LsystemWidgetModel.view_name,
             _view_module: LsystemWidgetModel.view_module,
             _view_module_version: LsystemWidgetModel.view_module_version,
-            lsystem: {
-                derivationLength: 0
-            },
+            derivationLength: 0,
             scene: null,
             unit: LsystemUnit.M,
             animate: false
@@ -104,6 +102,169 @@ export class LsystemWidgetModel extends DOMWidgetModel {
     static model_module = MODULE_NAME;
     static model_module_version = MODULE_VERSION;
     static view_name = 'LsystemWidgetView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+export class ParameterEditorModel extends VBoxModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: ParameterEditorModel.model_name,
+            _model_module: ParameterEditorModel.model_module,
+            _model_module_version: ParameterEditorModel.model_module_version,
+            _view_name: ParameterEditorModel.view_name,
+            _view_module: ParameterEditorModel.view_module,
+            _view_module_version: ParameterEditorModel.view_module_version
+        };
+    }
+
+    static model_name = 'ParameterEditorModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = 'ParameterEditorView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+export class _EditorModel extends VBoxModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: _EditorModel.model_name,
+            _model_module: _EditorModel.model_module,
+            _model_module_version: _EditorModel.model_module_version,
+            _view_name: _EditorModel.view_name,
+            _view_module: _EditorModel.view_module,
+            _view_module_version: _EditorModel.view_module_version
+        };
+    }
+
+    static model_name = '_EditorModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = '_EditorView';
+    static view_module = MODULE_NAME;
+    static view_module_version = MODULE_VERSION;
+
+}
+
+export class BoolEditorModel extends _EditorModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: BoolEditorModel.model_name,
+            _view_name: BoolEditorModel.view_name
+        };
+    }
+
+    static model_name = 'BoolEditorModel';
+    static view_name = 'BoolEditorView';
+
+}
+
+export class IntEditorModel extends _EditorModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: IntEditorModel.model_name,
+            _view_name: IntEditorModel.view_name
+        };
+    }
+
+    static model_name = 'IntEditorModel';
+    static view_name = 'IntEditorView';
+
+}
+
+export class FloatEditorModel extends _EditorModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: FloatEditorModel.model_name,
+            _view_name: FloatEditorModel.view_name
+        };
+    }
+
+    static model_name = 'FloatEditorModel';
+    static view_name = 'FloatEditorView';
+
+}
+
+export class StringEditorModel extends _EditorModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: StringEditorModel.model_name,
+            _view_name: StringEditorModel.view_name
+        };
+    }
+
+    static model_name = 'StringEditorModel';
+    static view_name = 'StringEditorView';
+
+}
+
+export class MaterialEditorModel extends _EditorModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: MaterialEditorModel.model_name,
+            _view_name: MaterialEditorModel.view_name
+        };
+    }
+
+    static model_name = 'MaterialEditorModel';
+    static view_name = 'MaterialEditorView';
+
+}
+
+export class CurveEditorModel extends _EditorModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: CurveEditorModel.model_name,
+            _view_name: CurveEditorModel.view_name
+        };
+    }
+
+    static model_name = 'CurveEditorModel';
+    static view_name = 'CurveEditorView';
+
+}
+
+export class _CurveEditorModel extends DOMWidgetModel {
+
+    defaults() {
+        return {
+            ...super.defaults(),
+            _model_name: _CurveEditorModel.model_name,
+            _model_module: _CurveEditorModel.model_module,
+            _model_module_version: _CurveEditorModel.model_module_version,
+            _view_name: _CurveEditorModel.view_name,
+            _view_module: _CurveEditorModel.view_module,
+            _view_module_version: _CurveEditorModel.view_module_version,
+            name: '',
+            control_points: [],
+            is_function: false,
+            curve_type: ''
+        };
+    }
+
+    static model_name = '_CurveEditorModel';
+    static model_module = MODULE_NAME;
+    static model_module_version = MODULE_VERSION;
+    static view_name = '_CurveEditorView';
     static view_module = MODULE_NAME;
     static view_module_version = MODULE_VERSION;
 

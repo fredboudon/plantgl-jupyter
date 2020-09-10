@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "scalar",
+    "anyOf": [
+        {
+            "type": "object",
+            "required": ["value"],
+            "properties": {
+                "value": {
+                    "type": "boolean"
+                },
+                "category": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "required": ["type", "value", "min", "max"],
+            "properties": {
+                "type": {
+                    "enum": ["Integer", "Float"]
+                },
+                "value": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": "number"
+                },
+                "max": {
+                    "type": "number"
+                },
+                "step": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        }
+    ]
+}

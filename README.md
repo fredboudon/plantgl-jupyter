@@ -1,70 +1,78 @@
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jvail/plantgl-jupyter.git/master?urlpath=lab&filepath=lpy/leuwenberg/leuwenberg.ipynb)
 
 # pgljupyter
 
-PlantGL jupyter widget
+PlantGL & L-Py jupyter widgets
 
-## Installation
-
-You can install using `pip`:
+## Install with pip - inside conda env
 
 ```bash
+conda create -y -n pgljupyter -c fredboudon -c conda-forge \
+    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
+conda activate pgljupyter
 pip install pgljupyter
+jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
+jupyter lab build && jupyter lab
 ```
 
-Or if you use jupyterlab:
+## Build, install and run from source
+
+ - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
 ```bash
-pip install pgljupyter
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
+conda create -y -n pgljupyter -c fredboudon -c conda-forge \
+    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
+conda activate pgljupyter
+jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```
 
-### dev
+ - install emsdk: https://emscripten.org/docs/getting_started/downloads.html
 
 ```bash
-npm run build
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+cd ..
 ```
+
+ - get pgljupyter source
+
+```bash
+git clone https://github.com/jvail/plantgl-jupyter.git
+cd plantgl-jupyter
+```
+
+ - fetch plantgl and install pgljs deps
+
+```bash
+git submodule update --init --recursive
+cd src/pgljs
+npm install
+cd ../..
+```
+
+ - install pgljupyter deps and build (requires activation of emsdk i.e. source ./emsdk_env.sh)
+
+```bash
+npm install
+npm run build:pgljs && npm run build
+```
+
+ - install python modules and jupyter extensions
 
 ```bash
 pip install -e .
-```
-
-jupyter notebook
-
-```bash
 jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
 jupyter nbextension enable --sys-prefix --py pgljupyter
-jupyter notebook --browser=google-chrome
-```
-
-jupyter lab
-
-```bash
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
 jupyter labextension install .
-jupyter lab --browser=google-chrome
+jupyter lab clean
 ```
 
-or
+ - run the lab
 
 ```bash
-npm run watch
-jupyter lab --watch
-```
-
-### docker
-
-```bash
-docker build --rm -f "docker/build.Dockerfile" -t plantgl-jupyter:build --network=host .
-```
-
-or
-
-```bash
-docker pull jvail/plantgl-jupyter:1a
-```
-
-```bash
-docker run -it --rm -p 8080:8080 -v $PWD/examples:/examples jvail/plantgl-jupyter:1a jupyter lab --port=8080 --allow-root --ip=0.0.0.0 --notebook-dir=/examples
+jupyter lab --notebook-dir=./examples
 ```

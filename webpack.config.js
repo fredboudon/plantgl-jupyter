@@ -1,5 +1,7 @@
 const path = require('path');
 const version = require('./package.json').version;
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// const TerserPlugin = require('terser-webpack-plugin');
 
 // Custom webpack rules
 const rules = [
@@ -11,9 +13,15 @@ const rules = [
 // Packages that shouldn't be bundled but loaded at runtime
 const externals = [
   '@jupyter-widgets/base',
+  "@jupyter-widgets/controls",
   '@jupyterlab/application',
   '@jupyterlab/codemirror',
-  '@jupyterlab/ui-components'
+  '@jupyterlab/ui-components',
+  '@jupyterlab/docregistry',
+  '@jupyterlab/rendermime',
+  '@jupyterlab/rendermime-interfaces',
+  "@lumino/application",
+  "@lumino/widgets"
 ];
 
 const resolve = {
@@ -38,12 +46,15 @@ module.exports = [
     module: {
       rules: rules
     },
-    devtool: 'source-map',
+    devtool: '',
     externals,
     resolve,
     performance: {
       hints: false
-    }
+    },
+    plugins: [
+      // new BundleAnalyzerPlugin()
+    ]
   },
 
   /**
@@ -63,12 +74,15 @@ module.exports = [
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'amd',
         library: "pgljupyter",
-        publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
+        // publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
     },
-    devtool: 'source-map',
+    devtool: '',
     module: {
         rules: rules
     },
+    plugins: [
+      // new BundleAnalyzerPlugin()
+    ],
     externals,
     resolve,
     performance: {
@@ -93,7 +107,7 @@ module.exports = [
     module: {
       rules: rules
     },
-    devtool: 'source-map',
+    devtool: '',
     externals,
     resolve,
     performance: {

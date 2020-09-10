@@ -1,18 +1,20 @@
+import '../../css/widget.css';
 import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
 import * as THREE from 'three';
-
-import '../../css/widget.css';
-
-import decoder from './mesh-decoder';
+import decoder from './decoder';
 import { PGLControls, LsystemControls } from './controls';
-import { OrbitControls } from './orbit-controls';
-import { IScene, IPGLControlsState, LsystemUnit, ILsystemControlsState, ILsystemScene } from './types';
-import { SceneWidgetModel } from './models';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import {
+    IScene,
+    IPGLControlsState,
+    ILsystemControlsState,
+    ILsystemScene,
+    ITaskResult
+} from './interfaces';
 import { disposeScene } from './utilities';
-
-const MIN_DELAY = 250;
+import { SCALES, LsystemUnit } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
 
@@ -37,6 +39,7 @@ export class PGLWidgetView extends DOMWidgetView {
     pglControlsEl: HTMLDivElement = null;
 
     disposables: THREE.Scene[] = [];
+    isDetached = false;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -45,7 +48,6 @@ export class PGLWidgetView extends DOMWidgetView {
     }
 
     render() {
-
         super.render();
 
         const initialState: IPGLControlsState = {
@@ -59,6 +61,7 @@ export class PGLWidgetView extends DOMWidgetView {
         };
 
         const [width, height] = this.sizeDisplay;
+        this.pWidget.addClass('pgl-widget');
         this.containerEl = document.createElement('div');
         const canvas = document.createElement('canvas');
         canvas.width = width;
@@ -88,7 +91,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.camera.up = new THREE.Vector3(0, 0, 1);
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color('#cccccc');
+        this.scene.background = new THREE.Color('#9c9c9c');
 
         this.plane = new THREE.Mesh(
             new THREE.PlaneBufferGeometry(x_size, y_size),
@@ -107,14 +110,14 @@ export class PGLWidgetView extends DOMWidgetView {
 
         this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.4));
 
-        const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.9);
+        const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.75);
         lightBottom.position.set(0, -z_size, 0);
         this.scene.add(lightBottom);
-        const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.9);
+        const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.75);
         lightTop.position.set(0, z_size, 0);
         this.scene.add(lightTop);
 
-        this.light = new THREE.DirectionalLight(0xFFFFFF, 0.9);
+        this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
         this.light.shadow.bias = -0.001;
         this.light.castShadow = true;
         this.light.position.set(x_size / 2, y_size / 2, Math.max(x_size, y_size) / 2);
@@ -226,17 +229,42 @@ export class PGLWidgetView extends DOMWidgetView {
                 this.resizeDisplay(width, height);
             }
         }
-
     }
 
     resizeDisplay(width, height) {
+        if (width > 0 && height > 0) {
+            this.camera.aspect = width / height;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(width, height);
+            this.renderer.render(this.scene, this.camera);
+            this.orbitControl.update();
+        }
+    }
 
-        this.camera.aspect = width / height;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(width, height);
-        this.renderer.render(this.scene, this.camera);
-        this.orbitControl.update();
+    processPhosphorMessage(msg) {
+        super.processPhosphorMessage(msg);
+        switch (msg.type) {
+            case 'resize':
+                if (this.isDetached) {
+                    const { width, height } = this.containerEl.getBoundingClientRect();
+                    this.resizeDisplay(width, height - 5);
+                }
+                break;
+            case 'after-attach':
+                if (this.el.closest('.jp-LinkedOutputView')) {
+                    this.pWidget.addClass('pgl-resizable');
+                    this.containerEl.classList.add('pgl-resizable');
+                    this.isDetached = true;
+                    const output = this.containerEl.closest('.jp-OutputArea') as HTMLElement;
+                    if (output) {
+                        output.style.overflow = 'hidden';
+                    }
 
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     resizeWorld() {
@@ -244,11 +272,9 @@ export class PGLWidgetView extends DOMWidgetView {
     }
 
     remove() {
-
         // TODO: use a context pool for all widget instances in a notebook?
         this.renderer.dispose();
         super.remove();
-
     }
 
 }
@@ -257,118 +283,50 @@ export class SceneWidgetView extends PGLWidgetView {
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
-
-        // add required fns for dynamically added scenes after loading the notebook with saved widget state
-        Object.keys(parameters.model.attributes).filter(key => key.startsWith('scene_')).forEach(key => {
-            SceneWidgetModel.serializers[key] = {
-                serialize: (scene, model) => {
-                    return Object.keys(model.views).length ? scene : undefined;
-                },
-                deserialize: scene => scene
-            };
-            this.listenTo(this.model, `change:${key}`, ((key) => () => this.addScene(this.model.get(key)))(key));
-        });
-
     }
 
     render() {
-
         super.render();
-
-        this.scene_changed();
-        this.listenTo(this.model, 'change:scene', this.scene_changed);
-        this.listenTo(this.model, 'msg:custom', msg => {
-            if ('new_trait' in msg) {
-                const key = msg.new_trait.name;
-                SceneWidgetModel.serializers[key] = {
-                    serialize: (scene, model) => {
-                        return Object.keys(model.views).length ? scene : undefined;
-                    },
-                    deserialize: scene => scene
-                }
-                this.listenTo(this.model, `change:${key}`, ((key) => () => this.addScene(this.model.get(key)))(key));
-            }
+        this.setScenes(this.model.get('scenes') as IScene[]);
+        this.listenTo(this.model, 'change:scenes', () => {
+            this.setScenes(this.model.get('scenes') as IScene[]);
         });
-
-        // there wont be a change event for dynamically added attr after loading the notebook with saved widget state
-        // if there are any we add them
-        Object.keys(this.model.attributes).filter(key => key.startsWith('scene_')).forEach(key => {
-            this.addScene(this.model.get(key));
-        });
-
     }
 
-    scene_changed() {
+    setScenes(scenes: IScene[]) {
 
-        this.addScene(this.model.get('scene') as IScene);
+        for (let i = 0; i < scenes.length; i++) {
+            const scene = scenes[i];
+            if(!this.scene.getObjectByName(scene.id)) {
+                const { id, data, position, scale } = scene;
+                decoder.decode({ data: data.buffer, userData: { position, scale, id } })
+                    .then(result => {
+                        const scene = new THREE.Scene();
+                        const { results, userData: { position, scale, id } } = result;
+                        const [x, y, z] = position;
 
-    }
+                        if (results.length > 0) {
+                            scene.add(...results);
+                            scene.name = id;
+                            scene.position.set(x, y, z);
+                            scene.scale.multiplyScalar(scale);
 
-    addScene(scene: IScene) {
-
-        const { drc, offsets, position, scale } = scene;
-        const drcs = offsets.map((begin, idx, arr) => {
-            return drc.buffer.slice(begin, arr[idx + 1] || drc.buffer.byteLength);
-        }).filter(drc => drc instanceof ArrayBuffer && !!drc.byteLength);
-
-        if (drcs.length) {
-
-            const scene = new THREE.Scene();
-
-            decoder.decode({ drcs, userData: { position, scale } }).then(result => {
-
-                const { results, userData: { position, scale } } = result;
-                results.forEach(result => {
-                    const { geometry, metaData, instances } = result;
-                    let mesh: THREE.InstancedMesh | THREE.Mesh = null;
-                    const material = new THREE.MeshStandardMaterial({
-                        side: THREE.DoubleSide,
-                        shadowSide: THREE.BackSide,
-                        vertexColors: true,
-                        roughness: 0.7
-                    });
-                    if (metaData.type === 'instanced_mesh') {
-                        mesh = new THREE.InstancedMesh(geometry, material, instances.matrices.length);
-                        for (let i = 0; i < instances.matrices.length; i++) {
-                            (mesh as THREE.InstancedMesh).setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.matrices[i]));
+                            this.scene.add(scene);
+                            this.disposables.push(scene);
+                            this.renderer.render(this.scene, this.camera);
+                            this.orbitControl.update();
                         }
-                    } else if (metaData.type === 'mesh') {
-                        mesh = new THREE.Mesh(geometry, material);
-                    }
-                    mesh.userData = metaData;
-                    geometry.computeVertexNormals();
-
-                    const [x, y, z] = position;
-
-                    mesh.scale.multiplyScalar(scale);
-                    mesh.position.set(x, y, z);
-                    // mesh.rotation.x = -Math.PI / 2;
-                    mesh.castShadow = true;
-                    mesh.receiveShadow = true;
-
-                    scene.add(mesh);
-                });
-
-                this.scene.add(scene);
-                this.disposables.push(scene);
-                this.renderer.render(this.scene, this.camera);
-                this.orbitControl.update();
-
-            }).catch(err => {
-                throw err;
-            });
-
+                    })
+                    .catch(err => console.log(err));
+            }
         }
 
     }
 
     remove() {
-
         // TODO: dispose helpers etc.?
         this.disposables.forEach(scene => disposeScene(scene));
-
         super.remove();
-
     }
 
 }
@@ -376,8 +334,9 @@ export class SceneWidgetView extends PGLWidgetView {
 export class LsystemWidgetView extends PGLWidgetView {
 
     unit: LsystemUnit = LsystemUnit.M;
-
-    lsystemScenes: {[key: number]: ILsystemScene} = {};
+    controls: LsystemControls = null;
+    queue: {[key:number]: ITaskResult} = {};
+    no = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -386,24 +345,23 @@ export class LsystemWidgetView extends PGLWidgetView {
     removeScenes() {
         this.scene.remove(...this.scene.children
             .filter(obj => obj instanceof THREE.Scene)
-            .map(obj => {
-                obj.visible = false;
-                return obj;
+            .map(scene => {
+                scene.visible = false;
+                disposeScene(scene as THREE.Scene);
+                return scene;
             }));
-        this.disposables.forEach(scene => disposeScene(scene));
     }
 
     render() {
-
         super.render();
 
         const initialState: ILsystemControlsState = {
-            // TODO: fix inital animation
             animate: this.model.get('animate'),
             derivationStep: this.model.get('scene').derivationStep,
-            derivationLength: this.model.get('lsystem').derivationLength,
+            derivationLength: this.model.get('derivationLength'),
             showControls: false,
-            busy: 0,
+            busy: 1,
+            pyFeed: 0,
             comm_live: this.model.comm_live
         };
 
@@ -411,170 +369,171 @@ export class LsystemWidgetView extends PGLWidgetView {
         controlsEl.setAttribute('class', 'pgl-jupyter-lsystem-widget-controls');
         this.containerEl.appendChild(controlsEl);
 
-        const animation = (step) => {
-            if (lsysState.animate) {
-                const scene = this.lsystemScenes[step];
-                if (scene) {
-                    if (lsysState.busy && step - lsysState.derivationStep > 1) {
-                        return setTimeout(() => animation(step), MIN_DELAY);
-                    }
-                    lsysState.derivationStep = step;
-                    this.setSceneVisible(scene.id);
-                } else {
-                    lsysState.busy++;
-                    this.send({ derive: step });
-                }
-                lsysState.animate = step + 1 < lsysState.derivationLength;
-                setTimeout(() => animation(step + 1), MIN_DELAY);
-            }
-        }
-
-        const controls = new LsystemControls(initialState, {
+        this.controls = new LsystemControls(initialState, {
             onAnimateToggled: (animate: boolean) => {
-                lsysState.animate = animate;
+                this.controls.state.animate = animate;
+                this.model.set('animate', animate);
+                this.touch();
                 if (animate) {
-                    const next = lsysState.derivationStep + 1;
-                    animation(next >= lsysState.derivationLength ? 0 : next);
+                    const pyFeedMax = Math.ceil(this.controls.state.derivationLength / 10);
+                    const animation = (step) => {
+                        if (this.controls.state.animate) {
+                            this.controls.state.busy++;
+                            this.controls.state.pyFeed++;
+                            this.send({ derive: step });
+                            if (step + 1 < this.controls.state.derivationLength) {
+                                const next = (step) => {
+                                    if (this.controls.state.pyFeed > pyFeedMax) {
+                                        setTimeout(() => {
+                                            next(step);
+                                        }, 100);
+                                    } else {
+                                        animation(step)
+                                    }
+                                }
+                                setTimeout(() => {
+                                    next(step + 1);
+                                }, 10);
+                            }
+                        }
+                    }
+                    const next = this.controls.state.derivationStep + 1;
+                    animation(next >= this.controls.state.derivationLength ? 0 : next);
+                } else {
+                    this.controls.state.busy -= Object.keys(this.queue).length;
+                    this.queue = {};
+                    decoder.abort(this.model.model_id);
                 }
             },
             onDeriveClicked: (step: number) => {
-                const scene = this.lsystemScenes[step];
-                if (scene) {
-                    lsysState.derivationStep = step;
-                    this.setSceneVisible(scene.id);
-                } else {
-                    lsysState.busy++;
-                    this.send({ derive: step });
-                }
+                this.controls.state.busy++;
+                this.controls.state.pyFeed++;
+                this.send({ derive: step });
             },
             onRewindClicked: () => {
-                this.lsystemScenes = [];
-                lsysState.busy = 1;
-                lsysState.derivationStep = 0;
+                this.controls.state.busy = 1;
+                this.controls.state.pyFeed = 0;
+                this.controls.state.derivationStep = 0;
                 this.send({ rewind: true });
                 this.removeScenes();
                 this.renderer.render(this.scene, this.camera);
+                this.queue = {};
+                this.no = 0;
             }
         }, controlsEl);
-        const lsysState = controls.state;
+        if (initialState.animate) {
+            this.controls.evtHandlers.onAnimateToggled(true);
+        }
 
-        this.containerEl.addEventListener('mouseover', () => lsysState.showControls = true);
-        this.containerEl.addEventListener('mouseout', () => lsysState.showControls = false);
+        this.containerEl.addEventListener('mouseover', () => this.controls.state.showControls = true);
+        this.containerEl.addEventListener('mouseout', () => this.controls.state.showControls = false);
 
         this.unit = this.model.get('unit');
         const scene = this.model.get('scene') as ILsystemScene;
-        const drcs = scene.offsets.map((begin, idx, arr) => {
-            return scene.drc.buffer.slice(begin, arr[idx + 1] || scene.drc.buffer.byteLength);
-        })
-        decoder.decode({ drcs, userData: { id: scene.id } })
-            .then(res => {
-                const { results, userData: { id } } = res;
-                this.lsystemScenes[scene.derivationStep] = scene;
-                this.addScene(id, results);
-            })
-            .catch(err => console.log(err));
+        this.decode(scene);
 
-        if (lsysState.animate) {
-            this.send({ derive: true });
-        }
         this.listenTo(this.model, 'change:unit', () => {
             this.unit = this.model.get('unit')
         });
-        this.listenTo(this.model, 'change:lsystem', () => {
-            lsysState.derivationLength = this.model.get('lsystem').derivationLength;
+        this.listenTo(this.model, 'change:derivationLength', () => {
+            this.controls.state.derivationLength = this.model.get('derivationLength');
         });
         this.listenTo(this.model, 'comm_live_update', () => {
-            lsysState.comm_live = this.model.comm_live;
+            this.controls.state.comm_live = this.model.comm_live;
         });
-
         this.listenTo(this.model, 'change:scene', () => {
             const scene = this.model.get('scene') as ILsystemScene;
-            this.lsystemScenes[scene.derivationStep] = scene;
-            const drcs = scene.offsets.map((begin, idx, arr) => {
-                return scene.drc.buffer.slice(begin, arr[idx + 1] || scene.drc.buffer.byteLength);
-            })
-            setTimeout(() => {
-                decoder.decode({ drcs, userData: { step: scene.derivationStep } }, true)
-                    .then(res => {
-                        const { results, userData: { step } } = res;
-                        setTimeout(((step, mesh) => {
-                            return () => {
-                                this.addScene(step, mesh);
-                                lsysState.derivationStep = step;
-                                lsysState.busy--;
-                            };
-                        })(step, results), MIN_DELAY);
-                    })
-                    .catch(err => console.log(err));
-            }, 1000);
-        });
-
-    }
-
-    setSceneVisible(id: number) {
-        this.scene.children.forEach(obj => {
-            if (obj.name === 'lsystem') {
-                obj.visible = obj.userData.id === id;
+            this.decode(scene);
+            if (this.controls.state.pyFeed > 0) {
+                this.controls.state.pyFeed--;
             }
         });
-        this.renderer.render(this.scene, this.camera);
     }
 
-    addScene(id: number, meshs, position = [0, 0, 0]) {
-
-        const scene = new THREE.Scene();
-        scene.userData = { id };
-        scene.name = 'lsystem';
-        meshs.forEach(result => {
-            const { geometry, metaData, instances } = result;
-            let mesh: THREE.InstancedMesh | THREE.Mesh = null;
-            const material = new THREE.MeshStandardMaterial({
-                side: THREE.DoubleSide,
-                shadowSide: THREE.BackSide,
-                vertexColors: true,
-                roughness: 0.7
-            });
-            if (metaData.type === 'instanced_mesh') {
-                mesh = new THREE.InstancedMesh(geometry, material, instances.matrices.length);
-                for (let i = 0; i < instances.matrices.length; i++) {
-                    (mesh as THREE.InstancedMesh).setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.matrices[i]));
+    getFromQueue(no) {
+        setTimeout((no) => {
+            const decoded = this.queue[no];
+            if (decoded) {
+                delete this.queue[no];
+                this.setScene(decoded.userData.step, decoded.results);
+                this.controls.state.derivationStep = decoded.userData.step;
+                if (this.controls.state.busy > 0) {
+                    this.controls.state.busy--;
                 }
-            } else if (metaData.type === 'mesh') {
-                mesh = new THREE.Mesh(geometry, material);
+                if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                    this.controls.state.animate = false;
+                    this.model.set('animate', false);
+                    this.touch();
+                }
+                if (this.queue[no + 1]) {
+                    this.getFromQueue(no + 1);
+                }
             }
-            mesh.userData = {
-                id,
-                metaData
-            };
-            mesh.name = 'lsystem';
-            geometry.computeVertexNormals();
+        }, 10, no);
+    }
 
-            const [x, y, z] = position;
-            const scale = this.unit === LsystemUnit.CM ? 0.1 : (this.unit === LsystemUnit.MM ? 0.01 : 1);
+    decode(scene: ILsystemScene) {
+        decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
+            .then(res => {
+                // TODO: use increasing number for a seq. of tasks and not step
+                const { results, userData: { step, no } } = res;
+                if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
+                    this.queue[no] = res;
+                } else {
+                    this.setScene(step, results);
+                    this.controls.state.derivationStep = step;
+                    if (this.controls.state.busy > 0) {
+                        this.controls.state.busy--;
+                    }
+                    if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                        this.controls.state.animate = false;
+                        this.model.set('animate', false);
+                        this.touch();
+                    }
+                    if (this.queue[no + 1]) {
+                        this.getFromQueue(no + 1);
+                    }
+                }
+            })
+            .catch(err => {
+                this.controls.state.busy--;
+                if (err.abort) {
+                    this.controls.state.derivationStep = err.userData.step;
+                } else {
+                    console.log(err)
+                }
+            });
+    }
 
-            mesh.scale.multiplyScalar(scale);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
+    setScene(step: number, meshs, position = [0, 0, 0]) {
 
-            scene.add(mesh);
-        });
+        const currentScene = new THREE.Scene();
+        const [x, y, z] = position;
+        const scale = SCALES[this.unit];
+        currentScene.scale.multiplyScalar(scale);
+        currentScene.position.set(x, y, z);
+        currentScene.add(...meshs);
+        currentScene.userData = { step };
+        currentScene.name = 'lsystem';
 
-        this.scene.add(scene);
-        this.setSceneVisible(id);
-        this.disposables.push(scene);
+        const previousScene = this.scene.getObjectByName('lsystem') as THREE.Scene;
+        if (previousScene) {
+            previousScene.visible = false;
+        }
+
+        this.scene.add(currentScene);
         this.renderer.render(this.scene, this.camera);
         this.orbitControl.update();
+
+        if (previousScene) {
+            this.scene.remove(previousScene);
+            disposeScene(previousScene);
+        }
 
     }
 
     remove() {
-
-        // TODO: dispose helpers etc.?
-        this.disposables.forEach(scene => disposeScene(scene));
-
         super.remove();
-
     }
 
 }

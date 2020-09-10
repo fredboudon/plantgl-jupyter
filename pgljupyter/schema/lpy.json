@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "L-Py",
+    "type": "object",
+    "required": ["schema", "scalars", "materials", "functions", "curves"],
+    "properties": {
+        "schema": {
+            "enum": ["lpy"]
+        },
+        "scalars": {
+            "type": "object",
+            "patternProperties": {
+                "^[^\\d\\W]\\w*\\Z": {
+                    "$ref": "scalar.json"
+                }
+            },
+            "additionalProperties": false
+        },
+        "materials": {
+            "type": "object",
+            "patternProperties": {
+                "^[^\\d\\W]\\w*\\Z": {
+                    "$ref": "material.json"
+                }
+            },
+            "additionalProperties": false
+        },
+        "functions": {
+            "type": "object",
+            "patternProperties": {
+                "^[^\\d\\W]\\w*\\Z": {
+                    "$ref": "function.json"
+                }
+            },
+            "additionalProperties": false
+        },
+        "curves": {
+            "type": "object",
+            "patternProperties": {
+                "^[^\\d\\W]\\w*\\Z": {
+                    "$ref": "curve.json"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

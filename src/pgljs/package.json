@@ -1,0 +1,30 @@
+{
+  "name": "pgljs",
+  "version": "1.0.0",
+  "description": "js port of some plantgl features",
+  "main": "index.js",
+  "scripts": {
+    "build:pgl": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=MinSizeRel .. && make -j4 VERBOSE=1",
+    "build:strings": "node scripts/stringify_wasm.js && rollup -c rollup.config.worker.js && node scripts/stringify_worker.js",
+    "build": "npm run build:pgl && npm run build:strings && rollup -c rollup.config.js",
+    "build:pgl:debug": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4 VERBOSE=1",
+    "build:strings:debug": "node scripts/stringify_wasm.js && rollup --configDebug -c rollup.config.worker.js && node scripts/stringify_worker.js",
+    "build:debug": "npm run build:pgl:debug && npm run build:strings:debug && rollup --configDebug -c rollup.config.js"
+  },
+  "keywords": [
+    "plantgl"
+  ],
+  "author": "jvail",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
+    "rollup": "^2.23.1",
+    "rollup-plugin-copy": "^3.3.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "serve": "^11.3.2"
+  },
+  "dependencies": {
+    "pako": "^1.0.11"
+  }
+}
