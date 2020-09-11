@@ -148,8 +148,6 @@ class LsystemWidget(PGLWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    __visualparameters = []
-    __scalars = []
     __trees = []
     __filename = ''
     __do_abort = False
@@ -169,11 +167,13 @@ class LsystemWidget(PGLWidget):
     __codes = []
     __derivationStep = 0
     __lsystem = None
+    __extra_context = {}
 
-    def __init__(self, filename, code='', unit=Unit.m, animate=False, dump='', **kwargs):
+    def __init__(self, filename, code='', unit=Unit.m, animate=False, dump='', context={}, **kwargs):
 
         self.__filename = filename if filename and filename.endswith('.lpy') else str(filename) + '.lpy'
         self.__lsystem = lpy.Lsystem()
+        self.__extra_context = context
         code_ = ''
         if Path(self.__filename).is_file():
             with io.open(self.__filename, 'r') as file:
@@ -218,6 +218,9 @@ class LsystemWidget(PGLWidget):
     def __initialize_lsystem(self):
         self.__lsystem.filename = self.__filename
         self.__lsystem.set(''.join(self.__codes), {})
+        context = self.__lsystem.context()
+        for key, value in self.__extra_context.items():
+            context[key] = value
         self.derivationLength = self.__lsystem.derivationLength
         self.__trees = []
         self.__trees.append(self.__lsystem.axiom)
