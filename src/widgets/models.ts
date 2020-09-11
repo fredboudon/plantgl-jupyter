@@ -84,7 +84,8 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             derivationLength: 0,
             scene: null,
             unit: LsystemUnit.M,
-            animate: false
+            animate: false,
+            is_magic: false
         };
     }
 

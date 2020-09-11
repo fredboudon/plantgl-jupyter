@@ -123,7 +123,7 @@ export class LsystemControls {
                     @click=${(evt) => evt.target.disabled || handlers.onAnimateToggled(!state.animate)}>
                 </mwc-icon-button-toggle>
                 <mwc-icon-button icon="&#8634"
-                    ?disabled=${state.animate || state.busy}
+                    ?disabled=${state.animate || state.busy || state.isMagic}
                     @click=${(evt) => evt.target.disabled || handlers.onRewindClicked()}>
                 </mwc-icon-button>
             </div>

@@ -49,6 +49,7 @@ export interface ILsystemControlsState {
     animate: boolean;
     derivationStep: number;
     derivationLength: number;
+    isMagic: boolean;
     showControls: boolean;
     busy: number;
     pyFeed: number;

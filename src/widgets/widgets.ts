@@ -359,6 +359,7 @@ export class LsystemWidgetView extends PGLWidgetView {
             animate: this.model.get('animate'),
             derivationStep: this.model.get('scene').derivationStep,
             derivationLength: this.model.get('derivationLength'),
+            isMagic: this.model.get('is_magic'),
             showControls: false,
             busy: 1,
             pyFeed: 0,

@@ -163,6 +163,8 @@ class LsystemWidget(PGLWidget):
     }).tag(sync=True, to_json=scene_to_json)
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
+    is_magic = Bool(False).tag(sync=True)
+
     __editor = None
     __codes = []
     __derivationStep = 0
@@ -180,6 +182,7 @@ class LsystemWidget(PGLWidget):
                 code_ = file.read()
         else:
             self.__filename = ''
+            self.is_magic = True
             code_ = code
 
         self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
