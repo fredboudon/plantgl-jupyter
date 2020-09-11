@@ -170,13 +170,21 @@ class LsystemWidget(PGLWidget):
     __derivationStep = 0
     __lsystem = None
 
-    def __init__(self, filename, options={}, unit=Unit.m, animate=False, dump='', **kwargs):
+    def __init__(self, filename, code='', unit=Unit.m, animate=False, dump='', **kwargs):
 
-        self.__filename = filename if filename.endswith('.lpy') else filename + '.lpy'
+        self.__filename = filename if filename and filename.endswith('.lpy') else str(filename) + '.lpy'
         self.__lsystem = lpy.Lsystem()
-        with io.open(self.__filename, 'r') as file:
-            self.__codes = file.read().split(lpy.LpyParsing.InitialisationBeginTag)
-            self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
+        code_ = ''
+        if Path(self.__filename).is_file():
+            with io.open(self.__filename, 'r') as file:
+                code_ = file.read()
+        else:
+            self.__filename = ''
+            code_ = code
+
+        self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
+        self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
+
         if len(self.__codes) < 2:
             raise ValueError('No L-Py code found')
         # if a json file with the same name is present load context from the json file
@@ -306,17 +314,22 @@ class LsystemWidget(PGLWidget):
     def __rewind(self):
         self.__lsystem.clear()
         self.__derivationStep = 0
-        with io.open(self.__filename, 'r') as file:
-            self.__codes = file.read().split(lpy.LpyParsing.InitialisationBeginTag)
-            self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
-        if len(self.__codes) < 2:
-            raise ValueError('No L_Py code found')
-        if self.__editor is not None:
-            self.__on_lpy_context_change(self.__editor.lpy_context)
-        elif Path(self.__filename[0:-3] + 'json').is_file():
-            self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-            self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-            self.__on_lpy_context_change(self.__editor.lpy_context)
+
+        if self.__filename:
+            with io.open(self.__filename, 'r') as file:
+                self.__codes = file.read().split(lpy.LpyParsing.InitialisationBeginTag)
+                self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
+            if len(self.__codes) < 2:
+                raise ValueError('No L_Py code found')
+            if self.__editor is not None:
+                self.__on_lpy_context_change(self.__editor.lpy_context)
+            elif Path(self.__filename[0:-3] + 'json').is_file():
+                self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
+                self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+                self.__on_lpy_context_change(self.__editor.lpy_context)
+            else:
+                self.__initialize_lsystem()
+                self.__set_scene(0)
         else:
             self.__initialize_lsystem()
             self.__set_scene(0)
