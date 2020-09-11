@@ -220,10 +220,10 @@ class LsystemWidget(PGLWidget):
 
     def __initialize_lsystem(self):
         self.__lsystem.filename = self.__filename
-        self.__lsystem.set(''.join(self.__codes), {})
-        context = self.__lsystem.context()
-        for key, value in self.__extra_context.items():
-            context[key] = value
+        self.__lsystem.set(''.join(self.__codes), self.__extra_context)
+        # context = self.__lsystem.context()
+        # for key, value in self.__extra_context.items():
+        #     context[key] = value
         self.derivationLength = self.__lsystem.derivationLength
         self.__trees = []
         self.__trees.append(self.__lsystem.axiom)

@@ -13,18 +13,13 @@ class PGLMagics(Magics):
     @argument('--size', '-s', default='400,400')
     @argument('--unit', '-u', default='m')
     @argument('--animate', '-a', default=False)
-    @argument('--context', '-c', default='')
     def lpy(self, line, cell, local_ns):
 
         args = parse_argstring(self.lpy, line)
         sizes = [int(i.strip()) for i in args.size.split(',')]
         unit = args.unit
         animate = bool(args.animate)
-
-        context = {}
-        for key in args.context.split(','):
-            if key in local_ns:
-                context[key] = local_ns[key]
+        context = local_ns
 
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
