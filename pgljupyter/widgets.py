@@ -253,12 +253,13 @@ class LsystemWidget(PGLWidget):
                     for scalar in catergory['scalars']:
                         context[scalar['name']] = scalar['value']
                     for curve in catergory['curves']:
-                        if curve['is_function']:
-                            context[curve['name']] = pgl.QuantisedFunction(
-                                pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                            )
-                        elif curve['type'] == 'NurbsCurve2D':
-                            context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                        if curve['type'] == 'NurbsCurve2D':
+                            if curve['is_function']:
+                                context[curve['name']] = pgl.QuantisedFunction(
+                                    pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                                )
+                            else:
+                                context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
                         elif curve['type'] == 'BezierCurve2D':
                             context[curve['name']] = pgl.BezierCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
                         elif curve['type'] == 'Polyline2D':
