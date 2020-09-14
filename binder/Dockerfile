@@ -1,4 +1,4 @@
-FROM jvail/plantgl-jupyter:0.1.13
+FROM jvail/plantgl-jupyter:0.1.14
 
 ARG NB_USER=jovyan
 ARG NB_UID=1000
