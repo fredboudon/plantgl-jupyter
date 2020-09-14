@@ -32,7 +32,7 @@ export class PGLWidgetView extends DOMWidgetView {
     containerEl: HTMLDivElement = null;
 
     sizeDisplay: number[];
-    sizeWorld: number[];
+    sizeWorld: number;
 
     pglControls: PGLControls = null;
     pglControlsState: IPGLControlsState = null;
@@ -83,7 +83,9 @@ export class PGLWidgetView extends DOMWidgetView {
             return false;
         });
 
-        const [x_size, y_size, z_size] = this.sizeWorld;
+        const x_size = this.sizeWorld;
+        const y_size = this.sizeWorld;
+        const z_size = this.sizeWorld;
 
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.01);
         this.camera.position.set(x_size / 2, y_size, z_size);

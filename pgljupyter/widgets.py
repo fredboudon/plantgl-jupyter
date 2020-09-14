@@ -78,7 +78,7 @@ class PGLWidget(DOMWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     size_display = Tuple(Int(400, min=400), Int(400, min=400), default_value=(400, 400)).tag(sync=True)
-    size_world = Tuple(Int(1, min=1), Int(1, min=1), Int(1, min=1), default_value=(10, 10, 10)).tag(sync=True)
+    size_world = Int(1, min=0.1).tag(sync=True)
     axes_helper = Bool(False).tag(sync=True)
     light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
