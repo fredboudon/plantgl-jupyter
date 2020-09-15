@@ -73,8 +73,8 @@ module.exports = [
         filename: 'index.js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'amd',
-        library: "pgljupyter",
-        // publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
+        library: 'pgljupyter',
+        publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
     },
     devtool: '',
     module: {
