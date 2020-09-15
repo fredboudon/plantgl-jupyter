@@ -108,7 +108,7 @@ class SceneWidget(PGLWidget):
     })).tag(sync=True, to_json=scene_to_json)
     # compress = Bool(False).tag(sync=False)
 
-    def __init__(self, obj=None, position=(0, 0, 0), scale=(1.0), **kwargs):
+    def __init__(self, obj=None, position=(0, 0, 0), scale=1.0, **kwargs):
         scene = to_scene(obj)
         serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         # self.compress = compress
