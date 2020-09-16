@@ -70,10 +70,9 @@ export enum LsystemUnit {
 }
 
 export interface IMaterial {
-    ambient: number[],
+    color: number[],
     specular: number[],
     emission: number[],
-    diffuse: number,
     shininess: number,
     transparency: number
 }

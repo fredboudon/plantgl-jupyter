@@ -352,7 +352,7 @@ class MaterialEditor(_Editor):
     transparency = Float().tag(sync=False)
     shininess = Float().tag(sync=False)
 
-    def __init__(self, index, ambient=[80, 80, 80], specular=[40, 40, 40], emission=[0, 0, 0], diffuse=0.75, transparency=0, shininess=0.5, **kwargs):
+    def __init__(self, index, ambient=[80, 80, 80], specular=[40, 40, 40], emission=[0, 0, 0], diffuse=1, transparency=0, shininess=0.2, **kwargs):
         self.index = index
         self.ambient = ambient
         self.specular = specular
@@ -364,7 +364,7 @@ class MaterialEditor(_Editor):
         self.__ambient = ColorPicker(value='#' + ''.join(format(v, "02x") for v in ambient), description='ambient')
         self.__specular = ColorPicker(value='#' + ''.join(format(v, "02x") for v in specular), description='specular')
         self.__emission = ColorPicker(value='#' + ''.join(format(v, "02x") for v in emission), description='emission')
-        self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=1)
+        self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=3)
         self.__transparency = FloatSlider(value=transparency, description='transparency', min=0, max=1)
         self.__shininess = FloatSlider(value=shininess, description='shininess', min=0, max=1)
         self.__index.observe(self.__on_index_changed, names='value')
@@ -380,7 +380,7 @@ class MaterialEditor(_Editor):
             self.__ambient,
             self.__specular,
             self.__emission,
-            # self.__diffuse, # diffuse not available in three.js
+            self.__diffuse,
             self.__transparency,
             self.__shininess
         ]
