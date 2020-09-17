@@ -23,12 +23,12 @@ function merge(geoms) {
         // const geom_nrl = new Float32Array(geoms[i].normal);
         // const geom_col = new Uint8Array(geoms[i].color);
         // in non instanced geoms we have currently only one material
-        // const ambient = geom.materials[0].ambient;
+        // const color = geom.materials[0].color;
         // const geom_col = new Uint8Array(geom.position.byteLength / 4);
         // for (let c = 0; c < len.pos; c += 3) {
-        //     geom_col[c] = ambient[0];
-        //     geom_col[c + 1] = ambient[1];
-        //     geom_col[c + 2] = ambient[2];
+        //     geom_col[c] = color[0];
+        //     geom_col[c + 1] = color[1];
+        //     geom_col[c + 2] = color[2];
         // }
         for (let j = 0; j < geom_idx.length; j++) {
             idx[j + offset_idx] = geom_idx[j] + offset_pos;
@@ -59,7 +59,7 @@ function splitAndMerge(triangleSets) {
                     ...g,
                     material: {
                         ...g.materials[0],
-                        ambient: g.materials[0].ambient.map(c => c / 255),
+                        color: g.materials[0].color.map(c => c / 255),
                         specular: g.materials[0].specular.map(c => c / 255),
                         emission: g.materials[0].emission.map(c => c / 255)
                     },
@@ -85,7 +85,7 @@ function splitAndMerge(triangleSets) {
                             const gm = gr.material;
                             return !(gm.transparency !== m.transparency ||
                                 gm.shininess !== m.shininess ||
-                                gm.ambient.join('') !== m.ambient.join('') ||
+                                gm.color.join('') !== m.color.join('') ||
                                 gm.specular.join('') !== m.specular.join('') ||
                                 gm.emission.join('') !== m.emission.join(''));
                         });
@@ -105,7 +105,7 @@ function splitAndMerge(triangleSets) {
                     instances: new Uint8Array(g.instances).buffer,
                     material: {
                         ...g.material,
-                        ambient: g.material.ambient.map(c => c / 255),
+                        color: g.material.color.map(c => c / 255),
                         specular: g.material.specular.map(c => c / 255),
                         emission: g.material.emission.map(c => c / 255)
                     },
@@ -118,7 +118,7 @@ function splitAndMerge(triangleSets) {
                     const gr = gss.find(gr => {
                         return !(gr.m.transparency !== m.transparency ||
                             gr.m.shininess !== m.shininess ||
-                            gr.m.ambient.join('') !== m.ambient.join('') ||
+                            gr.m.color.join('') !== m.color.join('') ||
                             gr.m.specular.join('') !== m.specular.join('') ||
                             gr.m.emission.join('') !== m.emission.join(''));
                     });
@@ -133,7 +133,7 @@ function splitAndMerge(triangleSets) {
                     instances: [],
                     material: {
                         ...gr.m,
-                        ambient: gr.m.ambient.map(c => c / 255),
+                        color: gr.m.color.map(c => c / 255),
                         specular: gr.m.specular.map(c => c / 255),
                         emission: gr.m.emission.map(c => c / 255)
                     },

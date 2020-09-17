@@ -41,7 +41,7 @@ const getWorker = (): Worker => {
                             const material = new THREE.MeshPhongMaterial({
                                 side: THREE.DoubleSide,
                                 shadowSide: THREE.BackSide,
-                                color: new THREE.Color(...geom.material.ambient),
+                                color: new THREE.Color(...geom.material.color),
                                 emissive: new THREE.Color(...geom.material.emission),
                                 specular: new THREE.Color(...geom.material.specular),
                                 shininess: geom.material.shininess * 100,

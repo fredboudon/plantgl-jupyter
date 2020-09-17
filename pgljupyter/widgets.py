@@ -78,7 +78,7 @@ class PGLWidget(DOMWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     size_display = Tuple(Int(400, min=400), Int(400, min=400), default_value=(400, 400)).tag(sync=True)
-    size_world = Tuple(Int(1, min=1), Int(1, min=1), Int(1, min=1), default_value=(10, 10, 10)).tag(sync=True)
+    size_world = Int(1, min=0.1).tag(sync=True)
     axes_helper = Bool(False).tag(sync=True)
     light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
@@ -108,7 +108,7 @@ class SceneWidget(PGLWidget):
     })).tag(sync=True, to_json=scene_to_json)
     # compress = Bool(False).tag(sync=False)
 
-    def __init__(self, obj=None, position=(0, 0, 0), scale=(1.0), **kwargs):
+    def __init__(self, obj=None, position=(0, 0, 0), scale=1.0, **kwargs):
         scene = to_scene(obj)
         serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         # self.compress = compress
@@ -253,12 +253,13 @@ class LsystemWidget(PGLWidget):
                     for scalar in catergory['scalars']:
                         context[scalar['name']] = scalar['value']
                     for curve in catergory['curves']:
-                        if curve['is_function']:
-                            context[curve['name']] = pgl.QuantisedFunction(
-                                pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                            )
-                        elif curve['type'] == 'NurbsCurve2D':
-                            context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                        if curve['type'] == 'NurbsCurve2D':
+                            if curve['is_function']:
+                                context[curve['name']] = pgl.QuantisedFunction(
+                                    pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+                                )
+                            else:
+                                context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
                         elif curve['type'] == 'BezierCurve2D':
                             context[curve['name']] = pgl.BezierCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
                         elif curve['type'] == 'Polyline2D':

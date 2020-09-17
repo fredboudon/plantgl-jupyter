@@ -1,9 +1,9 @@
-FROM jvail/plantgl-jupyter:0.1.13
+FROM jvail/plantgl-jupyter:0.1.15
 
 ARG NB_USER=jovyan
 ARG NB_UID=1000
 
-COPY ./examples /home/${NB_USER}
+COPY . /home/${NB_USER}
 USER root
 RUN chown -R ${NB_UID} /home/${NB_USER}
 WORKDIR /home/${NB_USER}

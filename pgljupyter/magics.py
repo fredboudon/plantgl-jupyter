@@ -11,16 +11,18 @@ class PGLMagics(Magics):
     @needs_local_scope
     @magic_arguments()
     @argument('--size', '-s', default='400,400')
+    @argument('--world', '-w', default=1)
     @argument('--unit', '-u', default='m')
     @argument('--animate', '-a', default=False)
     def lpy(self, line, cell, local_ns):
 
         args = parse_argstring(self.lpy, line)
         sizes = [int(i.strip()) for i in args.size.split(',')]
+        world = int(args.world)
         unit = args.unit
         animate = bool(args.animate)
         context = local_ns
 
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
-        return LsystemWidget('', code=cell, size_display=size_display, unit=unit, animate=animate, context=context)
+        return LsystemWidget('', code=cell, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)

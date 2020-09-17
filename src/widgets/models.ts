@@ -20,7 +20,7 @@ export class PGLWidgetModel extends DOMWidgetModel {
             _view_module: PGLWidgetModel.view_module,
             _view_module_version: PGLWidgetModel.view_module_version,
             size_display: [400, 400],
-            size_world: [10, 10, 10],
+            size_world: 1,
             axes_helper: false,
             light_helper: false,
             plane: true
