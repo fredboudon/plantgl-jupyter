@@ -16,7 +16,6 @@ from ipywidgets.widgets import (
     BoundedIntText
 )
 from traitlets import Unicode, List, Float, Bool, Int
-import openalea.lpy as lpy
 
 from ._frontend import module_name, module_version
 
