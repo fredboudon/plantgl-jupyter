@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "PlantGL jupyter widget",
   "keywords": [
     "jupyter",
@@ -36,7 +36,7 @@
     "build:lib": "tsc",
     "build:pgljs": "cd src/pgljs && npm run build && mkdir -p ../../lib/pgljs && cp -a dist ../../lib/pgljs",
     "build:nbextension": "webpack -p --optimize-minimize",
-    "build:all": "npm run build:pgljs && npm run build:labextension && npm run build:nbextension",
+    "build:all": "npm run build:pgljs && npm run build:lib && npm run build:labextension && npm run build:nbextension",
     "clean": "npm run clean:lib && npm run clean:nbextension",
     "clean:lib": "rimraf lib",
     "clean:labextension": "rimraf pgljupyter/labextension",
@@ -80,6 +80,7 @@
     "rimraf": "^2.6.2",
     "source-map-loader": "^0.2.4",
     "style-loader": "^1.0.0",
+    "svg-inline-loader": "^0.8.2",
     "terser-webpack-plugin": "^3.1.0",
     "ts-loader": "^5.2.1",
     "typescript": "^3.9.7",
