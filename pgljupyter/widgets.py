@@ -78,7 +78,7 @@ class PGLWidget(DOMWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     size_display = Tuple(Int(400, min=400), Int(400, min=400), default_value=(400, 400)).tag(sync=True)
-    size_world = Int(1, min=0.1).tag(sync=True)
+    size_world = Float(1.0, min=0.1).tag(sync=True)
     axes_helper = Bool(False).tag(sync=True)
     light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
@@ -103,12 +103,12 @@ class SceneWidget(PGLWidget):
         'id': Unicode(),
         'data': Bytes(),
         'scene': Instance(pgl.Scene),
-        'position': Tuple(Float(0), Float(0), Float(0)),
-        'scale': Float(1)
+        'position': Tuple(Float(0.0), Float(0.0), Float(0.0)),
+        'scale': Float(1.0)
     })).tag(sync=True, to_json=scene_to_json)
     # compress = Bool(False).tag(sync=False)
 
-    def __init__(self, obj=None, position=(0, 0, 0), scale=1.0, **kwargs):
+    def __init__(self, obj=None, position=(0.0, 0.0, 0.0), scale=1.0, **kwargs):
         scene = to_scene(obj)
         serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         # self.compress = compress
@@ -149,7 +149,7 @@ class LsystemWidget(PGLWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     __trees = []
-    __filename = ''
+    __filename = None
     __do_abort = False
 
     units = Unit
@@ -171,17 +171,24 @@ class LsystemWidget(PGLWidget):
     __lsystem = None
     __extra_context = {}
 
-    def __init__(self, filename, code='', unit=Unit.m, animate=False, dump='', context={}, **kwargs):
+    def __init__(self, filename=None, code=None, unit=Unit.m, animate=False, dump='', context={}, **kwargs):
 
-        self.__filename = filename if filename and filename.endswith('.lpy') else str(filename) + '.lpy'
+        if filename:
+            if filename.endswith('.lpy'):
+                self.__filename = filename
+            else:
+                self.__filename = str(filename) + '.lpy'
+
+        if not self.__filename and not code:
+            raise ValueError('Neither lpy file nor code provided')
+
         self.__lsystem = lpy.Lsystem()
         self.__extra_context = context
         code_ = ''
-        if Path(self.__filename).is_file():
+        if self.__filename and Path(self.__filename).is_file():
             with io.open(self.__filename, 'r') as file:
                 code_ = file.read()
         else:
-            self.__filename = ''
             self.is_magic = True
             code_ = code
 
@@ -191,7 +198,7 @@ class LsystemWidget(PGLWidget):
         if len(self.__codes) < 2:
             raise ValueError('No L-Py code found')
         # if a json file with the same name is present load context from the json file
-        if Path(self.__filename[0:-3] + 'json').is_file():
+        if self.__filename and Path(self.__filename[0:-3] + 'json').is_file():
             self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
             self.__editor.on_lpy_context_change = self.__on_lpy_context_change
             self.__on_lpy_context_change(self.__editor.lpy_context)
@@ -208,18 +215,31 @@ class LsystemWidget(PGLWidget):
 
     @property
     def editor(self):
-        filename = self.__filename[0:-3] + 'json'
-        if self.__editor is None and not Path(filename).exists():
-            lpy_context = make_default_lpy_context()
-            if ParameterEditor.validate_schema(lpy_context):
-                with io.open(filename, 'w') as file:
-                    file.write(json.dumps(lpy_context, indent=4))
-                self.__editor = ParameterEditor(filename)
-                self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-        return self.__editor
+        if self.__filename:
+            filename = self.__filename[0:-3] + 'json'
+            if self.__editor is None and not Path(filename).exists():
+                lpy_context = make_default_lpy_context()
+                if ParameterEditor.validate_schema(lpy_context):
+                    with io.open(filename, 'w') as file:
+                        file.write(json.dumps(lpy_context, indent=4))
+                    self.__editor = ParameterEditor(filename)
+                    self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+            return self.__editor
+        else:
+            return None
+
+    def get_lstring(self):
+        if self.__derivationStep < len(self.__trees):
+            return lpy.Lstring(self.__trees[self.__derivationStep])
+        return lpy.Lstring()
+
+    def get_namespace(self):
+        result = {}
+        result.update(self.__lsystem.context().globals())
+        return result
 
     def __initialize_lsystem(self):
-        self.__lsystem.filename = self.__filename
+        self.__lsystem.filename = self.__filename if self.__filename else ''
         self.__lsystem.set(''.join(self.__codes), self.__extra_context)
         # context = self.__lsystem.context()
         # for key, value in self.__extra_context.items():
