@@ -10,19 +10,19 @@ class PGLMagics(Magics):
     @cell_magic
     @needs_local_scope
     @magic_arguments()
-    @argument('--size', '-s', default='400,400')
-    @argument('--world', '-w', default=1)
-    @argument('--unit', '-u', default='m')
-    @argument('--animate', '-a', default=False)
+    @argument('--size', '-s', default='400,400', type=str, help='Width and hight of the canvas')
+    @argument('--world', '-w', default=1.0, type=float, help='Size of the 3d scene in meters')
+    @argument('--unit', '-u', default='m', type=str, help='Unit of the model - m, dm, cm, mm')
+    @argument('--animate', '-a', type=bool, help='Animate Lsystem')
     def lpy(self, line, cell, local_ns):
 
         args = parse_argstring(self.lpy, line)
         sizes = [int(i.strip()) for i in args.size.split(',')]
-        world = int(args.world)
+        world = args.world
         unit = args.unit
-        animate = bool(args.animate)
+        animate = args.animate if args.animate is not None else False
         context = local_ns
 
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
-        return LsystemWidget('', code=cell, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
+        return LsystemWidget(None, code=cell, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
