@@ -12,8 +12,8 @@ from pathlib import Path
 
 from ipywidgets.widgets import (
     register, DOMWidget,  VBox, HBox, Tab, Layout, Accordion, Dropdown, Button,
-    FloatText, IntText, Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedFloatText,
-    BoundedIntText
+    FloatText, IntText, Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText,
+    # BoundedFloatText
 )
 from traitlets import Unicode, List, Float, Bool, Int
 
@@ -178,40 +178,40 @@ class FloatEditor(_Editor):
         self.value = float(value)
 
         self.__slider = FloatSlider(value, min=min, max=max, step=step, description='value')
-        self.__min_ipt = FloatText(min, description='min')
-        self.__max_ipt = FloatText(max, description='max')
-        self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
+        # self.__min_ipt = FloatText(min, description='min')
+        # self.__max_ipt = FloatText(max, description='max')
+        # self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        self.__min_ipt.observe(self.__on_min_changed, names='value')
-        self.__max_ipt.observe(self.__on_max_changed, names='value')
-        self.__step_ipt.observe(self.__on_step_changed, names='value')
+        # self.__min_ipt.observe(self.__on_min_changed, names='value')
+        # self.__max_ipt.observe(self.__on_max_changed, names='value')
+        # self.__step_ipt.observe(self.__on_step_changed, names='value')
 
         kwargs['children'] = [
             self.__slider,
-            self.__min_ipt,
-            self.__max_ipt,
-            self.__step_ipt
+            # self.__min_ipt,
+            # self.__max_ipt,
+            # self.__step_ipt
         ]
         super().__init__(**kwargs)
 
-    def __on_min_changed(self, change):
-        if self.__min_ipt.value < self.__slider.max:
-            self.__slider.min = self.__min_ipt.value
-        else:
-            self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-        self.min = self.__min_ipt.value
+    # def __on_min_changed(self, change):
+    #     if self.__min_ipt.value < self.__slider.max:
+    #         self.__slider.min = self.__min_ipt.value
+    #     else:
+    #         self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
+    #     self.min = self.__min_ipt.value
 
-    def __on_max_changed(self, change):
-        if self.__max_ipt.value > self.__slider.min:
-            self.__slider.max = self.__max_ipt.value
-        else:
-            self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-        self.max = self.__max_ipt.value
+    # def __on_max_changed(self, change):
+    #     if self.__max_ipt.value > self.__slider.min:
+    #         self.__slider.max = self.__max_ipt.value
+    #     else:
+    #         self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
+    #     self.max = self.__max_ipt.value
 
-    def __on_step_changed(self, change):
-        self.__slider.step = self.__step_ipt.value
-        self.step = self.__step_ipt.value
+    # def __on_step_changed(self, change):
+    #     self.__slider.step = self.__step_ipt.value
+    #     self.step = self.__step_ipt.value
 
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
@@ -238,40 +238,40 @@ class IntEditor(_Editor):
 
         self.value = int(value)
         self.__slider = IntSlider(value, min, max, description='value')
-        self.__min_ipt = IntText(min, description='min')
-        self.__max_ipt = IntText(max, description='max')
-        self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
+        # self.__min_ipt = IntText(min, description='min')
+        # self.__max_ipt = IntText(max, description='max')
+        # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
 
-        self.__slider.observe(self.__on_slider_changed, names='value')
-        self.__min_ipt.observe(self.__on_min_changed, names='value')
-        self.__max_ipt.observe(self.__on_max_changed, names='value')
-        self.__step_ipt.observe(self.__on_step_changed, names='value')
+        # self.__slider.observe(self.__on_slider_changed, names='value')
+        # self.__min_ipt.observe(self.__on_min_changed, names='value')
+        # self.__max_ipt.observe(self.__on_max_changed, names='value')
+        # self.__step_ipt.observe(self.__on_step_changed, names='value')
 
         kwargs['children'] = [
             self.__slider,
-            self.__min_ipt,
-            self.__max_ipt,
-            self.__step_ipt
+            # self.__min_ipt,
+            # self.__max_ipt,
+            # self.__step_ipt
         ]
         super().__init__(**kwargs)
 
-    def __on_min_changed(self, change):
-        if self.__min_ipt.value < self.__slider.max:
-            self.__slider.min = self.__min_ipt.value
-        else:
-            self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-        self.min = self.__min_ipt.value
+    # def __on_min_changed(self, change):
+    #     if self.__min_ipt.value < self.__slider.max:
+    #         self.__slider.min = self.__min_ipt.value
+    #     else:
+    #         self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
+    #     self.min = self.__min_ipt.value
 
-    def __on_max_changed(self, change):
-        if self.__max_ipt.value > self.__slider.min:
-            self.__slider.max = self.__max_ipt.value
-        else:
-            self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-        self.max = self.__max_ipt.value
+    # def __on_max_changed(self, change):
+    #     if self.__max_ipt.value > self.__slider.min:
+    #         self.__slider.max = self.__max_ipt.value
+    #     else:
+    #         self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
+    #     self.max = self.__max_ipt.value
 
-    def __on_step_changed(self, change):
-        self.__slider.step = self.__step_ipt.value
-        self.step = self.__step_ipt.value
+    # def __on_step_changed(self, change):
+    #     self.__slider.step = self.__step_ipt.value
+    #     self.step = self.__step_ipt.value
 
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
