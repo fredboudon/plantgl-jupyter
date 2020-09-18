@@ -20,7 +20,7 @@
     python3 setup.py sdist bdist_wheel
     twine upload dist/*{0.x.xx}*
 
-## tag and check if docker build was succesful
+## tag and check if docker build was successful
 
     git tag -a v0.x.xx -m "v0.x.xx"
     git push --tags
