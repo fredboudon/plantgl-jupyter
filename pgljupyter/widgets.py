@@ -228,6 +228,16 @@ class LsystemWidget(PGLWidget):
         else:
             return None
 
+    def get_lstring(self):
+        if self.__derivationStep < len(self.__trees):
+            return lpy.Lstring(self.__trees[self.__derivationStep])
+        return lpy.Lstring()
+
+    def get_namespace(self):
+        result = {}
+        result.update(self.__lsystem.context().globals())
+        return result
+
     def __initialize_lsystem(self):
         self.__lsystem.filename = self.__filename if self.__filename else ''
         self.__lsystem.set(''.join(self.__codes), self.__extra_context)
