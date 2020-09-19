@@ -1,0 +1,36 @@
+#{% set version = "2.7.2" %}
+{% set data = load_setup_py_data() %}
+
+package:
+  name: openalea.pgljupyter
+  version: {{ data.get('version') }}
+
+source:
+  path: ..
+
+about:
+  home: https://github.com/jvail/pgljupyter
+  license: Cecill-C
+  summary: PlantGL and L-Py Jupyter widget.
+
+build:
+  preserve_egg_dir: True
+  number: 1
+requirements:
+  host:
+    - python {{PY_VER}}
+    - setuptools
+    - openalea.lpy
+    - openalea.plantgl
+    - notebook
+    - jupyterlab>=2.2
+    - ipywidgets>=7.5
+  run:
+    - python {{PY_VER}}
+    - setuptools
+    - openalea.lpy
+    - openalea.plantgl
+    - notebook
+    - jupyterlab>=2.2
+    - ipywidgets>=7.5
+
