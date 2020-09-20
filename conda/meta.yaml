@@ -25,6 +25,7 @@ requirements:
     - notebook
     - jupyterlab>=2.2
     - ipywidgets>=7.5
+    - nodejs
   run:
     - python {{PY_VER}}
     - setuptools
@@ -33,4 +34,5 @@ requirements:
     - notebook
     - jupyterlab>=2.2
     - ipywidgets>=7.5
+    - nodejs
 
