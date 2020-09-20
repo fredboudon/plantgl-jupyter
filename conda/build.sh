@@ -30,8 +30,8 @@ echo "****** install python modules and jupyter extensions"
 pip install -v .
 jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
 jupyter nbextension enable --sys-prefix --py pgljupyter
-jupyter labextension install .
-jupyter lab clean
+#jupyter labextension install --no-build pgljupyter 
+#jupyter lab clean
 
 echo 
 echo "****** END OF BUILD PROCESS"
