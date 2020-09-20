@@ -26,6 +26,13 @@ requirements:
     - jupyterlab>=2.2
     - ipywidgets>=7.5
     - nodejs
+    - pip
+    - cmake
+    - git
+    - toml
+    - jsonschema
+    - pathlib
+    - traitlets
   run:
     - python {{PY_VER}}
     - setuptools
@@ -34,5 +41,9 @@ requirements:
     - notebook
     - jupyterlab>=2.2
     - ipywidgets>=7.5
-    - nodejs
+    - nodejs # is it necessary at run time ?
+    - toml
+    - jsonschema
+    - pathlib
+    - traitlets
 

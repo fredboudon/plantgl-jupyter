@@ -23,11 +23,11 @@ cd ../..
 echo 
 echo "****** install pgljupyter deps and build"
 npm install
-npm run build:all
+#npm run build:all # done by pip install.
 
 echo 
 echo "****** install python modules and jupyter extensions"
-pip install .
+pip install -v .
 jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
 jupyter nbextension enable --sys-prefix --py pgljupyter
 jupyter labextension install .
