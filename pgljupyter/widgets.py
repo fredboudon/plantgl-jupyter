@@ -192,6 +192,9 @@ class LsystemWidget(PGLWidget):
             self.is_magic = True
             code_ = code
 
+        if not code_:
+            raise ValueError('Neither lpy file nor code provided')
+
         self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
         self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
 
