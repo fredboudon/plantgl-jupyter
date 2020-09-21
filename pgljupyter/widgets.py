@@ -250,7 +250,10 @@ class LsystemWidget(PGLWidget):
 
     def __on_lpy_context_change(self, context_obj):
         if not self.animate:
-            self.__codes[2] = self.__initialisation_function(context_obj)
+            if len(self.__codes) == 2:
+                self.__codes.append(self.__initialisation_function(context_obj))
+            else:
+                self.__codes[2] = self.__initialisation_function(context_obj)
             self.__lsystem.clear()
             self.__lsystem.filename = self.__filename
             self.__lsystem.set(''.join(self.__codes), {})
