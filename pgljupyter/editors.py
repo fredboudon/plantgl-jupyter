@@ -242,7 +242,7 @@ class IntEditor(_Editor):
         # self.__max_ipt = IntText(max, description='max')
         # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
 
-        # self.__slider.observe(self.__on_slider_changed, names='value')
+        self.__slider.observe(self.__on_slider_changed, names='value')
         # self.__min_ipt.observe(self.__on_min_changed, names='value')
         # self.__max_ipt.observe(self.__on_max_changed, names='value')
         # self.__step_ipt.observe(self.__on_step_changed, names='value')
@@ -716,10 +716,12 @@ class ParameterEditor(VBox):
 
             def fn_add(self):
 
-                material_name = f'{ddn_add.value}_{len(box.children)}'
+                index = len(box.children) + 1
+                material_name = f'{ddn_add.value}_{index}'
+
                 material = {
                     'name': material_name,
-                    'index': len(box.children),
+                    'index': index,
                     'ambient': [80, 80, 80]
                 }
                 item = MaterialEditor(**material, validator=self.__validate_name)
