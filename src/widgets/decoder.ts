@@ -1,9 +1,9 @@
 import pgljs from '../pgljs/dist/index.js';
-import * as THREE from 'three';
-import { IDecodingTask, ITaskData, ITaskResult, IGeom } from './interfaces';
+import { IDecodingTask, ITaskData, ITaskResult } from './interfaces';
 
 let MAX_WORKER = 10;
 const workers: Map<Worker, IDecodingTask[]> = new Map();
+
 const getWorker = (): Worker => {
 
     const avg = Array.from(workers.values()).reduce((s, v) => s + v.length / workers.size, 0);
@@ -33,38 +33,7 @@ const getWorker = (): Worker => {
                     if (evt.data.error) {
                         reject({ error: evt.data.error, userData});
                     } else {
-                        let meshs: THREE.Mesh[] = evt.data.map((geom: IGeom) => {
-                            let mesh;
-                            const geometry = new THREE.BufferGeometry();
-                            geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(geom.index), 1));
-                            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
-                            const material = new THREE.MeshPhongMaterial({
-                                side: THREE.DoubleSide,
-                                shadowSide: THREE.BackSide,
-                                color: new THREE.Color(...geom.material.color),
-                                emissive: new THREE.Color(...geom.material.emission),
-                                specular: new THREE.Color(...geom.material.specular),
-                                shininess: geom.material.shininess * 100,
-                                transparent: geom.material.transparency > 0,
-                                opacity: 1 - geom.material.transparency,
-                                vertexColors: false
-                            });
-                            if (geom.isInstanced) {
-                                const instances = new Float32Array(geom.instances);
-                                mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
-                                for (let i = 0; i < instances.length / 16; i++) {
-                                    mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));
-                                }
-                            } else {
-                                mesh = new THREE.Mesh(geometry, material);
-                            }
-                            geometry.computeVertexNormals();
-                            mesh.castShadow = true;
-                            mesh.receiveShadow = true;
-                            return mesh;
-                        });
-
-                        resolve({ results: meshs, userData });
+                        resolve({ results: evt.data, userData });
                     }
                 }
             }

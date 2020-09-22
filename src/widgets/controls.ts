@@ -55,17 +55,27 @@ export class PGLControls {
                 <mwc-formfield label='plane'>
                     <mwc-switch @change=${(evt) => handlers.onPlaneToggled(evt.target.checked)} ?checked=${state.plane}></mwc-switch>
                 </mwc-formfield>
-                <mwc-formfield label='axes helper'>
-                    <mwc-switch @change=${(evt) => handlers.onAxesHelperToggled(evt.target.checked)} ?checked=${state.axesHelper}></mwc-switch>
-                </mwc-formfield>
-                <mwc-formfield label='light helper'>
+                <mwc-formfield label='flat shading'>
                     <mwc-switch
-                        @change=${(evt) => handlers.onLightHelperToggled(evt.target.checked)} ?checked=${state.lightHelper}>
+                        @change=${(evt) => handlers.onFlatShadingToggled(evt.target.checked)} ?checked=${state.flatShading}>
                     </mwc-switch>
                 </mwc-formfield>
-            </div>
-        </div>`;
-    };
+                <mwc-formfield label='wireframe'>
+                    <mwc-switch
+                        @change=${(evt) => handlers.onWireframeToggled(evt.target.checked)} ?checked=${state.wireframe}>
+                    </mwc-switch>
+                </mwc-formfield>
+                </div>
+                </div>`;
+                // <mwc-formfield label='axes helper'>
+                //     <mwc-switch @change=${(evt) => handlers.onAxesHelperToggled(evt.target.checked)} ?checked=${state.axesHelper}></mwc-switch>
+                // </mwc-formfield>
+                // <mwc-formfield label='light helper'>
+                //     <mwc-switch
+                //         @change=${(evt) => handlers.onLightHelperToggled(evt.target.checked)} ?checked=${state.lightHelper}>
+                //     </mwc-switch>
+                // </mwc-formfield>
+            };
 }
 
 export class LsystemControls {

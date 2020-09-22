@@ -86,13 +86,16 @@ class _Editor(HBox):
 
     name = Unicode('').tag(sync=False)
 
-    def __init__(self, name, validator, **kwargs):
+    def __init__(self, name, validator, no_name=False, **kwargs):
         self.name = name
         self.__validator = validator
         self.__text = Text(name, description='name')
         self.__text.continuous_update = False
         self.__text.observe(self.__on_name_changed, names='value')
-        kwargs['children'] = (self.__text, *kwargs['children'])
+        if no_name:
+            kwargs['children'] = kwargs['children']
+        else:
+            kwargs['children'] = (self.__text, *kwargs['children'])
         kwargs['layout'] = Layout(margin='20px 0px')
         super().__init__(**kwargs)
 
@@ -384,7 +387,7 @@ class MaterialEditor(_Editor):
             self.__shininess
         ]
 
-        super().__init__(**kwargs)
+        super().__init__(no_name=True, **kwargs)
 
     def __rgb_to_list(self, rgb):
         return [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
@@ -574,7 +577,7 @@ class ParameterEditor(VBox):
 
             if 'schema' in obj and obj['schema'] == 'lpy':
 
-                box_options = HBox(layout=item_layout)
+                # box_options = HBox(layout=item_layout)
                 box_materials = HBox(layout=item_layout)
 
                 for material in obj['materials']:
@@ -583,10 +586,10 @@ class ParameterEditor(VBox):
                     box_materials.children = (*box_materials.children, ipt)
 
                 acc_items = [
-                    VBox([
-                        HBox((), layout=menu_layout),
-                        box_options
-                    ]),
+                    # VBox([
+                    #     HBox((), layout=menu_layout),
+                    #     box_options
+                    # ]),
                     VBox([
                         HBox(self.__menu('materials', box_materials), layout=menu_layout),
                         box_materials
@@ -624,10 +627,10 @@ class ParameterEditor(VBox):
                     ]))
 
                 acc = Accordion(acc_items)
-                acc.set_title(0, 'options')
-                acc.set_title(1, 'materials')
+                # acc.set_title(0, 'options')
+                acc.set_title(0, 'materials')
                 for i, category in enumerate(obj['parameters']):
-                    acc.set_title(i + 2, category['name'])
+                    acc.set_title(i + 1, category['name'])
 
             children.append(acc)
 
