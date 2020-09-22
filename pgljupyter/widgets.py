@@ -247,9 +247,8 @@ class LsystemWidget(PGLWidget):
         # context = self.__lsystem.context()
         # for key, value in self.__extra_context.items():
         #     context[key] = value
-        self.derivationLength = self.__lsystem.derivationLength
-        self.__trees = []
-        self.__trees.append(self.__lsystem.axiom)
+        self.derivationLength = self.__lsystem.derivationLength + 1
+        self.__trees = [self.__lsystem.axiom]
 
     def __on_lpy_context_change(self, context_obj):
         if not self.animate:
@@ -260,7 +259,7 @@ class LsystemWidget(PGLWidget):
             self.__lsystem.clear()
             self.__lsystem.filename = self.__filename
             self.__lsystem.set(''.join(self.__codes), {})
-            self.derivationLength = self.__lsystem.derivationLength
+            self.derivationLength = self.__lsystem.derivationLength + 1
             self.__trees = []
             self.__trees.append(self.__lsystem.axiom)
             self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
