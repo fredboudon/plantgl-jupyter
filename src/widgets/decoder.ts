@@ -70,21 +70,21 @@ const getWorker = (): Worker => {
 
 class Decoder {
 
-    decode(task: ITaskData, bucketID: string = ''): Promise<ITaskResult> {
+    decode(task: ITaskData, taskId: string = ''): Promise<ITaskResult> {
         const worker = getWorker();
         return new Promise((resolve, reject) => {
-            workers.get(worker).push({ bucketID, resolve, reject, ...task });
+            workers.get(worker).push({ taskId: taskId, resolve, reject, ...task });
             if ((worker as any).initialized) {
                 worker.postMessage(task.data);
             }
         });
     }
 
-    abort(bucketID: string) {
+    abort(taskId: string) {
         let tasks: IDecodingTask[] = [];
         for (const worker of workers.keys()) {
-            tasks = [...tasks, ...workers.get(worker).filter(task => task.bucketID === bucketID)];
-            workers.set(worker, workers.get(worker).filter(task => task.bucketID !== bucketID));
+            tasks = [...tasks, ...workers.get(worker).filter(task => task.taskId === taskId)];
+            workers.set(worker, workers.get(worker).filter(task => task.taskId !== taskId));
         }
         // reject in order
         tasks.sort((a, b) => a.userData.no - b.userData.no)
