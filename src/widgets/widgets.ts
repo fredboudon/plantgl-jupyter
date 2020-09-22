@@ -443,7 +443,11 @@ export class LsystemWidgetView extends PGLWidgetView {
                                 }
                                 setTimeout(() => {
                                     next(step + 1);
-                                }, 10);
+                                    /*  work around: animation for reseting
+                                        the progress bar to 0 might take
+                                        longer than the computation of the
+                                        next step which gives strange effects */
+                                }, step === 0 ? 500 : 10);
                             }
                         }
                     }
