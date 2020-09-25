@@ -4,14 +4,14 @@ import {
 } from '@jupyter-widgets/base';
 import * as THREE from 'three';
 import decoder from './decoder';
-import { PGLControls, LsystemControls } from './controls';
+import { PGLControls, LsystemControls, PGLProgress } from './controls';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
     IScene,
     IPGLControlsState,
     ILsystemControlsState,
     ILsystemScene,
-    ITaskResult
+    ITaskResult, IPGLProgressState
 } from './interfaces';
 import { disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
@@ -37,6 +37,8 @@ export class PGLWidgetView extends DOMWidgetView {
     pglControls: PGLControls = null;
     pglControlsState: IPGLControlsState = null;
     pglControlsEl: HTMLDivElement = null;
+
+    pglProgressState: IPGLProgressState = null;
 
     disposables: THREE.Scene[] = [];
     isDetached = false;
@@ -84,6 +86,12 @@ export class PGLWidgetView extends DOMWidgetView {
             ev.stopPropagation();
             return false;
         });
+
+        const progressEl = document.createElement('div');
+        progressEl.setAttribute('class', 'pgl-jupyter-pgl-widget-progress');
+        this.containerEl.appendChild(progressEl);
+        const pglProgress = new PGLProgress({ busy: false }, progressEl);
+        this.pglProgressState = pglProgress.state;
 
         const x_size = this.sizeWorld;
         const y_size = this.sizeWorld;
@@ -386,6 +394,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     controls: LsystemControls = null;
     queue: {[key:number]: ITaskResult} = {};
     no = 0;
+    context_change_queue = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -494,6 +503,9 @@ export class LsystemWidgetView extends PGLWidgetView {
         });
         this.listenTo(this.model, 'comm_live_update', () => {
             this.controls.state.comm_live = this.model.comm_live;
+        });
+        this.listenTo(this.model, 'change:progress', () => {
+            this.pglProgressState.busy = this.model.get('progress') < 1;
         });
         this.listenTo(this.model, 'change:scene', () => {
             const scene = this.model.get('scene') as ILsystemScene;

@@ -12,6 +12,8 @@ import zlib
 import json
 from enum import Enum
 from pathlib import Path
+import asyncio
+import concurrent
 
 from ipywidgets.widgets import DOMWidget, register
 from traitlets import (
@@ -58,12 +60,15 @@ def to_scene(obj):
     return scene
 
 
-# TODO: serialize in thread?
 def scene_to_bytes(scene):
-    # serialized = pgl_scene_to_bytes(scene, single_mesh)
-    # if not serialized.status:
-    #     raise ValueError('scene serialization failed')
     return zlib.compress(pgl.tobinarystring(scene, False), 9)
+
+
+async def serialize_scene(scene):
+    loop = asyncio.get_running_loop()
+    with concurrent.futures.ProcessPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, scene_to_bytes, (scene))
+    return result
 
 
 @register
@@ -109,24 +114,27 @@ class SceneWidget(PGLWidget):
     # compress = Bool(False).tag(sync=False)
 
     def __init__(self, obj=None, position=(0.0, 0.0, 0.0), scale=1.0, **kwargs):
-        scene = to_scene(obj)
-        serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
-        # self.compress = compress
-        self.scenes = [{
-            'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
-            'data': serialized,
-            'scene': scene,
-            'position': position,
-            'scale':  scale
-        }]
+        # scene = to_scene(obj)
+        # serialized = await serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        # # self.compress = compress
+        # self.scenes = [{
+        #     'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
+        #     'data': serialized,
+        #     'scene': scene,
+        #     'position': position,
+        #     'scale':  scale
+        # }]
+        if obj is not None:
+            asyncio.run(self.add(obj))
+
         super().__init__(**kwargs)
 
     # TODO: avoid re-sending all scenes after a scene was added.
     # - Partially syncing a state is not available out of the box
     # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
-    def add(self, obj, position=(0, 0, 0), scale=1.0):
+    async def add(self, obj, position=(0, 0, 0), scale=1.0):
         scene = to_scene(obj)
-        serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = await serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.scenes.append({
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -164,10 +172,13 @@ class LsystemWidget(PGLWidget):
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
     is_magic = Bool(False).tag(sync=True)
+    progress = Float(0.0).tag(sync=True)
 
     __editor = None
     __codes = []
     __derivationStep = 0
+    __in_queue = 0
+    __out_queue = 0
     __lsystem = None
     __extra_context = {}
 
@@ -252,6 +263,10 @@ class LsystemWidget(PGLWidget):
 
     def __on_lpy_context_change(self, context_obj):
         if not self.animate:
+            self.__in_queue = self.__in_queue + 1
+            # TODO: find a better solution for progress. Easier if lpy is moved to thread
+            self.progress = self.__out_queue / self.__in_queue
+            self.send_state('progress')
             if len(self.__codes) == 2:
                 self.__codes.append(self.__initialisation_function(context_obj))
             else:
@@ -264,6 +279,10 @@ class LsystemWidget(PGLWidget):
             self.__trees.append(self.__lsystem.axiom)
             self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
             self.__derive(self.__derivationStep)
+            self.__out_queue = self.__out_queue + 1
+            self.progress = self.__out_queue / self.__in_queue
+            if self.progress == 1:
+                self.__out_queue = self.__in_queue = 0
 
     def __initialisation_function(self, context_obj):
         def build_context(context_obj, context):
@@ -366,10 +385,10 @@ class LsystemWidget(PGLWidget):
             self.__initialize_lsystem()
             self.__set_scene(0)
 
-    def __set_scene(self, step):
+    async def __set_scene(self, step):
         # print('__set_scene', step)
         scene = self.__lsystem.sceneInterpretation(self.__trees[step])
-        serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = await serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
             'data': serialized,
             'scene': scene,
