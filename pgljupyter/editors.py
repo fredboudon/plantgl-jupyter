@@ -86,9 +86,9 @@ class _Editor(HBox):
 
     name = Unicode('').tag(sync=False)
 
-    def __init__(self, name, validator, no_name=False, **kwargs):
+    def __init__(self, name, validator=None, no_name=False, **kwargs):
         self.name = name
-        self.__validator = validator
+        self.__validator = validator if validator is not None else lambda x: True
         self.__text = Text(name, description='name')
         self.__text.continuous_update = False
         self.__text.observe(self.__on_name_changed, names='value')
@@ -588,7 +588,7 @@ class ParameterEditor(VBox):
                 box_materials = HBox(layout=item_layout)
 
                 for material in obj['materials']:
-                    ipt = MaterialEditor(**material, validator=self.__validate_name)
+                    ipt = MaterialEditor(**material)
                     ipt.observe(self.__observe_lpy('materials'))
                     box_materials.children = (*box_materials.children, ipt)
 
@@ -734,7 +734,7 @@ class ParameterEditor(VBox):
                     'index': index,
                     'ambient': [80, 80, 80]
                 }
-                item = MaterialEditor(**material, validator=self.__validate_name)
+                item = MaterialEditor(**material)
                 self.lpy_context['materials'].append(material)
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(parameter_type))
