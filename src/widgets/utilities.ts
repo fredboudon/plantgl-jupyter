@@ -109,7 +109,7 @@ function meshify(geoms: IGeom[], options: IMeshOptions = meshOptions):  Array<TH
         geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
         const material = new THREE.MeshPhongMaterial({
             side: THREE.DoubleSide,
-            shadowSide: THREE.BackSide,
+            shadowSide: THREE.DoubleSide,
             color: new THREE.Color(...geom.material.color),
             emissive: new THREE.Color(...geom.material.emission),
             specular: new THREE.Color(...geom.material.specular),
