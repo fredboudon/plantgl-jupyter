@@ -13,7 +13,7 @@ import {
     ILsystemScene,
     ITaskResult
 } from './interfaces';
-import { disposeScene } from './utilities';
+import { disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
@@ -54,6 +54,8 @@ export class PGLWidgetView extends DOMWidgetView {
             axesHelper: this.model.get('axes_helper'),
             lightHelper: this.model.get('light_helper'),
             plane: this.model.get('plane'),
+            flatShading: false,
+            wireframe: false,
             fullscreen: false,
             autoRotate: false,
             showHeader: false,
@@ -120,7 +122,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.scene.add(lightTop);
 
         this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
-        this.light.shadow.bias = -0.001;
+        this.light.shadow.bias = -0.0018
         this.light.castShadow = true;
         this.light.position.set(x_size / 2, y_size / 2, Math.max(x_size, y_size) / 2);
         this.light.target.position.set(0, 0, 0);
@@ -200,6 +202,48 @@ export class PGLWidgetView extends DOMWidgetView {
                 this.renderer.render(this.scene, this.camera);
                 this.model.set('light_helper', this.pglControlsState.lightHelper);
                 this.touch();
+            },
+            onFlatShadingToggled: (value: boolean) => {
+                this.pglControlsState.flatShading = value;
+                this.scene.children.forEach(child => {
+                    if (child instanceof THREE.Scene) {
+                        child.children.forEach(child => {
+                            if (child instanceof THREE.Mesh || child instanceof THREE.InstancedMesh) {
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach(material => {
+                                        material.flatShading = value;
+                                        material.needsUpdate = true;
+                                    });
+                                } else {
+                                    child.material.flatShading = value;
+                                    child.material.needsUpdate = true;
+                                }
+                            }
+                        });
+                    }
+                });
+                this.renderer.render(this.scene, this.camera);
+            },
+            onWireframeToggled: (value: boolean) => {
+                this.pglControlsState.wireframe = value;
+                this.scene.children.forEach(child => {
+                    if (child instanceof THREE.Scene) {
+                        child.children.forEach(child => {
+                            if (child instanceof THREE.Mesh || child instanceof THREE.InstancedMesh) {
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach(material => {
+                                        material.wireframe = value;
+                                        child.material.needsUpdate = true;
+                                    });
+                                } else {
+                                    child.material.wireframe = value;
+                                    child.material.needsUpdate = true;
+                                }
+                            }
+                        });
+                    }
+                });
+                this.renderer.render(this.scene, this.camera);
             }
         }, this.pglControlsEl);
         this.pglControlsState = this.pglControls.state;
@@ -308,7 +352,10 @@ export class SceneWidgetView extends PGLWidgetView {
                         const [x, y, z] = position;
 
                         if (results.length > 0) {
-                            scene.add(...results);
+                            scene.add(...meshify(results, {
+                                flatShading: this.pglControlsState.flatShading,
+                                wireframe: this.pglControlsState.wireframe,
+                            }));
                             scene.name = id;
                             scene.position.set(x, y, z);
                             scene.scale.multiplyScalar(scale);
@@ -396,7 +443,11 @@ export class LsystemWidgetView extends PGLWidgetView {
                                 }
                                 setTimeout(() => {
                                     next(step + 1);
-                                }, 10);
+                                    /*  work around: animation for reseting
+                                        the progress bar to 0 might take
+                                        longer than the computation of the
+                                        next step which gives strange effects */
+                                }, step === 0 ? 500 : 10);
                             }
                         }
                     }
@@ -458,7 +509,10 @@ export class LsystemWidgetView extends PGLWidgetView {
             const decoded = this.queue[no];
             if (decoded) {
                 delete this.queue[no];
-                this.setScene(decoded.userData.step, decoded.results);
+                this.setScene(decoded.userData.step, meshify(decoded.results, {
+                    flatShading: this.pglControlsState.flatShading,
+                    wireframe: this.pglControlsState.wireframe,
+                }));
                 this.controls.state.derivationStep = decoded.userData.step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
@@ -483,7 +537,10 @@ export class LsystemWidgetView extends PGLWidgetView {
                 if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
                     this.queue[no] = res;
                 } else {
-                    this.setScene(step, results);
+                    this.setScene(step, meshify(results, {
+                        flatShading: this.pglControlsState.flatShading,
+                        wireframe: this.pglControlsState.wireframe,
+                    }));
                     this.controls.state.derivationStep = step;
                     if (this.controls.state.busy > 0) {
                         this.controls.state.busy--;
@@ -508,7 +565,7 @@ export class LsystemWidgetView extends PGLWidgetView {
             });
     }
 
-    setScene(step: number, meshs, position = [0, 0, 0]) {
+    setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, position = [0, 0, 0]) {
 
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;

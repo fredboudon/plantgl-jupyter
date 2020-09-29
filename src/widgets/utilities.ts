@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { IGeom } from './interfaces';
+import { IMeshOptions, IGeom } from './interfaces';
 
 function disposeScene(scene: THREE.Scene) {
     scene.children.forEach(child => {
@@ -95,9 +95,52 @@ function debounce(fn: Function, delay: number): Function {
 
 };
 
+const meshOptions: IMeshOptions = {
+    flatShading: false,
+    wireframe: false
+};
+
+function meshify(geoms: IGeom[], options: IMeshOptions = meshOptions):  Array<THREE.Mesh | THREE.InstancedMesh> {
+
+    let meshs = geoms.map((geom: IGeom) => {
+        let mesh;
+        const geometry = new THREE.BufferGeometry();
+        geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(geom.index), 1));
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
+        const material = new THREE.MeshPhongMaterial({
+            side: THREE.DoubleSide,
+            shadowSide: THREE.DoubleSide,
+            color: new THREE.Color(...geom.material.color),
+            emissive: new THREE.Color(...geom.material.emission),
+            specular: new THREE.Color(...geom.material.specular),
+            shininess: geom.material.shininess * 100,
+            transparent: geom.material.transparency > 0,
+            opacity: 1 - geom.material.transparency,
+            vertexColors: false,
+            flatShading: options.flatShading,
+            wireframe: options.wireframe
+        });
+        if (geom.isInstanced) {
+            const instances = new Float32Array(geom.instances);
+            mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
+            for (let i = 0; i < instances.length / 16; i++) {
+                mesh.setMatrixAt(i, (new THREE.Matrix4() as any).set(...instances.slice(i * 16, i * 16 + 16)));
+            }
+        } else {
+            mesh = new THREE.Mesh(geometry, material);
+        }
+        geometry.computeVertexNormals();
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        return mesh;
+    });
+
+    return meshs;
+}
+
 export {
     disposeScene,
-    merge,
     isDracoFile,
-    debounce
+    debounce,
+    meshify
 }

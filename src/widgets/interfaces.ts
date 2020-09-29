@@ -11,7 +11,7 @@ export interface ILsystemScene extends IScene {
 }
 
 export interface IDecodingTask extends ITaskData {
-    bucketID: string;
+    taskId: string;
     reject(arg?: any): any;
     resolve(arg: ITaskResult): any;
 }
@@ -21,8 +21,13 @@ export interface ITaskData {
     userData?: any;
 }
 
+export interface IMeshOptions {
+    wireframe: boolean;
+    flatShading: boolean;
+}
+
 export interface ITaskResult {
-    results: (THREE.Mesh | THREE.InstancedMesh)[];
+    results: IGeom[];
     userData: any;
 }
 
@@ -30,6 +35,8 @@ export interface IPGLControlsState {
     axesHelper: boolean;
     lightHelper: boolean;
     plane: boolean;
+    flatShading: boolean;
+    wireframe: boolean;
     fullscreen: boolean;
     autoRotate: boolean;
     showHeader: boolean;
@@ -43,6 +50,8 @@ export interface IPGLControlsHandlers {
     onPlaneToggled: Function;
     onAxesHelperToggled: Function;
     onLightHelperToggled: Function;
+    onFlatShadingToggled: Function;
+    onWireframeToggled: Function;
 }
 
 export interface ILsystemControlsState {

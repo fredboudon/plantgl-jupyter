@@ -3,7 +3,7 @@ import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
 import * as THREE from 'three';
 import decoder from './decoder';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { disposeScene } from './utilities';
+import { disposeScene, meshify } from './utilities';
 import { imageIcon } from '@jupyterlab/ui-components';
 
 const MIME_TYPE = 'application/octet-stream';
@@ -89,7 +89,7 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         }
     }
 
-    setMeshs(meshs) {
+    setMeshs(meshs: Array<THREE.Mesh | THREE.InstancedMesh>) {
 
         this.scene.add(...meshs);
         const box = new THREE.Box3().setFromObject(this.scene);
@@ -109,7 +109,7 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         return new Promise((resolve, reject) => {
             decoder.decode({ data })
                 .then(res => {
-                    this.setMeshs(res.results);
+                    this.setMeshs(meshify(res.results));
                     resolve();
                 })
                 .catch(() => reject());

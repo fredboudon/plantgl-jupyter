@@ -1,4 +1,4 @@
-FROM jupyter/base-notebook:lab-2.1.5
+FROM jupyter/base-notebook:lab-2.2.5
 USER root
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y libgl1-mesa-dev && \
@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
     conda update -y jupyterlab && \
-    conda install --freeze-installed -y -c fredboudon -c conda-forge openalea.lpy && \
+    conda install -y -c fredboudon -c conda-forge 'openalea.lpy>=3.4.0' 'ipywidgets>=7.5.0' pandas matplotlib rpy2 && \
     jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
     pip3 install pgljupyter --no-cache && \
     jupyter lab build && \
@@ -18,4 +18,5 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
 
 USER 1000
 WORKDIR $HOME
+RUN rm -fr work
 ENTRYPOINT []

@@ -54,7 +54,7 @@ from ._frontend import module_name, module_version
 # should be moved to lpy
 def make_default_lpy_context():
 
-    return {
+    return DotDict({
         'schema': 'lpy',
         'version': '1.1',
         'options': {
@@ -65,10 +65,17 @@ def make_default_lpy_context():
         },
         'parameters': [],
         'materials': []
-    }
+    })
 
 
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
+
+
+class DotDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        super(DotDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 
 @register
@@ -86,13 +93,16 @@ class _Editor(HBox):
 
     name = Unicode('').tag(sync=False)
 
-    def __init__(self, name, validator, **kwargs):
+    def __init__(self, name, validator=None, no_name=False, **kwargs):
         self.name = name
-        self.__validator = validator
+        self.__validator = validator if validator is not None else lambda x: True
         self.__text = Text(name, description='name')
         self.__text.continuous_update = False
         self.__text.observe(self.__on_name_changed, names='value')
-        kwargs['children'] = (self.__text, *kwargs['children'])
+        if no_name:
+            kwargs['children'] = kwargs['children']
+        else:
+            kwargs['children'] = (self.__text, *kwargs['children'])
         kwargs['layout'] = Layout(margin='20px 0px')
         super().__init__(**kwargs)
 
@@ -423,13 +433,13 @@ class ParameterEditor(VBox):
 
     __auto_apply = False
     __auto_save = False
-    __tab = Tab()
-    __auto_apply_cbx = Checkbox(description='Auto apply')
-    __auto_save_cbx = Checkbox(description='Auto save')
-    __apply_btn = Button(description='Apply changes')
-    __save_btn = Button(description='Save changes')
-    __add_category_btn = Button(description='Add category')
-    __add_category_txt = Text(placeholder='category name')
+    __tab = None
+    __auto_apply_cbx = None
+    __auto_save_cbx = None
+    __apply_btn = None
+    __save_btn = None
+    __add_category_btn = None
+    __add_category_txt = None
 
     # values = List([]).tag(sync=False)
     # widget = Instance(VBox).tag(sync=True, **widget_serialization)
@@ -439,6 +449,13 @@ class ParameterEditor(VBox):
 
     def __init__(self, filename, context=None, **kwargs):
 
+        self.__tab = Tab()
+        self.__auto_apply_cbx = Checkbox(description='Auto apply')
+        self.__auto_save_cbx = Checkbox(description='Auto save')
+        self.__apply_btn = Button(description='Apply changes')
+        self.__save_btn = Button(description='Save changes')
+        self.__add_category_btn = Button(description='Add category')
+        self.__add_category_txt = Text(placeholder='category name')
         make_default_lpy_context()
         self.__load_from_file(filename)
         super().__init__([VBox([
@@ -574,7 +591,7 @@ class ParameterEditor(VBox):
 
             if 'schema' in obj and obj['schema'] == 'lpy':
 
-                box_options = HBox(layout=item_layout)
+                # box_options = HBox(layout=item_layout)
                 box_materials = HBox(layout=item_layout)
 
                 for material in obj['materials']:
@@ -583,10 +600,10 @@ class ParameterEditor(VBox):
                     box_materials.children = (*box_materials.children, ipt)
 
                 acc_items = [
-                    VBox([
-                        HBox((), layout=menu_layout),
-                        box_options
-                    ]),
+                    # VBox([
+                    #     HBox((), layout=menu_layout),
+                    #     box_options
+                    # ]),
                     VBox([
                         HBox(self.__menu('materials', box_materials), layout=menu_layout),
                         box_materials
@@ -624,10 +641,10 @@ class ParameterEditor(VBox):
                     ]))
 
                 acc = Accordion(acc_items)
-                acc.set_title(0, 'options')
-                acc.set_title(1, 'materials')
+                # acc.set_title(0, 'options')
+                acc.set_title(0, 'materials')
                 for i, category in enumerate(obj['parameters']):
-                    acc.set_title(i + 2, category['name'])
+                    acc.set_title(i + 1, category['name'])
 
             children.append(acc)
 
@@ -911,7 +928,9 @@ class ParameterEditor(VBox):
                     obj[prop] = new
 
             if self.__auto_apply:
-                self.on_lpy_context_change(self.lpy_context)
+                # A Material name is just a label
+                if not (isinstance(owner, MaterialEditor) and prop == 'name'):
+                    self.on_lpy_context_change(self.lpy_context)
             if self.__auto_save:
                 self.__save_files()
 

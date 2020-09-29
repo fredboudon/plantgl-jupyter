@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "0.1.17",
+  "version": "0.1.19",
   "description": "PlantGL jupyter widget",
   "keywords": [
     "jupyter",
@@ -37,7 +37,7 @@
     "build:pgljs": "cd src/pgljs && npm run build && mkdir -p ../../lib/pgljs && cp -a dist ../../lib/pgljs",
     "build:nbextension": "webpack -p --optimize-minimize",
     "build:all": "npm run build:pgljs && npm run build:lib && npm run build:labextension && npm run build:nbextension",
-    "clean": "npm run clean:lib && npm run clean:nbextension",
+    "clean": "npm run clean:lib && npm run clean:nbextension && npm run clean:labextension",
     "clean:lib": "rimraf lib",
     "clean:labextension": "rimraf pgljupyter/labextension",
     "clean:nbextension": "rimraf pgljupyter/nbextension/static/index.js",
