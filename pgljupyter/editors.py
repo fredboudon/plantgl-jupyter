@@ -54,7 +54,7 @@ from ._frontend import module_name, module_version
 # should be moved to lpy
 def make_default_lpy_context():
 
-    return {
+    return DotDict({
         'schema': 'lpy',
         'version': '1.1',
         'options': {
@@ -65,10 +65,17 @@ def make_default_lpy_context():
         },
         'parameters': [],
         'materials': []
-    }
+    })
 
 
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
+
+
+class DotDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        super(DotDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 
 @register
@@ -588,7 +595,7 @@ class ParameterEditor(VBox):
                 box_materials = HBox(layout=item_layout)
 
                 for material in obj['materials']:
-                    ipt = MaterialEditor(**material)
+                    ipt = MaterialEditor(**material, validator=self.__validate_name)
                     ipt.observe(self.__observe_lpy('materials'))
                     box_materials.children = (*box_materials.children, ipt)
 
@@ -734,7 +741,7 @@ class ParameterEditor(VBox):
                     'index': index,
                     'ambient': [80, 80, 80]
                 }
-                item = MaterialEditor(**material)
+                item = MaterialEditor(**material, validator=self.__validate_name)
                 self.lpy_context['materials'].append(material)
                 box.children = (*box.children, item)
                 item.observe(self.__observe_lpy(parameter_type))
