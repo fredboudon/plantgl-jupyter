@@ -314,7 +314,7 @@ class LsystemWidget(PGLWidget):
             raise ValueError('Neither lpy file nor code provided')
 
         self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
-        initialise_context_code = self.__codes[1]
+        initialise_context_code = self.__codes[1] if len(self.__codes) > 1 else ''
         self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
 
         if self.__filename:
