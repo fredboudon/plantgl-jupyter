@@ -3,7 +3,7 @@
 
 # pgljupyter
 
-PlantGL & L-Py jupyter widgets
+[PlantGL](https://github.com/fredboudon/plantgl) & [L-Py](https://github.com/fredboudon/lpy) jupyter widgets
 
 ## Quick Examples
 
