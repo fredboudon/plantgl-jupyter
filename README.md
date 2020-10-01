@@ -58,7 +58,7 @@ Arguments:
 - `--size`, `-s` int,int: same as `size_display`
 - `--unit`, `-u` enum: same as `unit`
 - `--world`, `-w` float: same as `size_world`
-- `--animate`, `-a` bool: if `True` runs animation automatically
+- `--animate`, `-a` True: runs animation automatically
 
 
 ## Installation
