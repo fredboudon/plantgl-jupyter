@@ -5,6 +5,15 @@
 
 PlantGL & L-Py jupyter widgets
 
+## Quick Examples
+
+- notebook magics - champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
+
+- simple shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+
+- lpy tree model - leuwenberg [@binder](https://mybinder.org/v2/gh/jvail/plantgl-jupyter/master?urlpath=lab/tree/examples/lpy/leuwenberg/leuwenberg.ipynb)
+
+
 ## Install with pip - inside conda env
 
 ```bash
