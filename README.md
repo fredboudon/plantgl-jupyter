@@ -139,10 +139,8 @@ jupyter lab --notebook-dir=./examples
 
 Tag `latest` might not be up-tp-date since docker is primarily used for binder
 
-`docker pull jvail/plantgl-jupyter:0.1.19`
-
-
 ```
+docker pull jvail/plantgl-jupyter:0.1.19
 docker run --rm \
     -p 8888:8888 \
     -v $PWD/{folder_with_your_notebooks}:/home/jovyan plantgl-jupyter \
