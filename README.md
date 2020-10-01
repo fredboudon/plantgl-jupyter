@@ -56,7 +56,7 @@ import pgljupyter
 Arguments:
 
 - `--size`, `-s` int,int: same as `size_display`
-- `--unit`, `-u` string enum: same as `unit`
+- `--unit`, `-u` enum: same as `unit`
 - `--world`, `-w` float: same as `size_world`
 - `--animate`, `-a` bool: if `True` runs animation automatically
 
