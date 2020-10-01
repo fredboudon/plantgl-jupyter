@@ -26,7 +26,7 @@ Arguments:
 - `arg0` list | plantgl.Shape | plantgl.Scene: a list of shapes or scenes or a single object
 - `position` tuple (float, float, float): x, y, z position of arg0 (default (0, 0, 0))
 - `scale` float: scale factor for arg0 (default 1)
-- `size_display` Tuple (int, int): width and height of the canvas (minimum 400)
+- `size_display` tuple (int, int): width and height of the canvas (minimum 400)
 - `size_world` float: extend on the 3D scene in all directions
 
 
@@ -40,7 +40,7 @@ Arguments:
 - `unit` string enum: the unit used in the Lsystem model ('m', 'dm', 'cm', 'mm', default 'm')
 - `scale` float: scale factor for arg0 (default 1)
 - `animate` bool: if `True` runs animation automatically
-- `size_display` Tuple (int, int): width and height of the canvas (minimum 400)
+- `size_display` tuple (int, int): width and height of the canvas (minimum 400)
 - `size_world` float: extend on the 3D scene in all directions
 
 
