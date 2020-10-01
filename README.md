@@ -14,7 +14,59 @@
 - lpy tree model - leuwenberg [@binder](https://mybinder.org/v2/gh/jvail/plantgl-jupyter/master?urlpath=lab/tree/examples/lpy/leuwenberg/leuwenberg.ipynb)
 
 
-## Install with pip - inside conda env
+## Usage
+
+```python
+from pgljupyter import SceneWidget, LsystemWidget
+```
+
+**SceneWidget**
+
+Renderer for PlantGL Scenes, Shapes, Geometries
+
+Arguments:
+
+- `arg0` list | plantgl.Shape | plantgl.Scene: a list of shapes or scenes or a single object
+- `position` tuple (float, float, float): x, y, z position of arg0 (default (0, 0, 0))
+- `scale` float: scale factor for arg0 (default 1)
+- `size_display` Tuple (int, int): width and height of the canvas (minimum 400)
+- `size_world` float: extend on the 3D scene in all directions
+
+
+**LsystemWidget**
+
+Renderer for lpy.Lstrings derived from lpy.Lsystem code
+
+Arguments:
+
+- `arg0` string: file name / path of lpy code file
+- `unit` string enum: the unit used in the Lsystem model ('m', 'dm', 'cm', 'mm', default 'm')
+- `scale` float: scale factor for arg0 (default 1)
+- `animate` bool: if `True` runs animation automatically
+- `size_display` Tuple (int, int): width and height of the canvas (minimum 400)
+- `size_world` float: extend on the 3D scene in all directions
+
+
+**%%lpy**
+
+A cell magic to inline L-Py code in a notebook
+
+```python
+# activated by importing pgljupyter
+import pgljupyter
+```
+
+Arguments:
+
+- `--size`, `-s` int,int: same as `size_display`
+- `--unit`, `-u` string enum: same as `unit`
+- `--world`, `-w` float: same as `size_world`
+- `--animate`, `-a` bool: if `True` runs animation automatically
+
+
+## Installation
+
+### Install with pip - inside conda env
 
 ```bash
 conda create -y -n pgljupyter -c fredboudon -c conda-forge \
@@ -25,7 +77,7 @@ jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 jupyter lab build && jupyter lab
 ```
 
-## Build, install and run from source
+### Build, install and run from source
 
  - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
