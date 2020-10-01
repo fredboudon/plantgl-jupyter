@@ -135,9 +135,10 @@ jupyter lab clean
 jupyter lab --notebook-dir=./examples
 ```
 
-### Run jupyter as docker container locally
+## Docker
 
-Tag `latest` might not be up-tp-date since docker is primarily used for binder
+Run jupyter as docker container locally.
+Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
 docker pull jvail/plantgl-jupyter:0.1.19
