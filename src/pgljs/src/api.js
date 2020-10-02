@@ -1,6 +1,7 @@
 
 function parse (bgeom) {
 
+    const floor = Math.floor;
     const triangleSets = [];
     if (!(bgeom instanceof Uint8Array)) {
         bgeom = new Uint8Array(bgeom);
@@ -29,11 +30,15 @@ function parse (bgeom) {
             const ambient = material.getAmbient();
             const specular = material.getSpecular();
             const emission = material.getEmission();
+            const diffuse = material.getDiffuse();
             materials.push({
-                ambient: [ambient.getRed(), ambient.getGreen(), ambient.getBlue()],
+                color: [
+                    floor(ambient.getRed() * diffuse),
+                    floor(ambient.getGreen() * diffuse),
+                    floor(ambient.getBlue() * diffuse)
+                ],
                 specular: [specular.getRed(), specular.getGreen(), specular.getBlue()],
                 emission: [emission.getRed(), emission.getGreen(), emission.getBlue()],
-                diffuse: material.getDiffuse(),
                 shininess: material.getShininess(),
                 transparency: material.getTransparency()
             });

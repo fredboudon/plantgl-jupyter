@@ -1,13 +1,14 @@
 const path = require('path');
 const version = require('./package.json').version;
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-// const TerserPlugin = require('terser-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 // Custom webpack rules
 const rules = [
   { test: /\.ts$/, loader: 'ts-loader' },
   { test: /\.js$/, loader: 'source-map-loader', exclude:  [path.join(process.cwd(), 'node_modules')] },
-  { test: /\.css$/, use: ['style-loader', 'css-loader']}
+  { test: /\.css$/, use: ['style-loader', 'css-loader']},
+  { test: /\.svg$/, loader: 'svg-inline-loader' }
 ];
 
 // Packages that shouldn't be bundled but loaded at runtime
@@ -46,13 +47,14 @@ module.exports = [
     module: {
       rules: rules
     },
-    devtool: '',
+    // devtool: 'source-map',
     externals,
     resolve,
     performance: {
       hints: false
     },
     plugins: [
+      new TerserPlugin(),
       // new BundleAnalyzerPlugin()
     ]
   },
@@ -73,17 +75,27 @@ module.exports = [
         filename: 'index.js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'amd',
-        library: "pgljupyter",
-        // publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
+        library: 'pgljupyter',
+        publicPath: 'https://unpkg.com/pgljupyter@' + version + '/dist/'
     },
-    devtool: '',
+    // devtool: 'source-map',
     module: {
         rules: rules
     },
     plugins: [
+      new TerserPlugin(),
       // new BundleAnalyzerPlugin()
     ],
-    externals,
+    externals: [
+      '@jupyter-widgets/base',
+      "@jupyter-widgets/controls",
+      '@jupyterlab/application',
+      '@jupyterlab/codemirror',
+      '@jupyterlab/docregistry',
+      '@jupyterlab/rendermime',
+      '@jupyterlab/rendermime-interfaces',
+      "@lumino/application"
+    ],
     resolve,
     performance: {
       hints: false
@@ -107,7 +119,7 @@ module.exports = [
     module: {
       rules: rules
     },
-    devtool: '',
+    // devtool: '',
     externals,
     resolve,
     performance: {

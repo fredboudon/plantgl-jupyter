@@ -20,7 +20,7 @@ export class PGLWidgetModel extends DOMWidgetModel {
             _view_module: PGLWidgetModel.view_module,
             _view_module_version: PGLWidgetModel.view_module_version,
             size_display: [400, 400],
-            size_world: [10, 10, 10],
+            size_world: 1,
             axes_helper: false,
             light_helper: false,
             plane: true
@@ -84,7 +84,8 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             derivationLength: 0,
             scene: null,
             unit: LsystemUnit.M,
-            animate: false
+            animate: false,
+            is_magic: false
         };
     }
 
@@ -255,9 +256,9 @@ export class _CurveEditorModel extends DOMWidgetModel {
             _view_module: _CurveEditorModel.view_module,
             _view_module_version: _CurveEditorModel.view_module_version,
             name: '',
-            control_points: [],
+            points: [],
             is_function: false,
-            curve_type: ''
+            type: ''
         };
     }
 
