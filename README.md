@@ -144,6 +144,6 @@ Tag `latest` might not always be up-to-date since docker is primarily used for b
 docker pull jvail/plantgl-jupyter:0.1.19
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/{folder_with_your_notebooks}:/home/jovyan plantgl-jupyter \
+    -v $PWD/{folder_with_your_notebooks}:/home/jovyan/work plantgl-jupyter \
     jupyter lab`
 ```

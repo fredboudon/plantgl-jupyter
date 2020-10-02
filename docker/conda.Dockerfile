@@ -18,5 +18,5 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
 
 USER 1000
 WORKDIR $HOME
-RUN rm -fr work
+# RUN rm -fr work
 ENTRYPOINT []
