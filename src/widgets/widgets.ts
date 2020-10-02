@@ -2,10 +2,8 @@ import '../../css/widget.css';
 import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
-import * as THREE from 'three';
 import decoder from './decoder';
 import { PGLControls, LsystemControls } from './controls';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import {
     IScene,
     IPGLControlsState,
@@ -13,7 +11,7 @@ import {
     ILsystemScene,
     ITaskResult
 } from './interfaces';
-import { disposeScene, meshify } from './utilities';
+import { THREE, disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
@@ -150,7 +148,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.render(this.scene, this.camera);
 
-        this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
+        this.orbitControl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
         this.orbitControl.addEventListener('change', () => {
             this.renderer.render(this.scene, this.camera)
