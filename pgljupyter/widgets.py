@@ -317,7 +317,11 @@ class LsystemWidget(PGLWidget):
         initialise_context_code = self.__codes[1] if len(self.__codes) > 1 else ''
         self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
 
-        if self.__filename:
+        if self.__filename and Path(self.__filename[0:-3] + 'json').is_file():
+            self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
+            self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+            self.__on_lpy_context_change(self.__editor.lpy_context)
+        elif self.__filename:
             scope = {}
             exec(compile(initialise_context_code + '\n', '<string>', 'exec'), scope)
             if '__initialiseContext__' in scope:
@@ -327,11 +331,6 @@ class LsystemWidget(PGLWidget):
                 if ParameterEditor.validate_schema(context_obj):
                     with io.open(self.__filename[0:-3] + 'json', 'w') as file:
                         file.write(json.dumps(context_obj, indent=4))
-
-        if self.__filename and Path(self.__filename[0:-3] + 'json').is_file():
-            self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-            self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-            self.__on_lpy_context_change(self.__editor.lpy_context)
         else:
             self.__initialize_lsystem()
             self.__set_scene(0)
