@@ -1,7 +1,7 @@
 const path = require('path');
 const version = require('./package.json').version;
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-// const TerserPlugin = require('terser-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 // Custom webpack rules
 const rules = [
@@ -54,6 +54,7 @@ module.exports = [
       hints: false
     },
     plugins: [
+      new TerserPlugin(),
       // new BundleAnalyzerPlugin()
     ]
   },
@@ -82,6 +83,7 @@ module.exports = [
         rules: rules
     },
     plugins: [
+      new TerserPlugin(),
       // new BundleAnalyzerPlugin()
     ],
     externals: [

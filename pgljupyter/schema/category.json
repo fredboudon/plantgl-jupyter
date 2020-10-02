@@ -4,8 +4,7 @@
     "type": "object",
     "properties": {
         "name": {
-            "type": "string",
-            "pattern": "^[^\\d\\W]\\w*\\Z"
+            "type": "string"
         },
         "enabled": {
             "type":"boolean"

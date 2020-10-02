@@ -17,6 +17,7 @@
 
 ## build python pkgs and publish them
 
+    npm run clean
     python3 setup.py sdist bdist_wheel
     twine upload dist/*{0.x.xx}*
 

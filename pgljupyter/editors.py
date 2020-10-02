@@ -12,8 +12,8 @@ from pathlib import Path
 
 from ipywidgets.widgets import (
     register, DOMWidget,  VBox, HBox, Tab, Layout, Accordion, Dropdown, Button,
-    FloatText, IntText, Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedFloatText,
-    BoundedIntText
+    FloatText, IntText, Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText,
+    # BoundedFloatText
 )
 from traitlets import Unicode, List, Float, Bool, Int
 
@@ -54,7 +54,7 @@ from ._frontend import module_name, module_version
 # should be moved to lpy
 def make_default_lpy_context():
 
-    return {
+    return DotDict({
         'schema': 'lpy',
         'version': '1.1',
         'options': {
@@ -65,10 +65,17 @@ def make_default_lpy_context():
         },
         'parameters': [],
         'materials': []
-    }
+    })
 
 
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
+
+
+class DotDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        super(DotDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 
 @register
@@ -86,13 +93,16 @@ class _Editor(HBox):
 
     name = Unicode('').tag(sync=False)
 
-    def __init__(self, name, validator, **kwargs):
+    def __init__(self, name, validator=None, no_name=False, **kwargs):
         self.name = name
-        self.__validator = validator
+        self.__validator = validator if validator is not None else lambda x: True
         self.__text = Text(name, description='name')
         self.__text.continuous_update = False
         self.__text.observe(self.__on_name_changed, names='value')
-        kwargs['children'] = (self.__text, *kwargs['children'])
+        if no_name:
+            kwargs['children'] = kwargs['children']
+        else:
+            kwargs['children'] = (self.__text, *kwargs['children'])
         kwargs['layout'] = Layout(margin='20px 0px')
         super().__init__(**kwargs)
 
@@ -178,40 +188,40 @@ class FloatEditor(_Editor):
         self.value = float(value)
 
         self.__slider = FloatSlider(value, min=min, max=max, step=step, description='value')
-        self.__min_ipt = FloatText(min, description='min')
-        self.__max_ipt = FloatText(max, description='max')
-        self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
+        # self.__min_ipt = FloatText(min, description='min')
+        # self.__max_ipt = FloatText(max, description='max')
+        # self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        self.__min_ipt.observe(self.__on_min_changed, names='value')
-        self.__max_ipt.observe(self.__on_max_changed, names='value')
-        self.__step_ipt.observe(self.__on_step_changed, names='value')
+        # self.__min_ipt.observe(self.__on_min_changed, names='value')
+        # self.__max_ipt.observe(self.__on_max_changed, names='value')
+        # self.__step_ipt.observe(self.__on_step_changed, names='value')
 
         kwargs['children'] = [
             self.__slider,
-            self.__min_ipt,
-            self.__max_ipt,
-            self.__step_ipt
+            # self.__min_ipt,
+            # self.__max_ipt,
+            # self.__step_ipt
         ]
         super().__init__(**kwargs)
 
-    def __on_min_changed(self, change):
-        if self.__min_ipt.value < self.__slider.max:
-            self.__slider.min = self.__min_ipt.value
-        else:
-            self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-        self.min = self.__min_ipt.value
+    # def __on_min_changed(self, change):
+    #     if self.__min_ipt.value < self.__slider.max:
+    #         self.__slider.min = self.__min_ipt.value
+    #     else:
+    #         self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
+    #     self.min = self.__min_ipt.value
 
-    def __on_max_changed(self, change):
-        if self.__max_ipt.value > self.__slider.min:
-            self.__slider.max = self.__max_ipt.value
-        else:
-            self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-        self.max = self.__max_ipt.value
+    # def __on_max_changed(self, change):
+    #     if self.__max_ipt.value > self.__slider.min:
+    #         self.__slider.max = self.__max_ipt.value
+    #     else:
+    #         self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
+    #     self.max = self.__max_ipt.value
 
-    def __on_step_changed(self, change):
-        self.__slider.step = self.__step_ipt.value
-        self.step = self.__step_ipt.value
+    # def __on_step_changed(self, change):
+    #     self.__slider.step = self.__step_ipt.value
+    #     self.step = self.__step_ipt.value
 
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
@@ -238,40 +248,40 @@ class IntEditor(_Editor):
 
         self.value = int(value)
         self.__slider = IntSlider(value, min, max, description='value')
-        self.__min_ipt = IntText(min, description='min')
-        self.__max_ipt = IntText(max, description='max')
-        self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
+        # self.__min_ipt = IntText(min, description='min')
+        # self.__max_ipt = IntText(max, description='max')
+        # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        self.__min_ipt.observe(self.__on_min_changed, names='value')
-        self.__max_ipt.observe(self.__on_max_changed, names='value')
-        self.__step_ipt.observe(self.__on_step_changed, names='value')
+        # self.__min_ipt.observe(self.__on_min_changed, names='value')
+        # self.__max_ipt.observe(self.__on_max_changed, names='value')
+        # self.__step_ipt.observe(self.__on_step_changed, names='value')
 
         kwargs['children'] = [
             self.__slider,
-            self.__min_ipt,
-            self.__max_ipt,
-            self.__step_ipt
+            # self.__min_ipt,
+            # self.__max_ipt,
+            # self.__step_ipt
         ]
         super().__init__(**kwargs)
 
-    def __on_min_changed(self, change):
-        if self.__min_ipt.value < self.__slider.max:
-            self.__slider.min = self.__min_ipt.value
-        else:
-            self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-        self.min = self.__min_ipt.value
+    # def __on_min_changed(self, change):
+    #     if self.__min_ipt.value < self.__slider.max:
+    #         self.__slider.min = self.__min_ipt.value
+    #     else:
+    #         self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
+    #     self.min = self.__min_ipt.value
 
-    def __on_max_changed(self, change):
-        if self.__max_ipt.value > self.__slider.min:
-            self.__slider.max = self.__max_ipt.value
-        else:
-            self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-        self.max = self.__max_ipt.value
+    # def __on_max_changed(self, change):
+    #     if self.__max_ipt.value > self.__slider.min:
+    #         self.__slider.max = self.__max_ipt.value
+    #     else:
+    #         self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
+    #     self.max = self.__max_ipt.value
 
-    def __on_step_changed(self, change):
-        self.__slider.step = self.__step_ipt.value
-        self.step = self.__step_ipt.value
+    # def __on_step_changed(self, change):
+    #     self.__slider.step = self.__step_ipt.value
+    #     self.step = self.__step_ipt.value
 
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
@@ -423,13 +433,13 @@ class ParameterEditor(VBox):
 
     __auto_apply = False
     __auto_save = False
-    __tab = Tab()
-    __auto_apply_cbx = Checkbox(description='Auto apply')
-    __auto_save_cbx = Checkbox(description='Auto save')
-    __apply_btn = Button(description='Apply changes')
-    __save_btn = Button(description='Save changes')
-    __add_category_btn = Button(description='Add category')
-    __add_category_txt = Text(placeholder='category name')
+    __tab = None
+    __auto_apply_cbx = None
+    __auto_save_cbx = None
+    __apply_btn = None
+    __save_btn = None
+    __add_category_btn = None
+    __add_category_txt = None
 
     # values = List([]).tag(sync=False)
     # widget = Instance(VBox).tag(sync=True, **widget_serialization)
@@ -439,6 +449,13 @@ class ParameterEditor(VBox):
 
     def __init__(self, filename, context=None, **kwargs):
 
+        self.__tab = Tab()
+        self.__auto_apply_cbx = Checkbox(description='Auto apply')
+        self.__auto_save_cbx = Checkbox(description='Auto save')
+        self.__apply_btn = Button(description='Apply changes')
+        self.__save_btn = Button(description='Save changes')
+        self.__add_category_btn = Button(description='Add category')
+        self.__add_category_txt = Text(placeholder='category name')
         make_default_lpy_context()
         self.__load_from_file(filename)
         super().__init__([VBox([
@@ -574,7 +591,7 @@ class ParameterEditor(VBox):
 
             if 'schema' in obj and obj['schema'] == 'lpy':
 
-                box_options = HBox(layout=item_layout)
+                # box_options = HBox(layout=item_layout)
                 box_materials = HBox(layout=item_layout)
 
                 for material in obj['materials']:
@@ -583,10 +600,10 @@ class ParameterEditor(VBox):
                     box_materials.children = (*box_materials.children, ipt)
 
                 acc_items = [
-                    VBox([
-                        HBox((), layout=menu_layout),
-                        box_options
-                    ]),
+                    # VBox([
+                    #     HBox((), layout=menu_layout),
+                    #     box_options
+                    # ]),
                     VBox([
                         HBox(self.__menu('materials', box_materials), layout=menu_layout),
                         box_materials
@@ -624,10 +641,10 @@ class ParameterEditor(VBox):
                     ]))
 
                 acc = Accordion(acc_items)
-                acc.set_title(0, 'options')
-                acc.set_title(1, 'materials')
+                # acc.set_title(0, 'options')
+                acc.set_title(0, 'materials')
                 for i, category in enumerate(obj['parameters']):
-                    acc.set_title(i + 2, category['name'])
+                    acc.set_title(i + 1, category['name'])
 
             children.append(acc)
 
@@ -716,10 +733,12 @@ class ParameterEditor(VBox):
 
             def fn_add(self):
 
-                material_name = f'{ddn_add.value}_{len(box.children)}'
+                index = len(box.children) + 1
+                material_name = f'{ddn_add.value}_{index}'
+
                 material = {
                     'name': material_name,
-                    'index': len(box.children),
+                    'index': index,
                     'ambient': [80, 80, 80]
                 }
                 item = MaterialEditor(**material, validator=self.__validate_name)
@@ -909,7 +928,9 @@ class ParameterEditor(VBox):
                     obj[prop] = new
 
             if self.__auto_apply:
-                self.on_lpy_context_change(self.lpy_context)
+                # A Material name is just a label
+                if not (isinstance(owner, MaterialEditor) and prop == 'name'):
+                    self.on_lpy_context_change(self.lpy_context)
             if self.__auto_save:
                 self.__save_files()
 
