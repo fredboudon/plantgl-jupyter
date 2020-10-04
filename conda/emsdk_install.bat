@@ -3,7 +3,7 @@ MKDIR \emsdk
 cd \emsdk
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk.bat install latest
-./emsdk.bat activate latest
-./emsdk_env.bat
+call ./emsdk.bat install latest
+call ./emsdk.bat activate latest
+call ./emsdk_env.bat
 cd %SRC_DIR%

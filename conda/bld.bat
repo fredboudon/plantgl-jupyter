@@ -3,7 +3,7 @@ echo "****** START OF BUILD PROCESS"
 REM jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 
 echo "install emsdk"
-conda/emsdk_install.bat
+call conda/emsdk_install.bat
 if errorlevel 1 exit 1
 
 echo "fetch plantgl and install pgljs deps"
