@@ -20,19 +20,19 @@ requirements:
   host:
     - python {{PY_VER}}
     - setuptools
-    - openalea.lpy
-    - openalea.plantgl
-    - notebook
+    #- openalea.lpy
+    #- openalea.plantgl
+    #- notebook
     - jupyterlab>=2.2
     - ipywidgets>=7.5
     - nodejs
     - pip
     - cmake
     - git
-    - toml
-    - jsonschema
-    - pathlib
-    - traitlets
+    #- toml
+    #- jsonschema
+    #- pathlib
+    #- traitlets
   run:
     - python {{PY_VER}}
     - setuptools
