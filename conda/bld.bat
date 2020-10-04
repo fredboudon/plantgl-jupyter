@@ -5,9 +5,9 @@ REM jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 echo "install emsdk"
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install latest
-./emsdk activate latest
-source ./emsdk_env.sh
+./emsdk.bat install latest
+./emsdk.bat activate latest
+./emsdk_env.bat
 cd ..
 
 echo "fetch plantgl and install pgljs deps"
