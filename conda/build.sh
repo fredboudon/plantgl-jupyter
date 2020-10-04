@@ -27,9 +27,9 @@ npm install
 
 echo 
 echo "****** install python modules and jupyter extensions"
-pip install -v .
-jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
-jupyter nbextension enable --sys-prefix --py pgljupyter
+"${PREFIX}/bin/pip" install -v .
+"${PREFIX}/bin/jupyter-nbextension" install --sys-prefix --overwrite --py pgljupyter
+# jupyter nbextension enable --sys-prefix --py pgljupyter
 #jupyter labextension install --no-build pgljupyter 
 #jupyter lab clean
 
