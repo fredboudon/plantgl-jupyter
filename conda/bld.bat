@@ -5,14 +5,16 @@ if errorlevel 1 exit 1
 
 "%PREFIX%\Scripts\jupyter-labextension.exe"  install --no-build @jupyter-widgets/jupyterlab-manager
 echo "PATH test"
-echo %PATH%
+@echo %PATH%
 
+set PPATH=%PATH%
 echo "install emsdk"
 call conda/emsdk_install.bat
 if errorlevel 1 exit 1
 
 echo "PATH test"
 echo %PATH%
+set PATH=%PPATH%;%PATH%
 
 echo "install pgljupyter deps and build"
 cd src/pgljs
