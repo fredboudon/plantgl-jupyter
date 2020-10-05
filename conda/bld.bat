@@ -1,40 +1,42 @@
 echo "****** START OF BUILD PROCESS"
-echo "fetch plantgl and install pgljs deps"
-git submodule update --init --recursive
-if errorlevel 1 exit 1
+REM echo "fetch plantgl and install pgljs deps"
+REM git submodule update --init --recursive
+REM if errorlevel 1 exit 1
 
-"%PREFIX%\Scripts\jupyter-labextension.exe"  install --no-build @jupyter-widgets/jupyterlab-manager
-echo "PATH test"
-@echo %PATH%
+REM "%PREFIX%\Scripts\jupyter-labextension.exe"  install --no-build @jupyter-widgets/jupyterlab-manager
+REM echo "PATH test"
+REM @echo %PATH%
 
-set PPATH=%PATH%
-echo "install emsdk"
-call conda/emsdk_install.bat
-if errorlevel 1 exit 1
+REM set PPATH=%PATH%
+REM echo "install emsdk"
+REM call conda/emsdk_install.bat
+REM if errorlevel 1 exit 1
 
-echo "PATH test"
-echo %PATH%
-set PATH=%PPATH%;%PATH%
+REM echo "PATH test"
+REM echo %PATH%
+REM set PATH=%PPATH%;%PATH%
 
-echo "install pgljupyter deps and build"
-cd src/pgljs
-call npm install
-if errorlevel 1 exit 1
+REM echo "install pgljupyter deps and build"
+REM cd src/pgljs
+REM call npm install
+REM if errorlevel 1 exit 1
 
-cd ../..
-call npm install
-if errorlevel 1 exit 1
+REM cd ../..
+REM call npm install
+REM if errorlevel 1 exit 1
 
 echo "install python modules and jupyter extensions"
 
-call "%PREFIX%\Scripts\pip.exe" install .
-if errorlevel 1 exit 1
+REM call "%PREFIX%\Scripts\pip.exe" install .
+REM if errorlevel 1 exit 1
 
-"%PREFIX%\Scripts\jupyter-nbextension.exe" install --sys-prefix --overwrite --py pgljupyter
-if errorlevel 1 exit 1
+REM "%PREFIX%\Scripts\jupyter-nbextension.exe" install --sys-prefix --overwrite --py pgljupyter
+REM if errorlevel 1 exit 1
 
 REM jupyter nbextension enable --sys-prefix --py pgljupyter
 REM jupyter labextension install .
 REM jupyter lab clean
+
+call "%PREFIX%\Scripts\pip.exe" install pgljupyter
 
 echo "****** END OF BUILD PROCESS"

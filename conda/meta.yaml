@@ -20,15 +20,15 @@ requirements:
   host:
     - python {{PY_VER}}
     - setuptools
-    - openalea.lpy
+    - openalea.lpy>=3.4
     - openalea.plantgl
-    - notebook
+    #- notebook
     - jupyterlab>=2.2
     - ipywidgets>=7.5
-    - nodejs
+    #- nodejs
     - pip
-    - cmake
-    - git
+    #- cmake
+    #- git
     - toml
     - jsonschema
     - pathlib
@@ -36,12 +36,12 @@ requirements:
   run:
     - python {{PY_VER}}
     - setuptools
-    - openalea.lpy
+    - openalea.lpy>=3.4
     - openalea.plantgl
-    - notebook
+    #- notebook
     - jupyterlab>=2.2
     - ipywidgets>=7.5
-    - nodejs # is it necessary at run time ?
+    #- nodejs 
     - toml
     - jsonschema
     - pathlib
