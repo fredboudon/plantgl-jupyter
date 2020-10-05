@@ -1,49 +1,52 @@
-#{% set version = "2.7.2" %}
-{% set data = load_setup_py_data() %}
+{% set name = "pgljupyter" %}
+{% set version = "0.1.21" %}
 
 package:
-  name: openalea.pgljupyter
-  version: {{ data.get('version') }}
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
 
 source:
-  path: ..
-
-about:
-  home: https://github.com/jvail/pgljupyter
-  license: Cecill-C
-  summary: PlantGL and L-Py Jupyter widget.
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: 778437413679659104b123c16f1ec5e8ceb7554a9a0fbf962d1b73048ac523fe
 
 build:
-  preserve_egg_dir: True
-  number: 1
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+
 requirements:
   host:
-    - python {{PY_VER}}
-    - setuptools
-    - openalea.lpy>=3.4
-    - openalea.plantgl
-    #- notebook
-    - jupyterlab>=2.2
-    - ipywidgets>=7.5
-    #- nodejs
+    - ipywidgets >=7.5.0
+    - jsonschema >=3.2.0
+    - jupyterlab >=2.2.0
+    - openalea.lpy >=3.4.0
+    - openalea.plantgl >=3.4.0
     - pip
-    #- cmake
-    #- git
-    - toml
-    - jsonschema
-    - pathlib
-    - traitlets
+    - python
+    - toml >=0.10.1
   run:
-    - python {{PY_VER}}
-    - setuptools
-    - openalea.lpy>=3.4
-    - openalea.plantgl
-    #- notebook
-    - jupyterlab>=2.2
-    - ipywidgets>=7.5
-    #- nodejs 
-    - toml
-    - jsonschema
-    - pathlib
-    - traitlets
+    - ipywidgets >=7.5.0
+    - jsonschema >=3.2.0
+    - jupyterlab >=2.2.0
+    - openalea.lpy >=3.4.0
+    - openalea.plantgl >=3.4.0
+    - python
+    - toml >=0.10.1
 
+test:
+  imports:
+    - pgljupyter
+    - pgljupyter.nbextension
+    - pgljupyter.tests
+
+about:
+  home: "https://github.com/jvail/plantgl-jupyter"
+  license: Cecill
+  license_family: OTHER
+  license_file: 
+  summary: "PlantGL and L-Py jupyter widget"
+  doc_url: 
+  dev_url: 
+
+extra:
+  recipe-maintainers:
+    - jvail, fredboudon

@@ -37,6 +37,6 @@ REM jupyter nbextension enable --sys-prefix --py pgljupyter
 REM jupyter labextension install .
 REM jupyter lab clean
 
-call "%PREFIX%\Scripts\pip.exe" install pgljupyter
+REM call "%PREFIX%\Scripts\pip.exe" install pgljupyter
 
 echo "****** END OF BUILD PROCESS"

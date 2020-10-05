@@ -33,7 +33,7 @@ echo "****** install python modules and jupyter extensions"
 #jupyter labextension install --no-build pgljupyter 
 #jupyter lab clean
 
-"${PREFIX}/bin/pip" install -v pgljupyter
+# "${PREFIX}/bin/pip" install -v pgljupyter
 
 echo 
 echo "****** END OF BUILD PROCESS"
