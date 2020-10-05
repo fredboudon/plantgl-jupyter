@@ -4,11 +4,11 @@
 
 ## Quick Examples
 
+- lpy tree model - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
+
 - notebook magics - champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
 
 - simple shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
-
-- lpy tree model - leuwenberg [@binder](https://mybinder.org/v2/gh/jvail/plantgl-jupyter/master?urlpath=lab/tree/examples/lpy/leuwenberg/leuwenberg.ipynb)
 
 
 ## Usage
@@ -65,10 +65,21 @@ Arguments:
 
 ### Install with pip - inside conda env
 
+Jupyterlab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
+`conda create` command.
+
 ```bash
-conda create -y -n pgljupyter -c fredboudon -c conda-forge \
-    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
-conda activate pgljupyter
+conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets
+```
+
+For windows specify python 3.7 (there are some issues with jupyter on windows with python 3.8)
+
+```bash
+conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 openalea.lpy jupyterlab ipywidgets
+```
+
+```bash
+conda activate pgl
 pip install pgljupyter
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 jupyter lab build && jupyter lab
@@ -79,9 +90,8 @@ jupyter lab build && jupyter lab
  - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
 ```bash
-conda create -y -n pgljupyter -c fredboudon -c conda-forge \
-    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
-conda activate pgljupyter
+conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets
+conda activate pgl
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```
 
