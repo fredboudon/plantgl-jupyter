@@ -11,7 +11,7 @@ source:
 
 build:
   number: 0
-  script: "{{ PYTHON }} -m pip install pgljupyter -vv"
+  script: "{{ PYTHON }} -m pip install pgljupyter-0.1.21-py2.py3-none-any.whl -vv"
 
 requirements:
   host:
