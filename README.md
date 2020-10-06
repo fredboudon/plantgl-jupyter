@@ -147,13 +147,13 @@ jupyter lab --notebook-dir=./examples
 
 ## Docker
 
-Run jupyter as docker container locally.
+Run jupyter as docker container locally. Replace `/examples` with the path to your notebooks.
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
 docker pull jvail/plantgl-jupyter:0.1.21
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/{folder_with_your_notebooks}:/home/jovyan/work plantgl-jupyter \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.1.21 \
     jupyter lab`
 ```
