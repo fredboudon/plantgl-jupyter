@@ -3,7 +3,8 @@ import random as rd
 extern (leafduration = 2) # life time of a leaf
 extern (leafold = 1) # age at which a leaf is considered as old
 extern (maxorder = 6) # maximum number of branching order
-extern (radinc = 0.01) # increment of radius through time
+extern (nb_axes = 3) # number of axes
+extern (radinc = 0.03) # increase of radius
 
 maxduration = lambda order : int(10./(order+1))+3  # life time of an apex
 branch_angle = lambda order : 60+30*((maxorder-order)/maxorder) # branching angle
