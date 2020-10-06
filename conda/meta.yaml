@@ -7,7 +7,7 @@ package:
   
 source:	
   url: "https://files.pythonhosted.org/packages/e6/0d/6dfd10d223a2571b4f0990afb1f63840bf671c2a382db55d80bcb8336776/pgljupyter-0.1.21-py2.py3-none-any.whl"	
-  sha256: 7ce801db6d8212d96620ae64e4fb786ac4e857c35563c2ab9852de754f2ee83c1	
+  sha256: ce801db6d8212d96620ae64e4fb786ac4e857c35563c2ab9852de754f2ee83c1	
 
 build:
   number: 0
