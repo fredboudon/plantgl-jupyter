@@ -69,13 +69,15 @@ Jupyterlab < 3.0 requires nodejs. In case it is not available on your system add
 `conda create` command.
 
 ```bash
-conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets ipython=7
+conda create -y -n pgl -c fredboudon -c conda-forge \
+    openalea.lpy jupyterlab ipywidgets ipython=7
 ```
 
 For **windows** specify python 3.7 (there are some issues with jupyter on windows with python 3.8)
 
 ```bash
-conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 openalea.lpy jupyterlab ipywidgets ipython=7
+conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
+    openalea.lpy jupyterlab ipywidgets ipython=7
 ```
 
 ```bash
@@ -155,5 +157,5 @@ docker pull jvail/plantgl-jupyter:0.1.21
 docker run --rm \
     -p 8888:8888 \
     -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.1.21 \
-    jupyter lab`
+    jupyter lab
 ```
