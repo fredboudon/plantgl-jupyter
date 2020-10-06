@@ -1,17 +1,13 @@
-{% set name = "pgljupyter" %}
+{% set name = "openalea.pgljupyter" %}
 {% set version = "0.1.21" %}
 
 package:
   name: "{{ name|lower }}"
   version: "{{ version }}"
 
-source:
-  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
-  sha256: 778437413679659104b123c16f1ec5e8ceb7554a9a0fbf962d1b73048ac523fe
-
 build:
   number: 0
-  script: "{{ PYTHON }} -m pip install . -vv"
+  script: "{{ PYTHON }} -m pip install pgljupyter -vv"
 
 requirements:
   host:
