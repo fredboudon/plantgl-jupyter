@@ -128,7 +128,7 @@ cd ../..
 
 ```bash
 npm install
-npm run build:pgljs && npm run build
+npm run build:all
 ```
 
  - install python modules and jupyter extensions
