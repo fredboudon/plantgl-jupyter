@@ -1,7 +1,8 @@
-# bash <(curl -s http://mywebsite.com/myscript.txt)
+# bash <(curl -s https://raw.githubusercontent.com/jvail/plantgl-jupyter/ifb/ifb/ifb.sh)
 
+# vmango
 cd /ifb/data/mydatalocal && \
-conda install -y -c fredboudon -c conda-forge openalea.lpy toml future rpy2 && \
+conda install -y -c fredboudon -c conda-forge openalea.lpy toml future rpy2 r-vgam r-multcomp r-combinat && \
 pip install git+https://github.com/fredboudon/deploy.git && \
 pip install git+https://github.com/fredboudon/mtg.git && \
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
