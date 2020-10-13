@@ -97,89 +97,91 @@ class PseudoContext(dict):
 
         for m in self.__materials:
             material = m['material']
-            context.materials.append({
-                'index': m['index'],
-                'name': material.name,
-                'ambient': [material.ambient.red, material.ambient.green, material.ambient.blue],
-                'specular': [material.specular.red, material.specular.green, material.specular.blue],
-                'emission': [material.emission.red, material.emission.green, material.emission.blue],
-                'diffuse': material.diffuse,
-                'transparency': material.transparency,
-                'shininess': material.shininess
-            })
+            if isinstance(material, pgl.Material):
+                context.materials.append({
+                    'index': m['index'],
+                    'name': material.name,
+                    'ambient': [material.ambient.red, material.ambient.green, material.ambient.blue],
+                    'specular': [material.specular.red, material.specular.green, material.specular.blue],
+                    'emission': [material.emission.red, material.emission.green, material.emission.blue],
+                    'diffuse': material.diffuse,
+                    'transparency': material.transparency,
+                    'shininess': material.shininess
+                })
 
         category_by_name = {}
-        for s in self.__items['__scalars__']:
-            if s[1] == 'Category':
-                context.parameters.append(DotDict({
-                    'name': s[0],
-                    'enabled': True,
-                    'scalars': [],
-                    'curves': []
-                }))
-                category_by_name[s[0]] = context.parameters[-1]
-            else:
-                if len(context.parameters) == 0:
+        if '__scalars__' in self.__items:
+            for s in self.__items['__scalars__']:
+                if s[1] == 'Category':
                     context.parameters.append(DotDict({
-                        'name': 'Category',
+                        'name': s[0],
                         'enabled': True,
                         'scalars': [],
                         'curves': []
                     }))
-                if s[1] == 'Bool':
-                    context.parameters[-1].scalars.append({
-                        'name': s[0],
-                        'value': s[2]
-                    })
+                    category_by_name[s[0]] = context.parameters[-1]
                 else:
-                    context.parameters[-1].scalars.append({
-                        'name': s[0],
-                        'type': s[1],
-                        'value': s[2],
-                        'min': s[3],
-                        'max': s[4],
-                        'step': s[5] if s[1] == 'Float' else 1
-                    })
-
-        for s in self.__items['__parameterset__']:
-            if s[0]['name'] in category_by_name:
-                parameters = category_by_name[s[0]['name']]
-            else:
-                parameters = DotDict({
-                    'name': s[0]['name'],
-                    'enabled': s[0]['active'],
-                    'scalars': [],
-                    'curves': []
-                })
-                context.parameters.append(parameters)
-            for p in s[1]:
-                if isinstance(p[1], pgl.BezierCurve2D):
-                    type = 'BezierCurve2D'
-                elif isinstance(p[1], pgl.Polyline2D):
-                    type = 'Polyline2D'
-                elif isinstance(p[1], pgl.NurbsCurve2D):
-                    type = 'NurbsCurve2D'
-                else:
-                    raise ValueError(f'{p[1]} not a valid curve instance')
-                if p[0] == 'Curve2D':
-                    curve = DotDict({
-                        'name': p[1].name,
-                        'type': type
-                    })
-                    if type == 'Polyline2D':
-                        curve['points'] = [[v[0], v[1]] for v in p[1].pointList]
+                    if len(context.parameters) == 0:
+                        context.parameters.append(DotDict({
+                            'name': 'Category',
+                            'enabled': True,
+                            'scalars': [],
+                            'curves': []
+                        }))
+                    if s[1] == 'Bool':
+                        context.parameters[-1].scalars.append({
+                            'name': s[0],
+                            'value': s[2]
+                        })
                     else:
-                        curve['points'] = [[v[0], v[1]] for v in p[1].ctrlPointList]
-                    if type == 'NurbsCurve2D':
-                        curve['is_function'] = False
-                    parameters.curves.append(curve)
-                elif p[0] == 'Function':
-                    parameters.curves.append(DotDict({
-                        'name': p[1].name,
-                        'type': 'NurbsCurve2D',
-                        'points': [[v[0], v[1]] for v in p[1].ctrlPointList],
-                        'is_function': True
-                    }))
+                        context.parameters[-1].scalars.append({
+                            'name': s[0],
+                            'type': s[1],
+                            'value': s[2],
+                            'min': s[3],
+                            'max': s[4],
+                            'step': s[5] if s[1] == 'Float' else 1
+                        })
+        if '__parameterset__' in self.__items:
+            for s in self.__items['__parameterset__']:
+                if s[0]['name'] in category_by_name:
+                    parameters = category_by_name[s[0]['name']]
+                else:
+                    parameters = DotDict({
+                        'name': s[0]['name'],
+                        'enabled': s[0]['active'],
+                        'scalars': [],
+                        'curves': []
+                    })
+                    context.parameters.append(parameters)
+                for p in s[1]:
+                    if isinstance(p[1], pgl.BezierCurve2D):
+                        type = 'BezierCurve2D'
+                    elif isinstance(p[1], pgl.Polyline2D):
+                        type = 'Polyline2D'
+                    elif isinstance(p[1], pgl.NurbsCurve2D):
+                        type = 'NurbsCurve2D'
+                    else:
+                        raise ValueError(f'{p[1]} not a valid curve instance')
+                    if p[0] == 'Curve2D':
+                        curve = DotDict({
+                            'name': p[1].name,
+                            'type': type
+                        })
+                        if type == 'Polyline2D':
+                            curve['points'] = [[v[0], v[1]] for v in p[1].pointList]
+                        else:
+                            curve['points'] = [[v[0], v[1]] for v in p[1].ctrlPointList]
+                        if type == 'NurbsCurve2D':
+                            curve['is_function'] = False
+                        parameters.curves.append(curve)
+                    elif p[0] == 'Function':
+                        parameters.curves.append(DotDict({
+                            'name': p[1].name,
+                            'type': 'NurbsCurve2D',
+                            'points': [[v[0], v[1]] for v in p[1].ctrlPointList],
+                            'is_function': True
+                        }))
 
         return context
 
