@@ -39,11 +39,12 @@ class PGLMagics(Magics):
     def lpy_plot(self, line):
 
         from math import ceil, sqrt, floor
+
         try:
             ip = get_ipython()
         except NameError:
             ip = None
-            pass
+
         args = parse_argstring(self.lpy_plot, line)
         file = args.file
         sizes = [int(i.strip()) for i in args.size.split(',')]
