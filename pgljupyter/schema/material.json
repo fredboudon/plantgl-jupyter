@@ -22,8 +22,7 @@
         },
         "diffuse": {
             "type": "number",
-            "minimum": 0,
-            "maximum": 10
+            "minimum": 0
         },
         "transparency": {
             "type": "number",
