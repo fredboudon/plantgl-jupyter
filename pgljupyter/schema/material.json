@@ -23,7 +23,7 @@
         "diffuse": {
             "type": "number",
             "minimum": 0,
-            "maximum": 3
+            "maximum": 10
         },
         "transparency": {
             "type": "number",

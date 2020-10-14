@@ -333,6 +333,12 @@ class LsystemWidget(PGLWidget):
                 if ParameterEditor.validate_schema(context_obj):
                     with io.open(self.__filename[0:-3] + 'json', 'w') as file:
                         file.write(json.dumps(context_obj, indent=4))
+                    self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
+                    self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+                    self.__on_lpy_context_change(self.__editor.lpy_context)
+            else:
+                self.__initialize_lsystem()
+                self.__set_scene(0)
         else:
             self.__initialize_lsystem()
             self.__set_scene(0)
