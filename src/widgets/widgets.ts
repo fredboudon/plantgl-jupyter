@@ -570,7 +570,7 @@ export class LsystemWidgetView extends PGLWidgetView {
         const scale = SCALES[this.unit];
         currentScene.scale.multiplyScalar(scale);
         currentScene.position.set(x, y, z);
-        currentScene.add(...meshs);
+        if (meshs.length) currentScene.add(...meshs);
         currentScene.userData = { step };
         currentScene.name = 'lsystem';
 
