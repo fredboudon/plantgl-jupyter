@@ -53,7 +53,7 @@ class PGLMagics(Magics):
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
         ls = Lsystem(file)
-        rows = cols = ceil(sqrt(ls.derivationLength))
+        rows = cols = ceil(sqrt(ls.derivationLength + 1))
         size = rows * cell
         start = -size/2 + cell/2
         sw = SceneWidget(size_display=size_display, size_world=size)
