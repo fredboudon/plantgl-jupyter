@@ -10,6 +10,15 @@ function parse (bgeom) {
     const filename = 'bgeom';
     FS.createDataFile('/', filename, bgeom, true, true);
     const tesselator = new Module.Tesselator(filename);
+    const bbox = tesselator.bbox();
+    console.log(
+        bbox.getXMin(),
+        bbox.getYMin(),
+        bbox.getZMin(),
+        bbox.getXMax(),
+        bbox.getYMax(),
+        bbox.getZMax()
+    );
     const ii = tesselator.trianglesSize();
 
     for (let i = 0; i < ii; i++) {
