@@ -186,8 +186,8 @@ class FloatEditor(_Editor):
     def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
 
         self.value = float(value)
-
-        self.__slider = FloatSlider(value, min=min, max=max, step=step, description='value')
+        description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
+        self.__slider = FloatSlider(value, min=min, max=max, step=step, description=description)
         # self.__min_ipt = FloatText(min, description='min')
         # self.__max_ipt = FloatText(max, description='max')
         # self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
@@ -247,7 +247,8 @@ class IntEditor(_Editor):
     def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
 
         self.value = int(value)
-        self.__slider = IntSlider(value, min, max, description='value')
+        description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
+        self.__slider = IntSlider(value, min, max, description=description)
         # self.__min_ipt = IntText(min, description='min')
         # self.__max_ipt = IntText(max, description='max')
         # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)

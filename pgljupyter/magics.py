@@ -2,10 +2,13 @@ from IPython.core.magic_arguments import magic_arguments, argument, parse_argstr
 from IPython.core.magic import (
     Magics, magics_class, cell_magic, line_magic, needs_local_scope
 )
+from ipywidgets import HBox, VBox
 
 from openalea.lpy import Lsystem
+import openalea.plantgl.all as pgl
 
 from .widgets import SceneWidget, LsystemWidget
+from .editors import CurveEditor, FloatEditor, IntEditor
 
 
 @magics_class
@@ -17,6 +20,7 @@ class PGLMagics(Magics):
     @argument('--size', '-s', default='400,400', type=str, help='Width and hight of the canvas')
     @argument('--world', '-w', default=1.0, type=float, help='Size of the 3d scene in meters')
     @argument('--unit', '-u', default='m', type=str, help='Unit of the model - m, dm, cm, mm')
+    @argument('--params', '-p', default='', type=str, help='Name of dict with parameters')
     @argument('--animate', '-a', type=bool, help='Animate Lsystem')
     def lpy(self, line, cell, local_ns):
 
@@ -24,12 +28,35 @@ class PGLMagics(Magics):
         sizes = [int(i.strip()) for i in args.size.split(',')]
         world = args.world
         unit = args.unit
+        params = args.params
         animate = args.animate if args.animate is not None else False
         context = local_ns
 
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
-        return LsystemWidget(None, code=cell, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
+        lsw = LsystemWidget(None, code=cell, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
+        editors = []
+        context = {}
+
+        if params and isinstance(local_ns[params], dict):
+            for key, value in local_ns[params].items():
+                if isinstance(value, (tuple, dict)) and len(value) == 4:
+                    if isinstance(value[0], float):
+                        context[key] = value[0]
+                        editors.append(FloatEditor(value[0], name=key, no_name=True, type='Float', min=value[1], max=value[2], step=value[3]))
+                    elif isinstance(value[0], int):
+                        context[key] = value[0]
+                        editors.append(IntEditor(value[0], name=key, no_name=True, type='Float', min=value[1], max=value[2], step=value[3]))
+                elif isinstance(value, bool):
+                    pass
+                elif 'curve' in value:
+                    if isinstance(value, pgl.NurbsCurve2D):
+                        editors.append(CurveEditor(name=key, type='NurbsCurve2D', points=[[v[0], v[1]] for v in value.ctrlPointList]))
+
+        if len(editors):
+            return HBox((lsw, VBox(editors)))
+
+        return lsw
 
     @line_magic
     @magic_arguments()
