@@ -13,6 +13,7 @@ import {
 } from './interfaces';
 import { THREE, disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
+import { Vector3 } from 'three';
 
 export class PGLWidgetView extends DOMWidgetView {
 
@@ -65,7 +66,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.containerEl = document.createElement('div');
         const canvas = document.createElement('canvas');
         canvas.width = width;
-        canvas.height = height
+        canvas.height = height;
         const context = (canvas.getContext('webgl2', { alpha: false }) ||
             canvas.getContext('experimental-webgl', { alpha: false }) ||
             canvas.getContext('webgl', { alpha: false })) as WebGLRenderingContext;
@@ -173,6 +174,9 @@ export class PGLWidgetView extends DOMWidgetView {
                         if (!this.pglControlsState.autoRotate) {
                             window.cancelAnimationFrame(id)
                         }
+                        const [x, y, z] = this.camera.position.toArray();
+                        console.log(x, y, Math.sqrt(Math.pow(Math.abs(x), 2) + Math.pow(Math.abs(y), 2)));
+
                         this.orbitControl.update();
                         this.renderer.render(this.scene, this.camera);
                     };
@@ -263,7 +267,7 @@ export class PGLWidgetView extends DOMWidgetView {
             const [width, height] = this.sizeDisplay;
             this.resizeDisplay(width, height);
         });
-        this.listenTo(this.model, 'change:size_world', this.resizeWorld);
+        // this.listenTo(this.model, 'change:size_world', this.resizeWorld);
         this.containerEl.onfullscreenchange = () => {
             this.pglControlsState.fullscreen = (document.fullscreenElement === this.containerEl);
             if (this.pglControlsState.fullscreen) {
@@ -311,8 +315,58 @@ export class PGLWidgetView extends DOMWidgetView {
         }
     }
 
-    resizeWorld() {
-        const size = this.model.get('size_world');
+    // resizeWorld() {
+    //     const size = this.model.get('size_world');
+    // }
+
+    fitBounds(bbox: number[][]) {
+
+        const x_size = bbox[1][0] - bbox[0][0];
+        const y_size = bbox[1][1] - bbox[0][1];
+        const z_size = bbox[1][2] - bbox[0][2];
+
+        const size = Math.max.apply(Math, [
+            x_size, y_size, z_size
+        ]);
+
+        const start = new THREE.Vector3();
+        const end = new THREE.Vector3(x_size / 2, y_size, z_size * 2);
+        this.camera.position.copy(start);
+
+        this.scene.remove(this.plane);
+        this.plane.geometry.dispose();
+        this.plane = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(size, size),
+            new THREE.MeshPhongMaterial({
+                color: new THREE.Color(0xFFFFFF)
+            })
+        );
+        this.plane.name = 'plane';
+        this.plane.receiveShadow = true;
+        this.plane.visible = this.pglControlsState.plane;
+        this.scene.add(this.plane);
+
+        const steps = 5;
+        for (let i = 1; i <= steps; i++) {
+            const [x, y, z] = start.lerp(end, 1 / steps * i).toArray();
+            this.camera.position.set(x, y, z);
+            this.camera.updateProjectionMatrix();
+            this.renderer.render(this.scene, this.camera);
+            this.orbitControl.update();
+        }
+
+        this.light.position.set(x_size / 2, y_size / 2, Math.max(x_size, y_size) / 2);
+        this.light.shadow.camera.far = Math.sqrt(Math.pow(Math.sqrt(x_size * x_size + y_size * y_size), 2) + Math.pow(z_size, 2));
+        this.light.shadow.camera.top = Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.shadow.camera.bottom = -Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.shadow.camera.left = -Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.shadow.camera.right = Math.sqrt(x_size * x_size + y_size * y_size) / 2;
+        this.light.target.updateMatrixWorld();
+        this.light.shadow.camera.updateProjectionMatrix();
+        this.lightHelper.update();
+        this.cameraHelper.update();
+        this.renderer.render(this.scene, this.camera);
+
     }
 
     remove() {
@@ -346,7 +400,7 @@ export class SceneWidgetView extends PGLWidgetView {
                 decoder.decode({ data: data.buffer, userData: { position, scale, id } })
                     .then(result => {
                         const scene = new THREE.Scene();
-                        const { results, userData: { position, scale, id } } = result;
+                        const { geoms: results, userData: { position, scale, id } } = result;
                         const [x, y, z] = position;
 
                         if (results.length > 0) {
@@ -507,10 +561,11 @@ export class LsystemWidgetView extends PGLWidgetView {
             const decoded = this.queue[no];
             if (decoded) {
                 delete this.queue[no];
-                this.setScene(decoded.userData.step, meshify(decoded.results, {
+                this.setScene(decoded.userData.step, meshify(decoded.geoms, {
                     flatShading: this.pglControlsState.flatShading,
                     wireframe: this.pglControlsState.wireframe,
                 }));
+                this.fitBounds(decoded.bbox);
                 this.controls.state.derivationStep = decoded.userData.step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
@@ -531,14 +586,16 @@ export class LsystemWidgetView extends PGLWidgetView {
         decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
             .then(res => {
                 // TODO: use increasing number for a seq. of tasks and not step
-                const { results, userData: { step, no } } = res;
+                const { geoms, bbox, userData: { step, no } } = res;
+                console.log(bbox);
                 if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
                     this.queue[no] = res;
                 } else {
-                    this.setScene(step, meshify(results, {
+                    this.setScene(step, meshify(geoms, {
                         flatShading: this.pglControlsState.flatShading,
                         wireframe: this.pglControlsState.wireframe,
                     }));
+                    this.fitBounds(bbox);
                     this.controls.state.derivationStep = step;
                     if (this.controls.state.busy > 0) {
                         this.controls.state.busy--;

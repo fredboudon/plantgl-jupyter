@@ -240,7 +240,7 @@ Tesselator::Tesselator(const std::string& filename) :
         PGL::Scene* scene = parser.getScene();
         scene->apply(*this);
         PGL::BBoxComputer bboxComputer(__tesselator);
-        scene->apply(bboxComputer);
+        bboxComputer.process(scene);
         __bbox = bboxComputer.getBoundingBox();
     }
 

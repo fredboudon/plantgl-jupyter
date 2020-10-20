@@ -108,7 +108,7 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         return new Promise((resolve, reject) => {
             decoder.decode({ data })
                 .then(res => {
-                    this.setMeshs(meshify(res.results));
+                    this.setMeshs(meshify(res.geoms));
                     resolve();
                 })
                 .catch(() => reject());

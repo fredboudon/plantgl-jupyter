@@ -27,7 +27,8 @@ export interface IMeshOptions {
 }
 
 export interface ITaskResult {
-    results: IGeom[];
+    geoms: IGeom[];
+    bbox: number[][];
     userData: any;
 }
 
