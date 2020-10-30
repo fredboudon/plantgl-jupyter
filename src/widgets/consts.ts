@@ -1,4 +1,5 @@
 export const enum LsystemUnit {
+    NONE = -1,
     M = 0,
     DM = 1,
     CM = 2,
@@ -6,6 +7,7 @@ export const enum LsystemUnit {
 }
 
 export const SCALES: {[key:number]: number} = {
+    [LsystemUnit.NONE]: 1,
     [LsystemUnit.M]: 1,
     [LsystemUnit.DM]: 0.1,
     [LsystemUnit.CM]: 0.01,

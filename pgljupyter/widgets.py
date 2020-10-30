@@ -27,6 +27,7 @@ from ._frontend import module_name, module_version
 
 
 class Unit(Enum):
+    none = -1
     m = 0
     dm = 1
     cm = 2
@@ -274,7 +275,7 @@ class LsystemWidget(PGLWidget):
 
     units = Unit
     derivationLength = Int(0, min=0).tag(sync=True)
-    unit = UseEnum(Unit).tag(sync=True, to_json=lambda e, o: e.value)
+    unit = UseEnum(Unit, default_value=Unit.none).tag(sync=True, to_json=lambda e, o: e.value)
     scene = Dict(traits={
         'data': Bytes(),
         'scene': Instance(pgl.Scene),
@@ -291,7 +292,7 @@ class LsystemWidget(PGLWidget):
     __lsystem = None
     __extra_context = {}
 
-    def __init__(self, filename=None, code=None, unit=Unit.m, animate=False, dump='', context={}, **kwargs):
+    def __init__(self, filename=None, code=None, unit=Unit.none, animate=False, dump='', context={}, **kwargs):
 
         if filename:
             if filename.endswith('.lpy'):

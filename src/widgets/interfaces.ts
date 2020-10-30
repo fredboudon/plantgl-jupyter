@@ -72,13 +72,6 @@ export interface ILsystemControlsHandlers {
     onRewindClicked: Function;
 }
 
-export enum LsystemUnit {
-    M = 0,
-    DM = 1,
-    CM = 2,
-    MM = 3
-}
-
 export interface IMaterial {
     color: number[],
     specular: number[],
