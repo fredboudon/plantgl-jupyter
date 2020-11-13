@@ -65,7 +65,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.containerEl = document.createElement('div');
         const canvas = document.createElement('canvas');
         canvas.width = width;
-        canvas.height = height
+        canvas.height = height;
         const context = (canvas.getContext('webgl2', { alpha: false }) ||
             canvas.getContext('experimental-webgl', { alpha: false }) ||
             canvas.getContext('webgl', { alpha: false })) as WebGLRenderingContext;
@@ -173,6 +173,9 @@ export class PGLWidgetView extends DOMWidgetView {
                         if (!this.pglControlsState.autoRotate) {
                             window.cancelAnimationFrame(id)
                         }
+                        const [x, y, z] = this.camera.position.toArray();
+                        console.log(x, y, Math.sqrt(Math.pow(Math.abs(x), 2) + Math.pow(Math.abs(y), 2)));
+
                         this.orbitControl.update();
                         this.renderer.render(this.scene, this.camera);
                     };
@@ -263,7 +266,7 @@ export class PGLWidgetView extends DOMWidgetView {
             const [width, height] = this.sizeDisplay;
             this.resizeDisplay(width, height);
         });
-        this.listenTo(this.model, 'change:size_world', this.resizeWorld);
+        // this.listenTo(this.model, 'change:size_world', this.resizeWorld);
         this.containerEl.onfullscreenchange = () => {
             this.pglControlsState.fullscreen = (document.fullscreenElement === this.containerEl);
             if (this.pglControlsState.fullscreen) {
@@ -311,8 +314,28 @@ export class PGLWidgetView extends DOMWidgetView {
         }
     }
 
-    resizeWorld() {
-        const size = this.model.get('size_world');
+    // resizeWorld() {
+    //     const size = this.model.get('size_world');
+    // }
+
+    fitBounds(bbox: number[][]) {
+
+        this.orbitControl.target = new THREE.Vector3(
+            0,
+            (bbox[0][1] + bbox[1][1]) / 2,
+            (bbox[0][2] + bbox[1][2]) / 2
+        );
+
+        this.camera.position.set(
+            Math.max((bbox[1][1] - bbox[0][1]), (bbox[1][2] - bbox[0][2])) * 2,
+            (bbox[0][1] + bbox[1][1]) / 2,
+            (bbox[0][2] + bbox[1][2]) / 2
+        );
+
+        this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+        this.orbitControl.update();
+
     }
 
     remove() {
@@ -346,7 +369,7 @@ export class SceneWidgetView extends PGLWidgetView {
                 decoder.decode({ data: data.buffer, userData: { position, scale, id } })
                     .then(result => {
                         const scene = new THREE.Scene();
-                        const { results, userData: { position, scale, id } } = result;
+                        const { geoms: results, userData: { position, scale, id } } = result;
                         const [x, y, z] = position;
 
                         if (results.length > 0) {
@@ -380,7 +403,7 @@ export class SceneWidgetView extends PGLWidgetView {
 
 export class LsystemWidgetView extends PGLWidgetView {
 
-    unit: LsystemUnit = LsystemUnit.M;
+    unit: LsystemUnit = LsystemUnit.NONE;
     controls: LsystemControls = null;
     queue: {[key:number]: ITaskResult} = {};
     no = 0;
@@ -507,10 +530,10 @@ export class LsystemWidgetView extends PGLWidgetView {
             const decoded = this.queue[no];
             if (decoded) {
                 delete this.queue[no];
-                this.setScene(decoded.userData.step, meshify(decoded.results, {
+                this.setScene(decoded.userData.step, meshify(decoded.geoms, {
                     flatShading: this.pglControlsState.flatShading,
                     wireframe: this.pglControlsState.wireframe,
-                }));
+                }), decoded.bbox);
                 this.controls.state.derivationStep = decoded.userData.step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
@@ -531,14 +554,14 @@ export class LsystemWidgetView extends PGLWidgetView {
         decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
             .then(res => {
                 // TODO: use increasing number for a seq. of tasks and not step
-                const { results, userData: { step, no } } = res;
+                const { geoms, bbox, userData: { step, no } } = res;
                 if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
                     this.queue[no] = res;
                 } else {
-                    this.setScene(step, meshify(results, {
+                    this.setScene(step, meshify(geoms, {
                         flatShading: this.pglControlsState.flatShading,
                         wireframe: this.pglControlsState.wireframe,
-                    }));
+                    }), bbox);
                     this.controls.state.derivationStep = step;
                     if (this.controls.state.busy > 0) {
                         this.controls.state.busy--;
@@ -563,14 +586,19 @@ export class LsystemWidgetView extends PGLWidgetView {
             });
     }
 
-    setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, position = [0, 0, 0]) {
+    setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, bbox=null, position=[0, 0, 0]) {
 
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];
         currentScene.scale.multiplyScalar(scale);
         currentScene.position.set(x, y, z);
-        if (meshs.length) currentScene.add(...meshs);
+        if (meshs.length) {
+            if (bbox && this.unit === LsystemUnit.NONE) {
+                this.fitBounds(bbox);
+            }
+            currentScene.add(...meshs);
+        }
         currentScene.userData = { step };
         currentScene.name = 'lsystem';
 
