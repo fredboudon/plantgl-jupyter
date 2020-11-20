@@ -505,7 +505,11 @@ export class LsystemWidgetView extends PGLWidgetView {
 
         this.unit = this.model.get('unit');
         const scene = this.model.get('scene') as ILsystemScene;
-        this.decode(scene);
+        try {
+            this.decode(scene);
+        } catch (err) {
+            console.log(err);
+        }
 
         this.listenTo(this.model, 'change:unit', () => {
             this.unit = this.model.get('unit')
