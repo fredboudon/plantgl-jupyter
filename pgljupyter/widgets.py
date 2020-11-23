@@ -21,6 +21,7 @@ from traitlets import (
 
 import openalea.plantgl.all as pgl
 import openalea.lpy as lpy
+from openalea.lpy.lsysparameters import LsystemParameters
 
 from .editors import ParameterEditor, make_default_lpy_context, DotDict
 from ._frontend import module_name, module_version
@@ -376,6 +377,33 @@ class LsystemWidget(PGLWidget):
         result.update(self.__lsystem.context().globals())
         return result
 
+    def set_parameters(self, parameters):
+        """Update Lsystem parameters in context.
+
+        Parameters
+        ----------
+        parameters : json
+            A valid parameter json string.
+        """
+
+        if not self.animate:
+            lp = LsystemParameters()
+            lp.loads(parameters)
+            self.__lsystem.clear()
+            print(''.join([
+                self.__codes[0],
+                lp.generate_py_code()
+            ]))
+            self.__lsystem.set(''.join([
+                self.__codes[0],
+                lp.generate_py_code()
+            ]), {})
+            self.derivationLength = self.__lsystem.derivationLength + 1
+            self.__trees = []
+            self.__trees.append(self.__lsystem.axiom)
+            self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
+            self.__derive(self.__derivationStep)
+
     def __initialize_lsystem(self):
         self.__lsystem.filename = self.__filename if self.__filename else ''
         self.__lsystem.set(''.join(self.__codes), self.__extra_context)
@@ -502,7 +530,7 @@ class LsystemWidget(PGLWidget):
             self.__set_scene(0)
 
     def __set_scene(self, step):
-        # print('__set_scene', step)
+        print('__set_scene', step, self.__trees)
         scene = self.__lsystem.sceneInterpretation(self.__trees[step])
         serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {

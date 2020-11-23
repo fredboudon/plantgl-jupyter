@@ -103,7 +103,7 @@ class _Editor(HBox):
             kwargs['children'] = kwargs['children']
         else:
             kwargs['children'] = (self.__text, *kwargs['children'])
-        kwargs['layout'] = Layout(margin='20px 0px')
+        kwargs['layout'] = Layout(margin='10px 10px')
         super().__init__(**kwargs)
 
     def __on_name_changed(self, change):
@@ -301,7 +301,8 @@ class BoolEditor(_Editor):
 
     def __init__(self, value, **kwargs):
         self.value = value
-        self.__checkbox = Checkbox(value, description='value')
+        description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
+        self.__checkbox = Checkbox(value, description=description)
         self.__checkbox.observe(self.__on_checkbox_changed, names='value')
         kwargs['children'] = [
             self.__checkbox

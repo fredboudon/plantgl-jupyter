@@ -2,13 +2,19 @@ from IPython.core.magic_arguments import magic_arguments, argument, parse_argstr
 from IPython.core.magic import (
     Magics, magics_class, cell_magic, line_magic, needs_local_scope
 )
-from ipywidgets import HBox, VBox
+from ipywidgets import HBox, Layout
 
 from openalea.lpy import Lsystem
+from openalea.lpy.lsysparameters import LsystemParameters
+from openalea.lpy.parameters.scalar import (
+    IntegerScalar, FloatScalar, BoolScalar
+)
 import openalea.plantgl.all as pgl
 
 from .widgets import SceneWidget, LsystemWidget
-from .editors import CurveEditor, FloatEditor, IntEditor
+from .editors import (
+    CurveEditor, FloatEditor, IntEditor, BoolEditor
+)
 
 
 @magics_class
@@ -20,7 +26,7 @@ class PGLMagics(Magics):
     @argument('--size', '-s', default='400,400', type=str, help='Width and hight of the canvas')
     @argument('--world', '-w', default=1.0, type=float, help='Size of the 3d scene in meters')
     @argument('--unit', '-u', default='m', type=str, help='Unit of the model - m, dm, cm, mm')
-    @argument('--params', '-p', default='', type=str, help='Name of dict with parameters')
+    @argument('--params', '-p', default='', type=str, help='Name of LsystemParameters instance')
     @argument('--animate', '-a', type=bool, help='Animate Lsystem')
     def lpy(self, line, cell, local_ns):
 
@@ -28,33 +34,89 @@ class PGLMagics(Magics):
         sizes = [int(i.strip()) for i in args.size.split(',')]
         world = args.world
         unit = args.unit
-        params = args.params
+        lp = local_ns[args.params] if args.params and args.params in local_ns and isinstance(local_ns[args.params], LsystemParameters) else None
         animate = args.animate if args.animate is not None else False
         context = local_ns
 
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
-        lsw = LsystemWidget(None, code=cell, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
+        code = ''.join([
+            cell,
+            lp.generate_py_code() if lp else ''
+        ])
+
+        lsw = LsystemWidget(None, code=code, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
         editors = []
         context = {}
 
-        if params and isinstance(local_ns[params], dict):
-            for key, value in local_ns[params].items():
-                if isinstance(value, (tuple, dict)) and len(value) == 4:
-                    if isinstance(value[0], float):
-                        context[key] = value[0]
-                        editors.append(FloatEditor(value[0], name=key, no_name=True, type='Float', min=value[1], max=value[2], step=value[3]))
-                    elif isinstance(value[0], int):
-                        context[key] = value[0]
-                        editors.append(IntEditor(value[0], name=key, no_name=True, type='Float', min=value[1], max=value[2], step=value[3]))
-                elif isinstance(value, bool):
-                    pass
-                elif 'curve' in value:
-                    if isinstance(value, pgl.NurbsCurve2D):
-                        editors.append(CurveEditor(name=key, type='NurbsCurve2D', points=[[v[0], v[1]] for v in value.ctrlPointList]))
+        def on_param_changed(param):
+            def fn(change):
+                if 'new' in change:
+                    param.value = change['new']
+                    lsw.set_parameters(lp.dumps())
+            return fn
 
+        if lp:
+            for param in lp.category_parameters('default'):
+                editor = None
+                print(param)
+                if isinstance(param, IntegerScalar):
+                    editor = IntEditor(
+                        param.value,
+                        name=param.name,
+                        min=param.minvalue,
+                        max=param.maxvalue,
+                        step=1,
+                        no_name=True
+                    )
+                elif isinstance(param, FloatScalar):
+                    editor = FloatEditor(
+                        param.value,
+                        name=param.name,
+                        min=param.minvalue,
+                        max=param.maxvalue,
+                        step=1/10**param.precision,
+                        no_name=True
+                    )
+                elif isinstance(param, BoolScalar):
+                    editor = BoolEditor(
+                        param.value,
+                        name=param.name,
+                        no_name=True
+                    )
+                elif isinstance(param, tuple):
+                    manager, value = param
+                    if isinstance(value, pgl.NurbsCurve2D):
+                        editor = CurveEditor(
+                            name='',
+                            points=[[v[0], v[1]] for v in value.ctrlPointList],
+                            type='NurbsCurve2D',
+                            no_name=True
+                        )
+                    elif isinstance(value, pgl.BezierCurve2D):
+                        editor = CurveEditor(
+                            name='',
+                            points=[[v[0], v[1]] for v in value.ctrlPointList],
+                            type='BezierCurve2D',
+                            no_name=True
+                        )
+                    elif isinstance(value, pgl.Polyline2D):
+                        editor = CurveEditor(
+                            name='',
+                            points=[[v[0], v[1]] for v in value.pointList],
+                            type='Polyline2D',
+                            no_name=True
+                        )
+                if editor:
+                    editor.observe(on_param_changed(param), 'value')
+                    editors.append(editor)
+
+        w, h = lsw.size_display
         if len(editors):
-            return HBox((lsw, VBox(editors)))
+            return HBox((
+                HBox([lsw], layout=Layout(min_width=str(w)+'px', min_height=str(h)+'px')),
+                HBox(editors, layout=Layout(margin='0', flex_flow='row wrap'))
+            ))
 
         return lsw
 
