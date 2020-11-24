@@ -45,7 +45,7 @@ export interface IPGLControlsState {
 }
 
 export interface IPGLProgressState {
-    busy: boolean;
+    busy: number;
 }
 
 export interface IPGLControlsHandlers {

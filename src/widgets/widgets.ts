@@ -88,7 +88,7 @@ export class PGLWidgetView extends DOMWidgetView {
         const progressEl = document.createElement('div');
         progressEl.setAttribute('class', 'pgl-jupyter-pgl-widget-progress');
         this.containerEl.appendChild(progressEl);
-        const pglProgress = new PGLProgress({ busy: false }, progressEl);
+        const pglProgress = new PGLProgress({ busy: 0 }, progressEl);
         this.pglProgressState = pglProgress.state;
 
         const x_size = this.sizeWorld;
@@ -415,7 +415,8 @@ export class LsystemWidgetView extends PGLWidgetView {
     controls: LsystemControls = null;
     queue: {[key:number]: ITaskResult} = {};
     no = 0;
-    context_change_queue = 0;
+    in = 0;
+    out = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -529,9 +530,6 @@ export class LsystemWidgetView extends PGLWidgetView {
         this.listenTo(this.model, 'comm_live_update', () => {
             this.controls.state.comm_live = this.model.comm_live;
         });
-        this.listenTo(this.model, 'change:progress', () => {
-            this.pglProgressState.busy = this.model.get('progress') < 1;
-        });
         this.listenTo(this.model, 'change:scene', () => {
             const scene = this.model.get('scene') as ILsystemScene;
             this.decode(scene);
@@ -567,6 +565,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     decode(scene: ILsystemScene) {
+        this.pglProgressState.busy = 1 - (this.out / ++this.in);
         decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
             .then(res => {
                 // TODO: use increasing number for a seq. of tasks and not step
@@ -603,7 +602,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, bbox=null, position=[0, 0, 0]) {
-
+        this.pglProgressState.busy = 1 - (++this.out / this.in);
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];

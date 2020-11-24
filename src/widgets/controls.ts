@@ -106,9 +106,9 @@ export class PGLProgress {
 
     private renderProgress = (state: IPGLProgressState) => {
         return html`<mwc-circular-progress
-            ?closed=${!state.busy}
-            indeterminate
-            density='-6'
+                ?closed=${!state.busy}
+                progress=${state.busy}
+                density='-6'
             ></mwc-circular-progress>`;
     };
 }

@@ -12,8 +12,6 @@ import zlib
 import json
 from enum import Enum
 from pathlib import Path
-import asyncio
-import concurrent
 
 from ipywidgets.widgets import DOMWidget, register
 from traitlets import (
@@ -189,11 +187,8 @@ class PseudoContext(dict):
         return context
 
 
-async def serialize_scene(scene):
-    loop = asyncio.get_running_loop()
-    with concurrent.futures.ProcessPoolExecutor() as pool:
-        result = await loop.run_in_executor(pool, scene_to_bytes, (scene))
-    return result
+def serialize_scene(scene):
+    return scene_to_bytes(scene)
 
 
 @register
@@ -239,18 +234,16 @@ class SceneWidget(PGLWidget):
     # compress = Bool(False).tag(sync=False)
 
     def __init__(self, obj=None, position=(0.0, 0.0, 0.0), scale=1.0, **kwargs):
-        # scene = to_scene(obj)
-        # serialized = await serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
-        # # self.compress = compress
-        # self.scenes = [{
-        #     'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
-        #     'data': serialized,
-        #     'scene': scene,
-        #     'position': position,
-        #     'scale':  scale
-        # }]
-        if obj is not None:
-            asyncio.run(self.add(obj))
+        scene = to_scene(obj)
+        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        # self.compress = compress
+        self.scenes = [{
+            'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
+            'data': serialized,
+            'scene': scene,
+            'position': position,
+            'scale':  scale
+        }]
 
         super().__init__(**kwargs)
 
@@ -524,10 +517,10 @@ class LsystemWidget(PGLWidget):
             self.__initialize_lsystem()
             self.__set_scene(0)
 
-    async def __set_scene(self, step):
+    def __set_scene(self, step):
         # print('__set_scene', step)
         scene = self.__lsystem.sceneInterpretation(self.__trees[step])
-        serialized = await serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
             'data': serialized,
             'scene': scene,
