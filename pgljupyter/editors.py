@@ -126,11 +126,13 @@ class _CurveEditor(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
+    name = Unicode('').tag(sync=True)
     type = Unicode('').tag(sync=True)
     points = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=True)
     is_function = Bool(False).tag(sync=True)
 
     def __init__(self, type, points, is_function=False, **kwargs):
+        self.name = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else ''
         self.type = type
         self.points = points
         self.is_function = is_function

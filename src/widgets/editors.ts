@@ -117,6 +117,12 @@ export class _CurveEditorView extends DOMWidgetView {
         const dx = ((this.width / 2) - (xScale(maxx) + xScale(minx)) / 2);
         const dy = ((this.height / 2) - (yScale(maxy) + yScale(miny)) / 2);
 
+        svg.append('text')
+            .text(this.name)
+            .attr('x', this.width / 2)
+            .attr('y', 20)
+            .attr('text-anchor', 'middle');
+
         const g = svg.append('g')
             .attr('transform', `translate(${dx},${dy})`);
 

@@ -151,3 +151,10 @@ mwc-icon-button-toggle, mwc-icon-button {
     fill: #f57c24;
     cursor: pointer;
 }
+
+.pgl-curve-editor-svg text {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

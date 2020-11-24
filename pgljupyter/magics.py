@@ -7,7 +7,7 @@ from ipywidgets import HBox, Layout
 from openalea.lpy import Lsystem
 from openalea.lpy.lsysparameters import LsystemParameters
 from openalea.lpy.parameters.scalar import (
-    IntegerScalar, FloatScalar, BoolScalar
+    IntegerScalar, FloatScalar, BoolScalar, BaseScalar
 )
 import openalea.plantgl.all as pgl
 
@@ -26,7 +26,7 @@ class PGLMagics(Magics):
     @argument('--size', '-s', default='400,400', type=str, help='Width and hight of the canvas')
     @argument('--world', '-w', default=1.0, type=float, help='Size of the 3d scene in meters')
     @argument('--unit', '-u', default='m', type=str, help='Unit of the model - m, dm, cm, mm')
-    @argument('--params', '-p', default='', type=str, help='Name of LsystemParameters instance')
+    @argument('--params', '-p', default='', type=str, help='Name of LsystemParameters instance with a "default" category')
     @argument('--animate', '-a', type=bool, help='Animate Lsystem')
     def lpy(self, line, cell, local_ns):
 
@@ -52,14 +52,20 @@ class PGLMagics(Magics):
         def on_param_changed(param):
             def fn(change):
                 if 'new' in change:
-                    param.value = change['new']
+                    if isinstance(param, BaseScalar):
+                        param.value = change['new']
+                    elif isinstance(param, tuple):
+                        if isinstance(param[1], (pgl.NurbsCurve2D, pgl.BezierCurve2D)):
+                            param[1].ctrlPointList = pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in change['new']])
+                        elif isinstance(param[1], pgl.Polyline2D):
+                            param[1].pointList = pgl.Point3Array([pgl.Vector2(p[0], p[1]) for p in change['new']])
+
                     lsw.set_parameters(lp.dumps())
             return fn
 
         if lp:
             for param in lp.category_parameters('default'):
                 editor = None
-                print(param)
                 if isinstance(param, IntegerScalar):
                     editor = IntEditor(
                         param.value,
@@ -88,21 +94,21 @@ class PGLMagics(Magics):
                     manager, value = param
                     if isinstance(value, pgl.NurbsCurve2D):
                         editor = CurveEditor(
-                            name='',
+                            name=value.name,
                             points=[[v[0], v[1]] for v in value.ctrlPointList],
                             type='NurbsCurve2D',
                             no_name=True
                         )
                     elif isinstance(value, pgl.BezierCurve2D):
                         editor = CurveEditor(
-                            name='',
+                            name=value.name,
                             points=[[v[0], v[1]] for v in value.ctrlPointList],
                             type='BezierCurve2D',
                             no_name=True
                         )
                     elif isinstance(value, pgl.Polyline2D):
                         editor = CurveEditor(
-                            name='',
+                            name=value.name,
                             points=[[v[0], v[1]] for v in value.pointList],
                             type='Polyline2D',
                             no_name=True
