@@ -1,5 +1,53 @@
-import * as THREE from 'three';
-import { IMeshOptions, IGeom } from './interfaces';
+import {
+    Scene,
+    Mesh,
+    InstancedMesh,
+    BufferGeometry,
+    BufferAttribute,
+    Matrix4,
+    Color,
+    DoubleSide,
+    MeshPhongMaterial,
+    PerspectiveCamera,
+    Vector3,
+    AmbientLight,
+    DirectionalLight,
+    WebGLRenderer,
+    PCFSoftShadowMap,
+    Box3,
+    PlaneBufferGeometry,
+    AxesHelper,
+    CameraHelper,
+    DirectionalLightHelper
+} from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+
+import { IMeshOptions,
+    IGeom } from './interfaces';
+
+const THREE = {
+    Scene,
+    Mesh,
+    InstancedMesh,
+    BufferGeometry,
+    BufferAttribute,
+    Matrix4,
+    Color,
+    DoubleSide,
+    MeshPhongMaterial,
+    OrbitControls,
+    PerspectiveCamera,
+    Vector3,
+    AmbientLight,
+    DirectionalLight,
+    WebGLRenderer,
+    PCFSoftShadowMap,
+    Box3,
+    PlaneBufferGeometry,
+    AxesHelper,
+    CameraHelper,
+    DirectionalLightHelper
+}
 
 function disposeScene(scene: THREE.Scene) {
     scene.children.forEach(child => {
@@ -14,59 +62,59 @@ function disposeScene(scene: THREE.Scene) {
     });
 }
 
-function merge(geoms: IGeom[]): THREE.BufferGeometry {
+// function merge(geoms: IGeom[]): THREE.BufferGeometry {
 
-    const len = geoms.reduce((len, geom) => {
-        len.idx = len.idx + geom.index.byteLength / 4;
-        len.pos = len.pos + geom.position.byteLength / 4;
-        return len;
-    }, { idx: 0, pos: 0 });
+//     const len = geoms.reduce((len, geom) => {
+//         len.idx = len.idx + geom.index.byteLength / 4;
+//         len.pos = len.pos + geom.position.byteLength / 4;
+//         return len;
+//     }, { idx: 0, pos: 0 });
 
-    const idx = new Uint32Array(len.idx);
-    const pos = new Float32Array(len.pos);
-    const col = new Uint8Array(len.pos);
-    // const nrl = new Float32Array(len.pos);
-    let offset_idx = 0;
-    let offset_pos = 0;
+//     const idx = new Uint32Array(len.idx);
+//     const pos = new Float32Array(len.pos);
+//     const col = new Uint8Array(len.pos);
+//     // const nrl = new Float32Array(len.pos);
+//     let offset_idx = 0;
+//     let offset_pos = 0;
 
-    for (let i = 0; i < geoms.length; i++) {
-        const geom = geoms[i];
-        const geom_idx = new Uint32Array(geom.index);
-        const geom_pos = new Float32Array(geom.position);
-        // const geom_nrl = new Float32Array(geoms[i].normal);
-        // const geom_col = new Uint8Array(geoms[i].color);
-        // in non instanced geoms we have currently only one material
-        // const ambient = geom.materials[0].ambient;
-        // const geom_col = new Uint8Array(geom.position.byteLength / 4);
-        // for (let c = 0; c < len.pos; c += 3) {
-        //     geom_col[c] = ambient[0];
-        //     geom_col[c + 1] = ambient[1];
-        //     geom_col[c + 2] = ambient[2];
-        // }
-        for (let j = 0; j < geom_idx.length; j++) {
-            idx[j + offset_idx] = geom_idx[j] + offset_pos;
-        }
-        pos.set(geom_pos, offset_pos * 3);
-        // col.set(geom_col, offset_pos * 3);
-        // nrl.set(geom_nrl, offset_pos * 3);
-        offset_pos += geom_pos.length / 3;
-        offset_idx += geom_idx.length;
-    }
+//     for (let i = 0; i < geoms.length; i++) {
+//         const geom = geoms[i];
+//         const geom_idx = new Uint32Array(geom.index);
+//         const geom_pos = new Float32Array(geom.position);
+//         // const geom_nrl = new Float32Array(geoms[i].normal);
+//         // const geom_col = new Uint8Array(geoms[i].color);
+//         // in non instanced geoms we have currently only one material
+//         // const ambient = geom.materials[0].ambient;
+//         // const geom_col = new Uint8Array(geom.position.byteLength / 4);
+//         // for (let c = 0; c < len.pos; c += 3) {
+//         //     geom_col[c] = ambient[0];
+//         //     geom_col[c + 1] = ambient[1];
+//         //     geom_col[c + 2] = ambient[2];
+//         // }
+//         for (let j = 0; j < geom_idx.length; j++) {
+//             idx[j + offset_idx] = geom_idx[j] + offset_pos;
+//         }
+//         pos.set(geom_pos, offset_pos * 3);
+//         // col.set(geom_col, offset_pos * 3);
+//         // nrl.set(geom_nrl, offset_pos * 3);
+//         offset_pos += geom_pos.length / 3;
+//         offset_idx += geom_idx.length;
+//     }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setIndex(new THREE.BufferAttribute(idx, 1));
-    geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    // geometry.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
-    // geometry.setAttribute('normal', new THREE.BufferAttribute(nrl, 3));
-    geometry.computeVertexNormals();
+//     const geometry = new THREE.BufferGeometry();
+//     geometry.setIndex(new THREE.BufferAttribute(idx, 1));
+//     geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+//     // geometry.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
+//     // geometry.setAttribute('normal', new THREE.BufferAttribute(nrl, 3));
+//     geometry.computeVertexNormals();
 
-    return geometry;
+//     return geometry;
 
-}
+// }
 
-function isDracoFile(data: ArrayBuffer) {
-    return 'DRACO' === String.fromCharCode(...Array.from(new Uint8Array(data.slice(0, 5))));
-}
+// function isDracoFile(data: ArrayBuffer) {
+//     return 'DRACO' === String.fromCharCode(...Array.from(new Uint8Array(data.slice(0, 5))));
+// }
 
 function debounce(fn: Function, delay: number): Function {
 
@@ -109,7 +157,7 @@ function meshify(geoms: IGeom[], options: IMeshOptions = meshOptions):  Array<TH
         geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
         const material = new THREE.MeshPhongMaterial({
             side: THREE.DoubleSide,
-            shadowSide: THREE.BackSide,
+            shadowSide: THREE.DoubleSide,
             color: new THREE.Color(...geom.material.color),
             emissive: new THREE.Color(...geom.material.emission),
             specular: new THREE.Color(...geom.material.specular),
@@ -139,8 +187,8 @@ function meshify(geoms: IGeom[], options: IMeshOptions = meshOptions):  Array<TH
 }
 
 export {
+    THREE,
     disposeScene,
-    isDracoFile,
     debounce,
     meshify
 }

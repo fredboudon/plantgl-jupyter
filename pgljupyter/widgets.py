@@ -24,15 +24,24 @@ from traitlets import (
 import openalea.plantgl.all as pgl
 import openalea.lpy as lpy
 
-from .editors import ParameterEditor, make_default_lpy_context
+from .editors import ParameterEditor, make_default_lpy_context, DotDict
 from ._frontend import module_name, module_version
 
 
 class Unit(Enum):
+    none = -1
     m = 0
     dm = 1
     cm = 2
     mm = 3
+
+
+# TODO: serialize in thread?
+def scene_to_bytes(scene):
+    # serialized = pgl_scene_to_bytes(scene, single_mesh)
+    # if not serialized.status:
+    #     raise ValueError('scene serialization failed')
+    return zlib.compress(pgl.tobinarystring(scene, False), 9)
 
 
 def scene_to_json(x, obj):
@@ -60,8 +69,124 @@ def to_scene(obj):
     return scene
 
 
-def scene_to_bytes(scene):
-    return zlib.compress(pgl.tobinarystring(scene, False), 9)
+class PseudoContext(dict):
+
+    __materials = []
+    __options = {}
+    __items = {}
+
+    def __init__(self, **kwargs):
+        self.turtle = DotDict({
+            'setMaterial': self.__set_material
+        })
+        self.options = DotDict({
+            'setSelection': self.__set_selection
+        })
+
+    def __setitem__(self, key, value):
+        self.__items[key] = value
+
+    def __set_material(self, index, material):
+        self.__materials.append({
+            'index': index,
+            'material': material
+        })
+
+    def __set_selection(self, key, value):
+        self.__options[key] = value
+
+    def get_context_obj(self):
+        context = make_default_lpy_context()
+
+        for m in self.__materials:
+            material = m['material']
+            if isinstance(material, pgl.Material):
+                context.materials.append({
+                    'index': m['index'],
+                    'name': material.name,
+                    'ambient': [material.ambient.red, material.ambient.green, material.ambient.blue],
+                    'specular': [material.specular.red, material.specular.green, material.specular.blue],
+                    'emission': [material.emission.red, material.emission.green, material.emission.blue],
+                    'diffuse': material.diffuse,
+                    'transparency': material.transparency,
+                    'shininess': material.shininess
+                })
+
+        category_by_name = {}
+        if '__scalars__' in self.__items:
+            for s in self.__items['__scalars__']:
+                if s[1] == 'Category':
+                    context.parameters.append(DotDict({
+                        'name': s[0],
+                        'enabled': True,
+                        'scalars': [],
+                        'curves': []
+                    }))
+                    category_by_name[s[0]] = context.parameters[-1]
+                else:
+                    if len(context.parameters) == 0:
+                        context.parameters.append(DotDict({
+                            'name': 'Category',
+                            'enabled': True,
+                            'scalars': [],
+                            'curves': []
+                        }))
+                    if s[1] == 'Bool':
+                        context.parameters[-1].scalars.append({
+                            'name': s[0],
+                            'value': s[2]
+                        })
+                    else:
+                        context.parameters[-1].scalars.append({
+                            'name': s[0],
+                            'type': s[1],
+                            'value': s[2],
+                            'min': s[3],
+                            'max': s[4],
+                            'step': s[5] if s[1] == 'Float' else 1
+                        })
+        if '__parameterset__' in self.__items:
+            for s in self.__items['__parameterset__']:
+                if s[0]['name'] in category_by_name:
+                    parameters = category_by_name[s[0]['name']]
+                else:
+                    parameters = DotDict({
+                        'name': s[0]['name'],
+                        'enabled': s[0]['active'],
+                        'scalars': [],
+                        'curves': []
+                    })
+                    context.parameters.append(parameters)
+                for p in s[1]:
+                    if isinstance(p[1], pgl.BezierCurve2D):
+                        type = 'BezierCurve2D'
+                    elif isinstance(p[1], pgl.Polyline2D):
+                        type = 'Polyline2D'
+                    elif isinstance(p[1], pgl.NurbsCurve2D):
+                        type = 'NurbsCurve2D'
+                    else:
+                        raise ValueError(f'{p[1]} not a valid curve instance')
+                    if p[0] == 'Curve2D':
+                        curve = DotDict({
+                            'name': p[1].name,
+                            'type': type
+                        })
+                        if type == 'Polyline2D':
+                            curve['points'] = [[v[0], v[1]] for v in p[1].pointList]
+                        else:
+                            curve['points'] = [[v[0], v[1]] for v in p[1].ctrlPointList]
+                        if type == 'NurbsCurve2D':
+                            curve['is_function'] = False
+                        parameters.curves.append(curve)
+                    elif p[0] == 'Function':
+                        parameters.curves.append(DotDict({
+                            'name': p[1].name,
+                            'type': 'NurbsCurve2D',
+                            'points': [[v[0], v[1]] for v in p[1].ctrlPointList],
+                            'is_function': True
+                        }))
+
+        return context
 
 
 async def serialize_scene(scene):
@@ -162,7 +287,7 @@ class LsystemWidget(PGLWidget):
 
     units = Unit
     derivationLength = Int(0, min=0).tag(sync=True)
-    unit = UseEnum(Unit).tag(sync=True, to_json=lambda e, o: e.value)
+    unit = UseEnum(Unit, default_value=Unit.none).tag(sync=True, to_json=lambda e, o: e.value)
     scene = Dict(traits={
         'data': Bytes(),
         'scene': Instance(pgl.Scene),
@@ -182,7 +307,7 @@ class LsystemWidget(PGLWidget):
     __lsystem = None
     __extra_context = {}
 
-    def __init__(self, filename=None, code=None, unit=Unit.m, animate=False, dump='', context={}, **kwargs):
+    def __init__(self, filename=None, code=None, unit=Unit.none, animate=False, dump='', context={}, **kwargs):
 
         if filename:
             if filename.endswith('.lpy'):
@@ -207,15 +332,29 @@ class LsystemWidget(PGLWidget):
             raise ValueError('Neither lpy file nor code provided')
 
         self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
+        initialise_context_code = self.__codes[1] if len(self.__codes) > 1 else ''
         self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
 
-        if len(self.__codes) < 2:
-            raise ValueError('No L-Py code found')
-        # if a json file with the same name is present load context from the json file
         if self.__filename and Path(self.__filename[0:-3] + 'json').is_file():
             self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
             self.__editor.on_lpy_context_change = self.__on_lpy_context_change
             self.__on_lpy_context_change(self.__editor.lpy_context)
+        elif self.__filename:
+            scope = {}
+            exec(compile(initialise_context_code + '\n', '<string>', 'exec'), scope)
+            if '__initialiseContext__' in scope:
+                pc = PseudoContext()
+                scope['__initialiseContext__'](pc)
+                context_obj = pc.get_context_obj()
+                if ParameterEditor.validate_schema(context_obj):
+                    with io.open(self.__filename[0:-3] + 'json', 'w') as file:
+                        file.write(json.dumps(context_obj, indent=4))
+                    self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
+                    self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+                    self.__on_lpy_context_change(self.__editor.lpy_context)
+            else:
+                self.__initialize_lsystem()
+                self.__set_scene(0)
         else:
             self.__initialize_lsystem()
             self.__set_scene(0)
