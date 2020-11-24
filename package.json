@@ -55,6 +55,7 @@
     "@jupyterlab/rendermime": "^2.2.1",
     "@jupyterlab/rendermime-interfaces": "^2.2.0",
     "@jupyterlab/ui-components": "^2.2.1",
+    "@material/mwc-circular-progress": "^0.18.0",
     "@material/mwc-formfield": "^0.18.0",
     "@material/mwc-icon-button": "^0.18.0",
     "@material/mwc-icon-button-toggle": "^0.18.0",

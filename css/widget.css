@@ -40,6 +40,20 @@
     pointer-events: none;
 }
 
+.pgl-jupyter-pgl-widget-progress {
+    position: absolute;
+    top: 0px;
+    padding: 15px;
+    pointer-events: none;
+    --mdc-typography-body1-font-size: 12px;
+    --mdc-typography-body2-font-size: 12px;
+    --mdc-typography-body2-color: white;
+    --mdc-theme-secondary: rgb(75, 75, 75);
+    --mdc-theme-primary: #f57c24;
+    --mdc-icon-size: 30px;
+    --mdc-button-size: 35px;
+}
+
 .pgl-jupyter-pgl-widget-controls-container {
     padding: 5px;
     height: 100%;

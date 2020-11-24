@@ -85,7 +85,8 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             scene: null,
             unit: LsystemUnit.NONE,
             animate: false,
-            is_magic: false
+            is_magic: false,
+            progress: 0
         };
     }
 

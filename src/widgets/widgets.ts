@@ -3,13 +3,13 @@ import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
 import decoder from './decoder';
-import { PGLControls, LsystemControls } from './controls';
+import { PGLControls, LsystemControls, PGLProgress } from './controls';
 import {
     IScene,
     IPGLControlsState,
     ILsystemControlsState,
     ILsystemScene,
-    ITaskResult
+    ITaskResult, IPGLProgressState
 } from './interfaces';
 import { THREE, disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
@@ -35,6 +35,8 @@ export class PGLWidgetView extends DOMWidgetView {
     pglControls: PGLControls = null;
     pglControlsState: IPGLControlsState = null;
     pglControlsEl: HTMLDivElement = null;
+
+    pglProgressState: IPGLProgressState = null;
 
     disposables: THREE.Scene[] = [];
     isDetached = false;
@@ -82,6 +84,12 @@ export class PGLWidgetView extends DOMWidgetView {
             ev.stopPropagation();
             return false;
         });
+
+        const progressEl = document.createElement('div');
+        progressEl.setAttribute('class', 'pgl-jupyter-pgl-widget-progress');
+        this.containerEl.appendChild(progressEl);
+        const pglProgress = new PGLProgress({ busy: 0 }, progressEl);
+        this.pglProgressState = pglProgress.state;
 
         const x_size = this.sizeWorld;
         const y_size = this.sizeWorld;
@@ -407,6 +415,8 @@ export class LsystemWidgetView extends PGLWidgetView {
     controls: LsystemControls = null;
     queue: {[key:number]: ITaskResult} = {};
     no = 0;
+    in = 0;
+    out = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -555,6 +565,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     decode(scene: ILsystemScene) {
+        this.pglProgressState.busy = 1 - (this.out / ++this.in);
         decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
             .then(res => {
                 // TODO: use increasing number for a seq. of tasks and not step
@@ -591,7 +602,7 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, bbox=null, position=[0, 0, 0]) {
-
+        this.pglProgressState.busy = 1 - (++this.out / this.in);
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];

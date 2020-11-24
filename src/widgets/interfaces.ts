@@ -42,7 +42,10 @@ export interface IPGLControlsState {
     autoRotate: boolean;
     showHeader: boolean;
     showControls: boolean;
+}
 
+export interface IPGLProgressState {
+    busy: number;
 }
 
 export interface IPGLControlsHandlers {

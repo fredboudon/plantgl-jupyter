@@ -5,11 +5,12 @@ import '@material/mwc-formfield';
 import '@material/mwc-icon-button-toggle';
 import '@material/mwc-icon-button';
 import '@material/mwc-linear-progress';
+import '@material/mwc-circular-progress';
 import {
     IPGLControlsState,
     IPGLControlsHandlers,
     ILsystemControlsState,
-    ILsystemControlsHandlers
+    ILsystemControlsHandlers, IPGLProgressState
 } from './interfaces';
 
 // TODO refactor handlers
@@ -77,6 +78,41 @@ export class PGLControls {
                 // </mwc-formfield>
             };
 }
+
+export class PGLProgress {
+
+    state: IPGLProgressState;
+    el: HTMLElement;
+
+    constructor(state: IPGLProgressState, el: HTMLElement) {
+        this.el = el;
+        const that = this;
+        this.state = new Proxy(state, {
+            set(obj, prop, value) {
+                if (value !== obj[prop]) {
+                    const res =  Reflect.set(obj, prop, value);
+                    if (res) that.render();
+                    return res;
+                }
+                return true;
+            }
+        });
+        this.render();
+    };
+
+    private render() {
+        render(this.renderProgress(this.state), this.el);
+    };
+
+    private renderProgress = (state: IPGLProgressState) => {
+        return html`<mwc-circular-progress
+                ?closed=${!state.busy}
+                progress=${state.busy}
+                density='-6'
+            ></mwc-circular-progress>`;
+    };
+}
+
 
 export class LsystemControls {
 
