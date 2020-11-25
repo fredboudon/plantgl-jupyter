@@ -90,8 +90,8 @@ setup_args = dict(
         'ipywidgets>=7.5.0',
         'toml>=0.10.1',
         'jsonschema>="3.2.0',
-        'openalea.lpy>="3.4.0',
-        'openalea.plantgl>="3.4.0'
+        'openalea.lpy>="3.5.0',
+        'openalea.plantgl>="3.5.0'
     ],
     python_requires='>=3.7',
     extras_require={
