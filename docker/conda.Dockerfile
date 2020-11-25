@@ -1,12 +1,11 @@
-FROM jupyter/base-notebook:lab-2.2.5
+FROM jupyter/base-notebook:lab-2.2.9
 USER root
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y libgl1-mesa-dev && \
     apt-get clean && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
-    conda update -y jupyterlab && \
-    conda install -y -c fredboudon -c conda-forge 'openalea.lpy>=3.4.0' 'ipywidgets>=7.5.0' pandas matplotlib rpy2 && \
+    conda install -y -c fredboudon -c conda-forge 'openalea.lpy>=3.5.0' 'ipywidgets>=7.5.0' 'ipython>=7.0.0' pandas matplotlib rpy2 && \
     jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
     pip3 install pgljupyter --no-cache && \
     jupyter lab build && \
