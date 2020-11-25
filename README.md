@@ -66,6 +66,21 @@ Arguments:
 - `--world`, `-w` float: same as `size_world`
 - `--animate`, `-a` True: runs animation automatically
 
+**%lpy_plot**
+
+A line magic to plot all derivation steps of an Lsystem on a square plane
+
+```python
+# activated by importing pgljupyter
+import pgljupyter
+```
+
+Arguments:
+
+- `arg0`, string: L-Py file
+- `--size`, `-u` int,int: width and hight of the canvas
+- `--cell`, `-c` float: size of cell for a single derivation step
+
 
 ## Installation
 

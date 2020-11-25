@@ -189,7 +189,7 @@ class FloatEditor(_Editor):
 
         self.value = float(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
-        self.__slider = FloatSlider(value, min=min, max=max, step=step, description=description)
+        self.__slider = FloatSlider(value, min=min, max=max, step=step, description=description, continuous_update=False)
         # self.__min_ipt = FloatText(min, description='min')
         # self.__max_ipt = FloatText(max, description='max')
         # self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
@@ -250,7 +250,7 @@ class IntEditor(_Editor):
 
         self.value = int(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
-        self.__slider = IntSlider(value, min, max, description=description)
+        self.__slider = IntSlider(value, min, max, description=description, continuous_update=False)
         # self.__min_ipt = IntText(min, description='min')
         # self.__max_ipt = IntText(max, description='max')
         # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
@@ -377,9 +377,9 @@ class MaterialEditor(_Editor):
         self.__ambient = ColorPicker(value='#' + ''.join(format(v, "02x") for v in ambient), description='ambient')
         self.__specular = ColorPicker(value='#' + ''.join(format(v, "02x") for v in specular), description='specular')
         self.__emission = ColorPicker(value='#' + ''.join(format(v, "02x") for v in emission), description='emission')
-        self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=3)
-        self.__transparency = FloatSlider(value=transparency, description='transparency', min=0, max=1)
-        self.__shininess = FloatSlider(value=shininess, description='shininess', min=0, max=1)
+        self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=3, continuous_update=False)
+        self.__transparency = FloatSlider(value=transparency, description='transparency', min=0, max=1, continuous_update=False)
+        self.__shininess = FloatSlider(value=shininess, description='shininess', min=0, max=1, continuous_update=False)
         self.__index.observe(self.__on_index_changed, names='value')
         self.__ambient.observe(self.__on_ambient_changed, names='value')
         self.__specular.observe(self.__on_specular_changed, names='value')

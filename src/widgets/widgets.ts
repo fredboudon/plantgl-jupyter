@@ -603,6 +603,9 @@ export class LsystemWidgetView extends PGLWidgetView {
 
     setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, bbox=null, position=[0, 0, 0]) {
         this.pglProgressState.busy = 1 - (++this.out / this.in);
+        if (this.in === this.out) {
+            this.in = this.out = 0;
+        }
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];

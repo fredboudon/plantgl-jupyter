@@ -13,7 +13,8 @@ import openalea.plantgl.all as pgl
 
 from .widgets import SceneWidget, LsystemWidget
 from .editors import (
-    CurveEditor, FloatEditor, IntEditor, BoolEditor
+    CurveEditor, FloatEditor, IntEditor, BoolEditor,
+    MaterialEditor
 )
 
 
@@ -49,7 +50,7 @@ class PGLMagics(Magics):
         editors = []
         context = {}
 
-        def on_param_changed(param):
+        def on_value_changed(param):
             def fn(change):
                 if 'new' in change:
                     if isinstance(param, BaseScalar):
@@ -58,69 +59,104 @@ class PGLMagics(Magics):
                         if isinstance(param[1], (pgl.NurbsCurve2D, pgl.BezierCurve2D)):
                             param[1].ctrlPointList = pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in change['new']])
                         elif isinstance(param[1], pgl.Polyline2D):
-                            param[1].pointList = pgl.Point3Array([pgl.Vector2(p[0], p[1]) for p in change['new']])
+                            param[1].pointList = pgl.Point2Array([pgl.Vector2(p[0], p[1]) for p in change['new']])
 
                     lsw.set_parameters(lp.dumps())
             return fn
 
+        def on_material_changed(material):
+            def fn(change):
+                if 'new' in change:
+                    if change['name'] == 'index':
+                        pass
+                    else:
+                        setattr(material, change['name'], change['new'])
+                    lsw.set_parameters(lp.dumps())
+            return fn
+
         if lp:
-            for param in lp.category_parameters('default'):
+            for scalar in lp.get_category_scalars():
                 editor = None
-                if isinstance(param, IntegerScalar):
+                if isinstance(scalar, IntegerScalar):
                     editor = IntEditor(
-                        param.value,
-                        name=param.name,
-                        min=param.minvalue,
-                        max=param.maxvalue,
+                        scalar.value,
+                        name=scalar.name,
+                        min=scalar.minvalue,
+                        max=scalar.maxvalue,
                         step=1,
                         no_name=True
                     )
-                elif isinstance(param, FloatScalar):
+                elif isinstance(scalar, FloatScalar):
                     editor = FloatEditor(
-                        param.value,
-                        name=param.name,
-                        min=param.minvalue,
-                        max=param.maxvalue,
-                        step=1/10**param.precision,
+                        scalar.value,
+                        name=scalar.name,
+                        min=scalar.minvalue,
+                        max=scalar.maxvalue,
+                        step=1/10**scalar.precision,
                         no_name=True
                     )
-                elif isinstance(param, BoolScalar):
+                elif isinstance(scalar, BoolScalar):
                     editor = BoolEditor(
-                        param.value,
-                        name=param.name,
+                        scalar.value,
+                        name=scalar.name,
                         no_name=True
                     )
-                elif isinstance(param, tuple):
-                    manager, value = param
-                    if isinstance(value, pgl.NurbsCurve2D):
-                        editor = CurveEditor(
-                            name=value.name,
-                            points=[[v[0], v[1]] for v in value.ctrlPointList],
-                            type='NurbsCurve2D',
-                            no_name=True
-                        )
-                    elif isinstance(value, pgl.BezierCurve2D):
-                        editor = CurveEditor(
-                            name=value.name,
-                            points=[[v[0], v[1]] for v in value.ctrlPointList],
-                            type='BezierCurve2D',
-                            no_name=True
-                        )
-                    elif isinstance(value, pgl.Polyline2D):
-                        editor = CurveEditor(
-                            name=value.name,
-                            points=[[v[0], v[1]] for v in value.pointList],
-                            type='Polyline2D',
-                            no_name=True
-                        )
                 if editor:
-                    editor.observe(on_param_changed(param), 'value')
+                    editor.observe(on_value_changed(scalar), 'value')
+                    editors.append(editor)
+
+            for index, color in lp.get_colors().items():
+                editor = None
+                if isinstance(color, pgl.Material):
+                    editor = MaterialEditor(
+                        index=index,
+                        name=color.name,
+                        ambient=[color.ambient.red, color.ambient.green, color.ambient.blue],
+                        specular=[color.specular.red, color.specular.green, color.specular.blue],
+                        emission=[color.emission.red, color.emission.green, color.emission.blue],
+                        diffuse=color.diffuse,
+                        transparency=color.transparency,
+                        shininess=color.shininess,
+                        no_name=True
+                    )
+                if editor:
+                    editor.observe(on_material_changed(color))
+                    editors.append(editor)
+
+            for param in lp.get_category_graphicalparameters():
+                editor = None
+                manager, value = param
+                if isinstance(value, pgl.NurbsCurve2D):
+                    editor = CurveEditor(
+                        name=value.name,
+                        points=[[v[0], v[1]] for v in value.ctrlPointList],
+                        type='NurbsCurve2D',
+                        no_name=True,
+                        is_function=manager.typename == 'Function'
+                    )
+                elif isinstance(value, pgl.BezierCurve2D):
+                    editor = CurveEditor(
+                        name=value.name,
+                        points=[[v[0], v[1]] for v in value.ctrlPointList],
+                        type='BezierCurve2D',
+                        no_name=True,
+                        is_function=manager.typename == 'Function'
+                    )
+                elif isinstance(value, pgl.Polyline2D):
+                    editor = CurveEditor(
+                        name=value.name,
+                        points=[[v[0], v[1]] for v in value.pointList],
+                        type='Polyline2D',
+                        no_name=True
+                    )
+                if editor:
+                    editor.observe(on_value_changed(param), 'value')
                     editors.append(editor)
 
         w, h = lsw.size_display
         if len(editors):
             return HBox((
-                HBox([lsw], layout=Layout(min_width=str(w)+'px', min_height=str(h)+'px')),
+                HBox([lsw], layout=Layout(margin='10px', min_width=str(w)+'px', min_height=str(h)+'px')),
                 HBox(editors, layout=Layout(margin='0', flex_flow='row wrap'))
             ))
 
