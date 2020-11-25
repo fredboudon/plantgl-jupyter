@@ -6,9 +6,15 @@
 
 - lpy tree model - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
 
+- simple PlantGL shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+
 - notebook magics - champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
 
-- simple shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+- notebook magics - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
+
+- notebook magics - integration [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/integration.ipynb)
+
+
 
 
 ## Usage
@@ -69,13 +75,15 @@ Jupyterlab < 3.0 requires nodejs. In case it is not available on your system add
 `conda create` command.
 
 ```bash
-conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets
+conda create -y -n pgl -c fredboudon -c conda-forge \
+    openalea.lpy jupyterlab ipywidgets ipython=7
 ```
 
 For **windows** specify python 3.7 (there are some issues with jupyter on windows with python 3.8)
 
 ```bash
-conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 openalea.lpy jupyterlab ipywidgets
+conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
+    openalea.lpy jupyterlab ipywidgets ipython=7
 ```
 
 ```bash
@@ -126,7 +134,7 @@ cd ../..
 
 ```bash
 npm install
-npm run build:pgljs && npm run build
+npm run build:all
 ```
 
  - install python modules and jupyter extensions
@@ -147,13 +155,13 @@ jupyter lab --notebook-dir=./examples
 
 ## Docker
 
-Run jupyter as docker container locally.
+Run jupyter as docker container locally. Replace `/examples` with the path to your notebooks.
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
 docker pull jvail/plantgl-jupyter:0.1.21
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/{folder_with_your_notebooks}:/home/jovyan/work plantgl-jupyter \
-    jupyter lab`
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.1.21 \
+    jupyter lab
 ```
