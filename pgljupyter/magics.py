@@ -68,7 +68,8 @@ class PGLMagics(Magics):
             def fn(change):
                 if 'new' in change:
                     if change['name'] == 'index':
-                        pass
+                        lp.unset_color(change['old'])
+                        lp.set_color(change['new'], material)
                     else:
                         setattr(material, change['name'], change['new'])
                     lsw.set_parameters(lp.dumps())
