@@ -401,7 +401,7 @@ class MaterialEditor(_Editor):
         super().__init__(**kwargs)
 
     def __rgb_to_list(self, rgb):
-        return [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
+        return [255, 0, 0] if len(rgb) != 7 else [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
 
     def __on_index_changed(self, change):
         self.index = self.__index.value
