@@ -2,6 +2,7 @@
 TODO: Add module docstring
 """
 
+import warnings
 import random
 import string
 import io
@@ -110,6 +111,8 @@ class PseudoContext(dict):
                     'transparency': material.transparency,
                     'shininess': material.shininess
                 })
+            else:
+                warnings.warn('Texture2D currently not supported')
 
         category_by_name = {}
         if '__scalars__' in self.__items:
@@ -157,6 +160,9 @@ class PseudoContext(dict):
                     })
                     context.parameters.append(parameters)
                 for p in s[1]:
+                    if isinstance(p[1], pgl.NurbsPatch):
+                        warnings.warn('NurbsPatch currently not supported')
+                        continue
                     if isinstance(p[1], pgl.BezierCurve2D):
                         type = 'BezierCurve2D'
                     elif isinstance(p[1], pgl.Polyline2D):
