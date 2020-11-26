@@ -31,6 +31,7 @@ export class PGLWidgetView extends DOMWidgetView {
 
     sizeDisplay: number[];
     sizeWorld: number;
+    isMagic: boolean;
 
     pglControls: PGLControls = null;
     pglControlsState: IPGLControlsState = null;
@@ -45,6 +46,7 @@ export class PGLWidgetView extends DOMWidgetView {
         super.initialize(parameters);
         this.sizeDisplay = parameters.model.attributes['size_display'];
         this.sizeWorld = parameters.model.attributes['size_world'];
+        this.isMagic = parameters.model.attributes['is_magic'];
     }
 
     render() {
@@ -306,7 +308,7 @@ export class PGLWidgetView extends DOMWidgetView {
                 }
                 break;
             case 'after-attach':
-                if (this.el.closest('.jp-LinkedOutputView')) {
+                if (this.el.closest('.jp-LinkedOutputView') && !this.isMagic) {
                     this.pWidget.addClass('pgl-resizable');
                     this.containerEl.classList.add('pgl-resizable');
                     this.isDetached = true;
