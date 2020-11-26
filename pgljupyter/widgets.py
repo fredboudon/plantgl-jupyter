@@ -251,9 +251,9 @@ class SceneWidget(PGLWidget):
     # TODO: avoid re-sending all scenes after a scene was added.
     # - Partially syncing a state is not available out of the box
     # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
-    async def add(self, obj, position=(0, 0, 0), scale=1.0):
+    def add(self, obj, position=(0, 0, 0), scale=1.0):
         scene = to_scene(obj)
-        serialized = await serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.scenes.append({
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -262,6 +262,20 @@ class SceneWidget(PGLWidget):
             'scale':  scale
         })
         self.send_state('scenes')
+
+    def set_scenes(self, objs, scales=1., positions=(0., 0., 0.)):
+        scenes = []
+        for i, obj in enumerate(objs):
+            scene = to_scene(obj)
+            serialized = serialize_scene(scene)
+            scenes.append({
+                'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
+                'data': serialized,
+                'scene': scene,
+                'position': positions[i] if type(positions) == list else (0., 0., 0.),
+                'scale':  scales[i] if type(scales) == list else 1.
+            })
+        self.scenes = scenes
 
 
 @register
