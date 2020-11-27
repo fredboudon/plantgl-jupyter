@@ -12,6 +12,7 @@
 
 ## test if npm builds and publish npm pkg
 
+    npm run clean
     npm run build:all
     npm publish
 
