@@ -1,25 +1,25 @@
 {% set name = "openalea.pgljupyter" %}
-{% set version = "0.1.21" %}
+{% set version = "0.2.0" %}
 
 package:
   name: "{{ name|lower }}"
   version: "{{ version }}"
   
 source:	
-  url: "https://files.pythonhosted.org/packages/e6/0d/6dfd10d223a2571b4f0990afb1f63840bf671c2a382db55d80bcb8336776/pgljupyter-0.1.21-py2.py3-none-any.whl"	
-  sha256: ce801db6d8212d96620ae64e4fb786ac4e857c35563c2ab9852de754f2ee83c1	
+  url: "https://files.pythonhosted.org/packages/9b/87/23f47ad78128a5b15f34a49cfae73cd263749dc72579fbe9a72892035607/pgljupyter-0.2.0-py2.py3-none-any.whl"	
+  sha256: f63defc5f265717646836dd8acc9ef2443e67eaf2172b7f6202816ce3f14a7c3	
 
 build:
   number: 0
-  script: "{{ PYTHON }} -m pip install pgljupyter-0.1.21-py2.py3-none-any.whl -vv"
+  script: "{{ PYTHON }} -m pip install pgljupyter-0.2.0-py2.py3-none-any.whl -vv"
 
 requirements:
   host:
     - ipywidgets >=7.5.0
     - jsonschema >=3.2.0
     - jupyterlab >=2.2.0
-    - openalea.lpy >=3.4.0
-    - openalea.plantgl >=3.4.0
+    - openalea.lpy >=3.5.0
+    - openalea.plantgl >=3.5.0
     - pip
     - python
     - toml >=0.10.1
@@ -27,8 +27,8 @@ requirements:
     - ipywidgets >=7.5.0
     - jsonschema >=3.2.0
     - jupyterlab >=2.2.0
-    - openalea.lpy >=3.4.0
-    - openalea.plantgl >=3.4.0
+    - openalea.lpy >=3.5.0
+    - openalea.plantgl >=3.5.0
     - python
     - toml >=0.10.1
 
