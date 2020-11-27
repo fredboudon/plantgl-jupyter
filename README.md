@@ -62,8 +62,9 @@ import pgljupyter
 Arguments:
 
 - `--size`, `-s` int,int: same as `size_display`
-- `--unit`, `-u` enum: same as `unit`
 - `--world`, `-w` float: same as `size_world`
+- `--unit`, `-u` enum: same as `unit`
+- `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
 
 **%lpy_plot**
@@ -100,6 +101,8 @@ For **windows** specify python 3.7 (there are some issues with jupyter on window
 conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
     openalea.lpy jupyterlab ipywidgets ipython=7
 ```
+
+Some examples also require `matplotlib` and `rpy2`.
 
 ```bash
 conda activate pgl
@@ -174,9 +177,9 @@ Run jupyter as docker container locally. Replace `/examples` with the path to yo
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
-docker pull jvail/plantgl-jupyter:0.1.21
+docker pull jvail/plantgl-jupyter:0.2.0
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.1.21 \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.2.0 \
     jupyter lab
 ```
