@@ -79,7 +79,7 @@ import pgljupyter
 Arguments:
 
 - `arg0`, string: L-Py file
-- `--size`, `-u` int,int: width and hight of the canvas
+- `--size`, `-s` int,int: width and hight of the canvas
 - `--cell`, `-c` float: size of cell for a single derivation step
 
 
