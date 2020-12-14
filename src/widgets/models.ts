@@ -257,6 +257,7 @@ export class _CurveEditorModel extends DOMWidgetModel {
             _view_module: _CurveEditorModel.view_module,
             _view_module_version: _CurveEditorModel.view_module_version,
             name: '',
+            show_name: false,
             points: [],
             is_function: false,
             type: ''
