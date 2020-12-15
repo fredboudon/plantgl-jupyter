@@ -2,15 +2,11 @@
 TODO: Add module docstring
 """
 
-import warnings
 import random
 import string
 import io
 import os
-import inspect
-import textwrap
 import zlib
-import json
 from enum import Enum
 from pathlib import Path
 
@@ -24,7 +20,7 @@ import openalea.plantgl.all as pgl
 import openalea.lpy as lpy
 from openalea.lpy.lsysparameters import LsystemParameters
 
-from .editors import ParameterEditor, DotDict
+from .editors import ParameterEditor
 from ._frontend import module_name, module_version
 
 
@@ -209,51 +205,23 @@ class LsystemWidget(PGLWidget):
 
         self.__lsystem = lpy.Lsystem()
         self.__extra_context = context
-        # code_ = ''
+        code_ = ''
         if self.__filename and Path(self.__filename).is_file():
-            pass
-            # self.__editor = ParameterEditor(lpy.Lsystem(self.__filename))
-            # with io.open(self.__filename, 'r') as file:
-            #     code_ = file.read()
+            with io.open(self.__filename, 'r') as file:
+                code_ = file.read()
         else:
             self.is_magic = True
-            # code_ = code
+            code_ = code
 
-        # if not code_:
-        #     raise ValueError('Neither lpy file nor code provided')
-
-        # self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
-        # initialise_context_code = self.__codes[1] if len(self.__codes) > 1 else ''
-        # self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
-
-        # if self.__filename and Path(self.__filename[0:-3] + 'json').is_file():
-        #     self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-        #     self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-        #     self.__on_lpy_context_change(self.__editor.lpy_context)
-        # elif self.__filename:
-        #     scope = {}
-        #     exec(compile(initialise_context_code + '\n', '<string>', 'exec'), scope)
-        #     if '__initialiseContext__' in scope:
-        #         pc = PseudoContext()
-        #         scope['__initialiseContext__'](pc)
-        #         context_obj = pc.get_context_obj()
-        #         if ParameterEditor.validate_schema(context_obj):
-        #             with io.open(self.__filename[0:-3] + 'json', 'w') as file:
-        #                 file.write(json.dumps(context_obj, indent=4))
-        #             self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-        #             self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-        #             self.__on_lpy_context_change(self.__editor.lpy_context)
-        #     else:
-        #         self.__initialize_lsystem()
-        #         self.__set_scene(0)
-        # else:
-        #     self.__initialize_lsystem()
-        #     self.__set_scene(0)
+        self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
 
         self.unit = unit
         self.animate = animate
         self.dump = dump
         self.on_msg(self.__on_custom_msg)
+
+        self.__initialize_lsystem()
+        self.__set_scene(0)
 
         super().__init__(**kwargs)
 
@@ -261,6 +229,7 @@ class LsystemWidget(PGLWidget):
     def editor(self):
         if not self.is_magic:
             self.__editor = ParameterEditor(lpy.Lsystem(self.__filename))
+            self.__editor.on_lpy_context_change = self.set_parameters
             return self.__editor
         else:
             return None
@@ -290,6 +259,10 @@ class LsystemWidget(PGLWidget):
                 lp.loads(parameters)
             except AssertionError:
                 return False
+            self.__in_queue = self.__in_queue + 1
+            self.progress = self.__out_queue / self.__in_queue
+            self.send_state('progress')
+
             self.__lsystem.clear()
             self.__lsystem.set(''.join([
                 self.__codes[0],
@@ -300,6 +273,12 @@ class LsystemWidget(PGLWidget):
             self.__trees.append(self.__lsystem.axiom)
             self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
             self.__derive(self.__derivationStep)
+
+            self.__out_queue = self.__out_queue + 1
+            self.progress = self.__out_queue / self.__in_queue
+            if self.progress == 1:
+                self.__out_queue = self.__in_queue = 0
+
             return True
 
         return False
@@ -307,101 +286,8 @@ class LsystemWidget(PGLWidget):
     def __initialize_lsystem(self):
         self.__lsystem.filename = self.__filename if self.__filename else ''
         self.__lsystem.set(''.join(self.__codes), self.__extra_context)
-        # context = self.__lsystem.context()
-        # for key, value in self.__extra_context.items():
-        #     context[key] = value
         self.derivationLength = self.__lsystem.derivationLength + 1
         self.__trees = [self.__lsystem.axiom]
-
-    def __on_lpy_context_change(self, context_obj):
-        if not self.animate:
-            self.__in_queue = self.__in_queue + 1
-            # TODO: find a better solution for progress. Easier if lpy is moved to thread
-            self.progress = self.__out_queue / self.__in_queue
-            self.send_state('progress')
-            if len(self.__codes) == 2:
-                self.__codes.append(self.__initialisation_function(context_obj))
-            else:
-                self.__codes[2] = self.__initialisation_function(context_obj)
-            self.__lsystem.clear()
-            self.__lsystem.filename = self.__filename
-            self.__lsystem.set(''.join(self.__codes), {})
-            self.derivationLength = self.__lsystem.derivationLength + 1
-            self.__trees = []
-            self.__trees.append(self.__lsystem.axiom)
-            self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
-            self.__derive(self.__derivationStep)
-            self.__out_queue = self.__out_queue + 1
-            self.progress = self.__out_queue / self.__in_queue
-            if self.progress == 1:
-                self.__out_queue = self.__in_queue = 0
-
-    def __initialisation_function(self, context_obj):
-        def build_context(context_obj, context):
-            for material in context_obj['materials']:
-                material = dict(material)
-                index = material.pop('index')
-                name = material.pop('name')
-                context[name] = pgl.Material(**material)
-                context.turtle.setMaterial(index, context[name])
-            for catergory in context_obj['parameters']:
-                if catergory['enabled']:
-                    for scalar in catergory['scalars']:
-                        context[scalar['name']] = scalar['value']
-                    for curve in catergory['curves']:
-                        if curve['type'] == 'NurbsCurve2D':
-                            if curve['is_function']:
-                                context[curve['name']] = pgl.QuantisedFunction(
-                                    pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                                )
-                            else:
-                                context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                        elif curve['type'] == 'BezierCurve2D':
-                            context[curve['name']] = pgl.BezierCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                        elif curve['type'] == 'Polyline2D':
-                            context[curve['name']] = pgl.Polyline2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-
-            # for key, value in context_obj.items():
-            #     if isinstance(value, dict):
-            #         if key == 'scalars':
-            #             for name, scalar in value.items():
-            #                 context[name] = scalar['value']
-            #         elif key == 'materials':
-            #             for name, material in value.items():
-            #                 m = dict(material)
-            #                 index = m.pop('index')
-            #                 context[name] = pgl.Material(**m)
-            #                 context.turtle.setMaterial(index, context[name])
-            #         elif key == 'functions':
-            #             for name, function in value.items():
-            #                 if 'NurbsCurve2D' in function:
-            #                     points = function['NurbsCurve2D']
-            #                     context[name] = pgl.QuantisedFunction(
-            #                         pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
-            #                     )
-            #         elif key == 'curves':
-            #             for name, curve in value.items():
-            #                 if 'NurbsCurve2D' in curve:
-            #                     points = curve['NurbsCurve2D']
-            #                     context[name] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
-
-        codes = [
-            '\n__lpy_code_version__ = 1.1',
-            f'\ndef {lpy.LsysContext.InitialisationFunctionName}(context):',
-            '\n    import openalea.plantgl.all as pgl',
-            f'\n{textwrap.indent(textwrap.dedent(inspect.getsource(build_context)), "    ")}',
-            f'\n    context_obj={str(context_obj)}',
-            '\n    build_context(context_obj, context)'
-        ]
-
-        return ''.join(codes)
-
-    # @observe('animate')
-    # def on_animate_changed(self, change):
-    #     # print('on_animate_changed', change['old'], change['new'])
-    #     if change['old'] and not change['new']:
-    #         print('__do_abort')
-    #         # __do_abort = True
 
     def __on_custom_msg(self, widget, content, buffers):
         if 'derive' in content:

@@ -6,9 +6,7 @@ from ipywidgets import HBox, Layout
 
 from openalea.lpy import Lsystem
 from openalea.lpy.lsysparameters import LsystemParameters
-from openalea.lpy.parameters.scalar import (
-    IntegerScalar, FloatScalar, BoolScalar, BaseScalar
-)
+from openalea.lpy.parameters.scalar import BaseScalar
 import openalea.plantgl.all as pgl
 
 from .widgets import SceneWidget, LsystemWidget
@@ -83,7 +81,7 @@ class PGLMagics(Magics):
                     editors.append(editor)
 
             for index, color in lp.get_colors().items():
-                editor = make_color_editor(color, True, index)
+                editor = make_color_editor(color, index, True)
                 if editor:
                     editor.observe(on_material_changed(color))
                     editors.append(editor)
