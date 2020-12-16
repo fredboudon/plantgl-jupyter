@@ -506,6 +506,9 @@ class ParameterEditor(VBox):
             self.__accordion
         ], layout=Layout(margin='5px'))], **kwargs)
 
+    def dumps(self):
+        return self.__lp.dumps()
+
     def __load_from(self, lsystem):
 
         if lsystem.filename.endswith('.lpy'):
@@ -713,8 +716,9 @@ class ParameterEditor(VBox):
         return True
 
     def __save(self):
+        params = self.__lp.dumps()
         with io.open(self.__filename, 'w') as file:
-            file.write(json.dumps(json.loads(self.__lp.dumps()), indent=4))
+            file.write(json.dumps(json.loads(params), indent=4))
 
     def __on_editor_changed(self, param):
 

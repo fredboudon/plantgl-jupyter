@@ -214,6 +214,7 @@ class LsystemWidget(PGLWidget):
             code_ = code
 
         self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
+        self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
 
         self.unit = unit
         self.animate = animate
@@ -267,7 +268,7 @@ class LsystemWidget(PGLWidget):
             self.__lsystem.set(''.join([
                 self.__codes[0],
                 lp.generate_py_code()
-            ]), {})
+            ]), self.__extra_context)
             self.derivationLength = self.__lsystem.derivationLength + 1
             self.__trees = []
             self.__trees.append(self.__lsystem.axiom)
@@ -284,8 +285,18 @@ class LsystemWidget(PGLWidget):
         return False
 
     def __initialize_lsystem(self):
+        self.__lsystem.clear()
         self.__lsystem.filename = self.__filename if self.__filename else ''
-        self.__lsystem.set(''.join(self.__codes), self.__extra_context)
+        if self.editor:
+            lp = LsystemParameters()
+            lp.loads(self.editor.dumps())
+            self.__lsystem.set(''.join([
+                self.__codes[0],
+                lp.generate_py_code()
+            ]), self.__extra_context)
+        else:
+            self.__lsystem.set(''.join(self.__codes), self.__extra_context)
+        self.__derivationStep = 0
         self.derivationLength = self.__lsystem.derivationLength + 1
         self.__trees = [self.__lsystem.axiom]
 
@@ -301,27 +312,8 @@ class LsystemWidget(PGLWidget):
             self.__rewind()
 
     def __rewind(self):
-        self.__lsystem.clear()
-        self.__derivationStep = 0
-
-        if self.__filename:
-            with io.open(self.__filename, 'r') as file:
-                self.__codes = file.read().split(lpy.LpyParsing.InitialisationBeginTag)
-                self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
-            if len(self.__codes) < 2:
-                raise ValueError('No L_Py code found')
-            if self.__editor is not None:
-                self.__on_lpy_context_change(self.__editor.lpy_context)
-            elif Path(self.__filename[0:-3] + 'json').is_file():
-                self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-                self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-                self.__on_lpy_context_change(self.__editor.lpy_context)
-            else:
-                self.__initialize_lsystem()
-                self.__set_scene(0)
-        else:
-            self.__initialize_lsystem()
-            self.__set_scene(0)
+        self.__initialize_lsystem()
+        self.__set_scene(0)
 
     def __set_scene(self, step):
         # print('__set_scene', step, self.__trees)
