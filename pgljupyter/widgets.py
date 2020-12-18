@@ -185,6 +185,7 @@ class LsystemWidget(PGLWidget):
     progress = Float(0.0).tag(sync=True)
 
     __editor = None
+    __lp = None
     __codes = []
     __derivationStep = 0
     __in_queue = 0
@@ -192,7 +193,7 @@ class LsystemWidget(PGLWidget):
     __lsystem = None
     __extra_context = {}
 
-    def __init__(self, filename=None, code=None, unit=Unit.none, animate=False, dump='', context={}, **kwargs):
+    def __init__(self, filename=None, code=None, unit=Unit.none, animate=False, dump='', context={}, lp=None, **kwargs):
 
         if filename:
             if filename.endswith('.lpy'):
@@ -205,6 +206,7 @@ class LsystemWidget(PGLWidget):
 
         self.__lsystem = lpy.Lsystem()
         self.__extra_context = context
+        self.__lp = lp
         code_ = ''
         if self.__filename and Path(self.__filename).is_file():
             with io.open(self.__filename, 'r') as file:
@@ -221,6 +223,8 @@ class LsystemWidget(PGLWidget):
         self.dump = dump
         self.on_msg(self.__on_custom_msg)
 
+        if not isinstance(self.__lp, LsystemParameters):
+            self.__initialize_parameters()
         self.__initialize_lsystem()
         self.__set_scene(0)
 
@@ -229,11 +233,22 @@ class LsystemWidget(PGLWidget):
     @property
     def editor(self):
         if not self.is_magic:
-            self.__editor = ParameterEditor(lpy.Lsystem(self.__filename))
+            self.__editor = ParameterEditor(self.__lp, filename=self.__filename.split('.lpy')[0] + '.json')
             self.__editor.on_lpy_context_change = self.set_parameters
             return self.__editor
         else:
             return None
+
+    def __initialize_parameters(self):
+        self.__lp = LsystemParameters()
+        if not self.is_magic:
+            json_filename = self.__filename.split('.lpy')[0] + '.json'
+            if Path(json_filename).exists():
+                with io.open(json_filename, 'r') as file:
+                    self.__lp.load(file)
+            else:
+                self.__lp.retrieve_from(lpy.Lsystem(self.__filename))
+            self.__lp.filename = json_filename
 
     def get_lstring(self):
         if self.__derivationStep < len(self.__trees):
@@ -287,15 +302,10 @@ class LsystemWidget(PGLWidget):
     def __initialize_lsystem(self):
         self.__lsystem.clear()
         self.__lsystem.filename = self.__filename if self.__filename else ''
-        if self.editor:
-            lp = LsystemParameters()
-            lp.loads(self.editor.dumps())
-            self.__lsystem.set(''.join([
-                self.__codes[0],
-                lp.generate_py_code()
-            ]), self.__extra_context)
-        else:
-            self.__lsystem.set(''.join(self.__codes), self.__extra_context)
+        self.__lsystem.set(''.join([
+            self.__codes[0],
+            self.__lp.generate_py_code()
+        ]), self.__extra_context)
         self.__derivationStep = 0
         self.derivationLength = self.__lsystem.derivationLength + 1
         self.__trees = [self.__lsystem.axiom]

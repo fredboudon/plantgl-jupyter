@@ -43,9 +43,8 @@ class PGLMagics(Magics):
             lp.generate_py_code() if lp else ''
         ])
 
-        lsw = LsystemWidget(None, code=code, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context)
+        lsw = LsystemWidget(None, code=code, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context, lp=lp)
         editors = []
-        context = {}
 
         def on_value_changed(param):
             def fn(change):

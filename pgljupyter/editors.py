@@ -5,7 +5,6 @@ TODO: Add module docstring
 import io
 import json
 import re
-from pathlib import Path
 from enum import Enum
 
 from ipywidgets.widgets import (
@@ -13,7 +12,6 @@ from ipywidgets.widgets import (
     Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText
 )
 from traitlets import Unicode, List, Float, Bool, Int
-from openalea.lpy.lsysparameters import LsystemParameters
 from openalea.lpy.parameters.scalar import (
     IntegerScalar, FloatScalar, BoolScalar, BaseScalar
 )
@@ -466,6 +464,9 @@ class MaterialEditor(_Editor):
 class ParameterEditor(VBox):
     """TODO: Add docstring here
     """
+
+    filename = ''
+
     _model_name = Unicode('ParameterEditorModel').tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
     _model_module_version = Unicode(module_version).tag(sync=True)
@@ -485,9 +486,10 @@ class ParameterEditor(VBox):
 
     __lp = None
 
-    def __init__(self, lsystem, context=None, **kwargs):
+    def __init__(self, lp, filename='', **kwargs):
 
-        self.__lp = LsystemParameters()
+        self.__lp = lp
+        self.filename = filename
         self.__accordion = Accordion()
         self.__auto_apply_cbx = Checkbox(description='Auto apply')
         self.__auto_save_cbx = Checkbox(description='Auto save')
@@ -495,7 +497,7 @@ class ParameterEditor(VBox):
         self.__save_btn = Button(description='Save changes')
         self.__add_category_btn = Button(description='Add category')
         self.__add_category_txt = Text(placeholder='category name')
-        self.__load_from(lsystem)
+        self.__initialize()
 
         super().__init__([VBox([
             HBox([
@@ -509,23 +511,7 @@ class ParameterEditor(VBox):
     def dumps(self):
         return self.__lp.dumps()
 
-    def __load_from(self, lsystem):
-
-        if lsystem.filename.endswith('.lpy'):
-            self.__filename = lsystem.filename.split('.lpy')[0] + '.json'
-        else:
-            self.__filename = lsystem.filename + '.json'
-        self.__lp.retrieve_from(lsystem)
-
-        # if lp empty try to load from a json file and if there is no file create one
-        if len(self.__lp.get_colors().items()) == 0 and len(self.__lp.get_categories().items()) == 0:
-            if Path(self.__filename).exists():
-                with io.open(self.__filename, 'r') as file:
-                    self.__lp.load(file)
-            else:
-                with io.open(self.__filename, 'w') as file:
-                    self.__lp.dump(file)
-
+    def __initialize(self):
         if self.__lp.is_valid():
             children, titles = self.__build_gui()
             accordion = Accordion(children)
@@ -575,7 +561,7 @@ class ParameterEditor(VBox):
             self.__save()
 
     def on_lpy_context_change(self, context):
-        print(context)
+        pass
 
     def __build_gui(self):
 
@@ -716,9 +702,10 @@ class ParameterEditor(VBox):
         return True
 
     def __save(self):
-        params = self.__lp.dumps()
-        with io.open(self.__filename, 'w') as file:
-            file.write(json.dumps(json.loads(params), indent=4))
+        if self.filename:
+            params = self.__lp.dumps()
+            with io.open(self.filename, 'w') as file:
+                file.write(json.dumps(json.loads(params), indent=4))
 
     def __on_editor_changed(self, param):
 
