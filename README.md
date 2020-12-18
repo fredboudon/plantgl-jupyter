@@ -10,11 +10,9 @@
 
 - notebook magics - champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
 
-- notebook magics - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
+- notebook magics with scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
 
-- notebook magics - integration [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/integration.ipynb)
-
-
+- notebook magics with curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
 
 
 ## Usage
@@ -177,9 +175,9 @@ Run jupyter as docker container locally. Replace `/examples` with the path to yo
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
-docker pull jvail/plantgl-jupyter:0.2.0
+docker pull jvail/plantgl-jupyter:0.2.1
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.2.0 \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.2.1 \
     jupyter lab
 ```
