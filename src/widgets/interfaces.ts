@@ -27,7 +27,8 @@ export interface IMeshOptions {
 }
 
 export interface ITaskResult {
-    results: IGeom[];
+    geoms: IGeom[];
+    bbox: number[][];
     userData: any;
 }
 
@@ -41,7 +42,10 @@ export interface IPGLControlsState {
     autoRotate: boolean;
     showHeader: boolean;
     showControls: boolean;
+}
 
+export interface IPGLProgressState {
+    busy: number;
 }
 
 export interface IPGLControlsHandlers {
@@ -69,13 +73,6 @@ export interface ILsystemControlsHandlers {
     onAnimateToggled: Function;
     onDeriveClicked: Function;
     onRewindClicked: Function;
-}
-
-export enum LsystemUnit {
-    M = 0,
-    DM = 1,
-    CM = 2,
-    MM = 3
 }
 
 export interface IMaterial {

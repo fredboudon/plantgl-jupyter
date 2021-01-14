@@ -5,6 +5,7 @@
 #include <plantgl/scenegraph/scene/scene.h>
 #include <plantgl/scenegraph/core/action.h>
 #include <plantgl/algo/base/matrixcomputer.h>
+#include <plantgl/algo/base/bboxcomputer.h>
 
 namespace PGLJS
 {
@@ -60,6 +61,10 @@ class Tesselator : public PGL::Action
 
         TriangleSet* trianglesAt(uint_t i) {
             return triangles.at(i);
+        }
+
+        PGL::BoundingBox* bbox() {
+            return __bbox.get();
         }
 
         virtual bool beginProcess();
@@ -120,6 +125,7 @@ class Tesselator : public PGL::Action
         bool __single_mesh = false;
         std::vector<TriangleSet*> triangles;
         std::map<size_t, TriangleSet*> triangleMap;
+        PGL::BoundingBoxPtr __bbox;
 
         typedef PGL::Cache<PGL::ExplicitModelPtr> DiscretizerCache;
         DiscretizerCache __discretizer_cache;

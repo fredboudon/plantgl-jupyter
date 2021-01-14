@@ -4,11 +4,15 @@
 
 ## Quick Examples
 
+- lpy tree model - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
+
+- simple PlantGL shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+
 - notebook magics - champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
 
-- simple shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+- notebook magics with scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
 
-- lpy tree model - leuwenberg [@binder](https://mybinder.org/v2/gh/jvail/plantgl-jupyter/master?urlpath=lab/tree/examples/lpy/leuwenberg/leuwenberg.ipynb)
+- notebook magics with curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
 
 
 ## Usage
@@ -56,19 +60,50 @@ import pgljupyter
 Arguments:
 
 - `--size`, `-s` int,int: same as `size_display`
-- `--unit`, `-u` enum: same as `unit`
 - `--world`, `-w` float: same as `size_world`
+- `--unit`, `-u` enum: same as `unit`
+- `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
+
+**%lpy_plot**
+
+A line magic to plot all derivation steps of an Lsystem on a square plane
+
+```python
+# activated by importing pgljupyter
+import pgljupyter
+```
+
+Arguments:
+
+- `arg0`, string: L-Py file
+- `--size`, `-s` int,int: width and hight of the canvas
+- `--cell`, `-c` float: size of cell for a single derivation step
 
 
 ## Installation
 
 ### Install with pip - inside conda env
 
+Jupyterlab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
+`conda create` command.
+
 ```bash
-conda create -y -n pgljupyter -c fredboudon -c conda-forge \
-    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
-conda activate pgljupyter
+conda create -y -n pgl -c fredboudon -c conda-forge \
+    openalea.lpy jupyterlab ipywidgets ipython=7
+```
+
+For **windows** specify python 3.7 (there are some issues with jupyter on windows with python 3.8)
+
+```bash
+conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
+    openalea.lpy jupyterlab ipywidgets ipython=7
+```
+
+Some examples also require `matplotlib` and `rpy2`.
+
+```bash
+conda activate pgl
 pip install pgljupyter
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 jupyter lab build && jupyter lab
@@ -79,9 +114,8 @@ jupyter lab build && jupyter lab
  - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
 ```bash
-conda create -y -n pgljupyter -c fredboudon -c conda-forge \
-    'openalea.lpy>=3.4.0' 'jupyterlab>=2.2.0' 'ipywidgets>=7.5.0'
-conda activate pgljupyter
+conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets
+conda activate pgl
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```
 
@@ -116,7 +150,7 @@ cd ../..
 
 ```bash
 npm install
-npm run build:pgljs && npm run build
+npm run build:all
 ```
 
  - install python modules and jupyter extensions
@@ -137,13 +171,13 @@ jupyter lab --notebook-dir=./examples
 
 ## Docker
 
-Run jupyter as docker container locally.
+Run jupyter as docker container locally. Replace `/examples` with the path to your notebooks.
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
-docker pull jvail/plantgl-jupyter:0.1.19
+docker pull jvail/plantgl-jupyter:0.2.1
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/{folder_with_your_notebooks}:/home/jovyan/work plantgl-jupyter \
-    jupyter lab`
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.2.1 \
+    jupyter lab
 ```

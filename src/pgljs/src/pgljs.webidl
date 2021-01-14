@@ -7,6 +7,17 @@ interface Color3 {
 };
 
 [Prefix="PGL::"]
+interface BoundingBox {
+    void BoundingBox();
+    float getXMin();
+    float getYMin();
+    float getZMin();
+    float getXMax();
+    float getYMax();
+    float getZMax();
+};
+
+[Prefix="PGL::"]
 interface Material {
     void Material();
     [Ref] Color3 getAmbient();
@@ -45,4 +56,5 @@ interface Tesselator {
     void Tesselator(DOMString filename);
     unsigned long trianglesSize();
     TriangleSet trianglesAt(unsigned long i);
+    BoundingBox bbox();
 };

@@ -2,80 +2,114 @@
 TODO: Add module docstring
 """
 
-import os
 import io
 import json
 import re
-import toml
-import jsonschema
-from pathlib import Path
+from enum import Enum
 
 from ipywidgets.widgets import (
-    register, DOMWidget,  VBox, HBox, Tab, Layout, Accordion, Dropdown, Button,
-    FloatText, IntText, Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText,
-    # BoundedFloatText
+    register, DOMWidget,  VBox, HBox, Layout, Accordion, Dropdown, Button,
+    Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText
 )
 from traitlets import Unicode, List, Float, Bool, Int
+from openalea.lpy.parameters.scalar import (
+    IntegerScalar, FloatScalar, BoolScalar, BaseScalar
+)
+import openalea.plantgl.all as pgl
 
 from ._frontend import module_name, module_version
-
-
-# def to_json(tomls, _):
-#     return [_to_json(toml) for toml in tomls]
-
-# def _to_json(thing):
-#     if hasattr(thing, 'body'):
-#         json = {}
-#         for key in thing.keys():
-#             json[key] = _to_json(thing[key])
-#     elif isinstance(thing, dict):
-#         a_dict = {
-#             'value': {},
-#             'comment': thing.trivia.comment[1:].strip()
-#         }
-#         for key in thing:
-#             a_dict['value'][key] = _to_json(thing[key])
-#         return a_dict
-#     elif isinstance(thing, list):
-#         a_list = {
-#             'value': [],
-#             'comment': thing.trivia.comment[1:].strip()
-#         }
-#         for item in thing:
-#             a_list['value'].append(_to_json(item))
-#         return a_list
-#     else:
-#         return {
-#             'value':  'nan' if isinstance(thing, (int, float)) and math.isnan(thing) else thing.value,
-#             'comment': thing.trivia.comment[1:].strip()
-#         }
-#     return json
-
-# should be moved to lpy
-def make_default_lpy_context():
-
-    return DotDict({
-        'schema': 'lpy',
-        'version': '1.1',
-        'options': {
-            'compilation': {},
-            'matching': {},
-            'processing': {},
-            'interaction': {}
-        },
-        'parameters': [],
-        'materials': []
-    })
-
 
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
 
 
-class DotDict(dict):
+def make_scalar_editor(scalar, no_name=False):
 
-    def __init__(self, *args, **kwargs):
-        super(DotDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+    editor = None
+
+    if isinstance(scalar, IntegerScalar):
+        editor = IntEditor(
+            scalar.value,
+            name=scalar.name,
+            min=scalar.minvalue,
+            max=scalar.maxvalue,
+            step=1,
+            no_name=no_name
+        )
+    elif isinstance(scalar, FloatScalar):
+        editor = FloatEditor(
+            scalar.value,
+            name=scalar.name,
+            min=scalar.minvalue,
+            max=scalar.maxvalue,
+            step=1/10**scalar.precision,
+            no_name=no_name
+        )
+    elif isinstance(scalar, BoolScalar):
+        editor = BoolEditor(
+            scalar.value,
+            name=scalar.name,
+            no_name=no_name
+        )
+
+    return editor
+
+
+def make_color_editor(color, index, no_name=False):
+
+    editor = None
+
+    if isinstance(color, pgl.Material):
+        editor = MaterialEditor(
+            index=index,
+            name=color.name,
+            ambient=[color.ambient.red, color.ambient.green, color.ambient.blue],
+            specular=[color.specular.red, color.specular.green, color.specular.blue],
+            emission=[color.emission.red, color.emission.green, color.emission.blue],
+            diffuse=color.diffuse,
+            transparency=color.transparency,
+            shininess=color.shininess,
+            no_name=no_name
+        )
+
+    return editor
+
+
+def make_curve_editor(param, no_name=False):
+
+    editor = None
+    manager, value = param
+
+    if isinstance(value, pgl.NurbsCurve2D):
+        editor = CurveEditor(
+            name=value.name,
+            points=[[v[0], v[1]] for v in value.ctrlPointList],
+            type=CurveType.NURBS_CURVE_2D.value,
+            no_name=no_name,
+            is_function=manager.typename == 'Function'
+        )
+    elif isinstance(value, pgl.BezierCurve2D):
+        editor = CurveEditor(
+            name=value.name,
+            points=[[v[0], v[1]] for v in value.ctrlPointList],
+            type=CurveType.BEZIER_CURVE_2D.value,
+            no_name=no_name,
+            is_function=manager.typename == 'Function'
+        )
+    elif isinstance(value, pgl.Polyline2D):
+        editor = CurveEditor(
+            name=value.name,
+            points=[[v[0], v[1]] for v in value.pointList],
+            type=CurveType.POLYLINE_2D.value,
+            no_name=no_name
+        )
+
+    return editor
+
+
+class CurveType(Enum):
+    NURBS_CURVE_2D = 'NurbsCurve2D'
+    BEZIER_CURVE_2D = 'BezierCurve2D'
+    POLYLINE_2D = 'Polyline2D'
 
 
 @register
@@ -103,7 +137,7 @@ class _Editor(HBox):
             kwargs['children'] = kwargs['children']
         else:
             kwargs['children'] = (self.__text, *kwargs['children'])
-        kwargs['layout'] = Layout(margin='20px 0px')
+        kwargs['layout'] = Layout(margin='10px 10px')
         super().__init__(**kwargs)
 
     def __on_name_changed(self, change):
@@ -126,11 +160,15 @@ class _CurveEditor(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
+    name = Unicode('').tag(sync=True)
+    show_name = Bool(False).tag(sync=True)
     type = Unicode('').tag(sync=True)
     points = List(trait=List(trait=Float(), minlen=2, maxlen=2), minlen=2).tag(sync=True)
     is_function = Bool(False).tag(sync=True)
 
     def __init__(self, type, points, is_function=False, **kwargs):
+        self.name = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else ''
+        self.show_name = 'no_name' in kwargs and kwargs['no_name']
         self.type = type
         self.points = points
         self.is_function = is_function
@@ -186,8 +224,8 @@ class FloatEditor(_Editor):
     def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
 
         self.value = float(value)
-
-        self.__slider = FloatSlider(value, min=min, max=max, step=step, description='value')
+        description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
+        self.__slider = FloatSlider(value, min=min, max=max, step=step, description=description, continuous_update=False)
         # self.__min_ipt = FloatText(min, description='min')
         # self.__max_ipt = FloatText(max, description='max')
         # self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
@@ -247,7 +285,8 @@ class IntEditor(_Editor):
     def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
 
         self.value = int(value)
-        self.__slider = IntSlider(value, min, max, description='value')
+        description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
+        self.__slider = IntSlider(value, min, max, description=description, continuous_update=False)
         # self.__min_ipt = IntText(min, description='min')
         # self.__max_ipt = IntText(max, description='max')
         # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
@@ -300,7 +339,8 @@ class BoolEditor(_Editor):
 
     def __init__(self, value, **kwargs):
         self.value = value
-        self.__checkbox = Checkbox(value, description='value')
+        description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
+        self.__checkbox = Checkbox(value, description=description)
         self.__checkbox.observe(self.__on_checkbox_changed, names='value')
         kwargs['children'] = [
             self.__checkbox
@@ -373,9 +413,9 @@ class MaterialEditor(_Editor):
         self.__ambient = ColorPicker(value='#' + ''.join(format(v, "02x") for v in ambient), description='ambient')
         self.__specular = ColorPicker(value='#' + ''.join(format(v, "02x") for v in specular), description='specular')
         self.__emission = ColorPicker(value='#' + ''.join(format(v, "02x") for v in emission), description='emission')
-        self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=3)
-        self.__transparency = FloatSlider(value=transparency, description='transparency', min=0, max=1)
-        self.__shininess = FloatSlider(value=shininess, description='shininess', min=0, max=1)
+        self.__diffuse = FloatSlider(value=diffuse, description='diffuse', min=0, max=3, continuous_update=False)
+        self.__transparency = FloatSlider(value=transparency, description='transparency', min=0, max=1, continuous_update=False)
+        self.__shininess = FloatSlider(value=shininess, description='shininess', min=0, max=1, continuous_update=False)
         self.__index.observe(self.__on_index_changed, names='value')
         self.__ambient.observe(self.__on_ambient_changed, names='value')
         self.__specular.observe(self.__on_specular_changed, names='value')
@@ -397,7 +437,7 @@ class MaterialEditor(_Editor):
         super().__init__(**kwargs)
 
     def __rgb_to_list(self, rgb):
-        return [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
+        return [255, 0, 0] if len(rgb) != 7 else [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
 
     def __on_index_changed(self, change):
         self.index = self.__index.value
@@ -424,6 +464,9 @@ class MaterialEditor(_Editor):
 class ParameterEditor(VBox):
     """TODO: Add docstring here
     """
+
+    filename = ''
+
     _model_name = Unicode('ParameterEditorModel').tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
     _model_module_version = Unicode(module_version).tag(sync=True)
@@ -433,7 +476,7 @@ class ParameterEditor(VBox):
 
     __auto_apply = False
     __auto_save = False
-    __tab = None
+    __accordion = None
     __auto_apply_cbx = None
     __auto_save_cbx = None
     __apply_btn = None
@@ -441,212 +484,137 @@ class ParameterEditor(VBox):
     __add_category_btn = None
     __add_category_txt = None
 
-    # values = List([]).tag(sync=False)
-    # widget = Instance(VBox).tag(sync=True, **widget_serialization)
-    # files = {}
-    # status = Output(layout={'border': '1px solid black'})
-    lpy_context = {}
+    __lp = None
 
-    def __init__(self, filename, context=None, **kwargs):
+    def __init__(self, lp, filename='', **kwargs):
 
-        self.__tab = Tab()
+        self.__lp = lp
+        self.filename = filename
+        self.__accordion = Accordion()
         self.__auto_apply_cbx = Checkbox(description='Auto apply')
         self.__auto_save_cbx = Checkbox(description='Auto save')
         self.__apply_btn = Button(description='Apply changes')
         self.__save_btn = Button(description='Save changes')
         self.__add_category_btn = Button(description='Add category')
         self.__add_category_txt = Text(placeholder='category name')
-        make_default_lpy_context()
-        self.__load_from_file(filename)
+        self.__initialize()
+
         super().__init__([VBox([
             HBox([
                 HBox((self.__apply_btn, self.__auto_apply_cbx)),
                 HBox((self.__save_btn, self.__auto_save_cbx)),
                 HBox((self.__add_category_btn, self.__add_category_txt))
-            ], layout=Layout(flex_flow='row wrap')),
-            self.__tab
-        ])], **kwargs)
+            ], layout=Layout(flex_flow='row wrap', margin='5px')),
+            self.__accordion
+        ], layout=Layout(margin='5px'))], **kwargs)
 
-    def __load_from_file(self, filename):
+    def dumps(self):
+        return self.__lp.dumps()
 
-        self.__filename = filename
-        self.__tab = Tab()
+    def __initialize(self):
+        if self.__lp.is_valid():
+            children, titles = self.__build_gui()
+            accordion = Accordion(children)
+            for i, title in enumerate(titles):
+                accordion.set_title(i, title)
+            self.__accordion = accordion
 
-        with io.open(self.__filename, 'r') as file:
-            obj = None
-            if Path(self.__filename).suffix == '.toml':
-                pass
-                # try:
-                #     obj = toml.loads(file.read(), decoder=toml.TomlPreserveCommentDecoder())
-                # except toml.TomlDecodeError as e:
-                #     print('toml decode error:', e, self.__filename)
-            elif Path(self.__filename).suffix == '.json':
-                try:
-                    obj = json.loads(file.read())
-                except json.JSONDecodeError as e:
-                    print('json decode error:', e, self.__filename)
-                if obj is not None and ParameterEditor.validate_schema(obj):
-                    self.lpy_context = obj
-                    children, titles = self.__build_gui(obj)
-                    self.__tab .children = children
-                    for i, title in enumerate(titles):
-                        self.__tab .set_title(i, title)
-                    self.__auto_apply_cbx.observe(self.__on_auto_apply_cbx_change, names='value')
-                    self.__auto_save_cbx.observe(self.__on_auto_save_cbx_change, names='value')
-                    self.__apply_btn.on_click(lambda x: self.on_lpy_context_change(self.lpy_context))
-                    self.__save_btn.on_click(lambda x: self.__save_files())
-                    self.__add_category_btn.on_click(lambda x: self.__add_category(self.__add_category_txt.value.strip()))
-
-    def __del_category(self, name):
-        self_ = self
-
-        def delete(self):
-            for i, category in enumerate(self_.lpy_context['parameters']):
-                if category['name'] == name:
-                    no_categories = len(self_.lpy_context['parameters'])
-                    self_.lpy_context['parameters'].pop(i)
-                    acc = self_.__tab.children[0]
-                    children = list(acc.children)
-                    titles = [acc.get_title(c) for c in range(len(acc.children))]
-                    titles.pop(i + len(children) - no_categories)
-                    children.pop(i + len(children) - no_categories)
-                    for j, title in enumerate(titles):
-                        acc.set_title(j, title)
-                    acc.children = children
-                    if self_.__auto_save:
-                        self_.__save_files()
-                    break
-        return delete
+            self.__auto_apply_cbx.observe(self.__on_auto_apply_cbx_change, names='value')
+            self.__auto_save_cbx.observe(self.__on_auto_save_cbx_change, names='value')
+            self.__apply_btn.on_click(lambda x: self.on_lpy_context_change(self.__lp.dumps()))
+            self.__save_btn.on_click(lambda x: self.__save())
+            self.__add_category_btn.on_click(lambda x: self.__add_category(self.__add_category_txt.value.strip()))
 
     def __add_category(self, name):
-        if len(name) == 0 or len([c for c in self.lpy_context['parameters'] if c['name'] == name]):
+        if not name or name in self.__lp.get_category_names():
             return
+
         item_layout = Layout(
             margin='20px',
             flex_flow='row wrap'
         )
-        menu_layout = Layout(
-            margin='20px',
-            flex_flow='row wrap'
-        )
-        acc = self.__tab.children[0]
+        acc = self.__accordion
         box_scalars = HBox(layout=item_layout)
         box_curves = HBox(layout=item_layout)
-        btn_delete = Button(description='Delete category')
-        btn_delete.on_click(self.__del_category(name))
 
-        acc.children = (*acc.children, VBox([
-            HBox([btn_delete], layout=menu_layout),
-            HBox(self.__menu('scalars', box_scalars, name), layout=menu_layout),
+        acc.children = (*self.__accordion.children, VBox([
+            self.__menu('scalars', box_scalars, name),
             box_scalars,
-            HBox(self.__menu('curves', box_curves, name), layout=menu_layout),
+            self.__menu('curves', box_curves, name),
             box_curves
         ]))
         acc.set_title(len(acc.children) - 1, name)
-        self.lpy_context['parameters'].append({
-            'name': name,
-            'enabled': True,
-            'scalars': [],
-            'curves': []
-        })
+        self.__lp.add_category(name)
         if self.__auto_save:
-            self.__save_files()
+            self.__save()
 
     def __on_auto_apply_cbx_change(self, change):
         self.__auto_apply = change['owner'].value
         self.__apply_btn.disabled = self.__auto_apply
         if self.__auto_apply:
-            self.on_lpy_context_change(self.lpy_context)
+            self.on_lpy_context_change(self.__lp.dumps())
 
     def __on_auto_save_cbx_change(self, change):
         self.__auto_save = change['owner'].value
         self.__save_btn.disabled = self.__auto_save
         if self.__auto_save:
-            self.__save_files()
+            self.__save()
 
     def on_lpy_context_change(self, context):
         pass
 
-    def __build_gui(self, obj):
-        path = os.path.normpath(os.path.abspath(self.__filename))
-        files = {
-            path: obj
-        }
-        self.__gather_files(obj, os.path.dirname(path), files)
-        # self.values = [{ 'filename': os.path.basename(key), 'path': key, 'obj': files[key] } for key in files.keys()]
+    def __build_gui(self):
 
         children = []
-        titles = []
-        for path, obj in files.items():
-            titles.append(os.path.basename(path))
-            item_layout = Layout(
-                margin='20px',
-                flex_flow='row wrap'
+        titles = ['materials']
+        item_layout = Layout(
+            margin='20px',
+            flex_flow='row wrap'
+        )
+
+        if self.__lp:
+
+            box_materials = HBox(layout=item_layout)
+
+            for index, color in self.__lp.get_colors().items():
+                editor = make_color_editor(color, index, no_name=True)
+                if editor:
+                    editor.observe(self.__on_editor_changed(color))
+                    box_materials.children = (*box_materials.children, editor)
+
+            children.append(
+                VBox([
+                    self.__menu('materials', box_materials),
+                    box_materials
+                ])
             )
-            menu_layout = Layout(
-                margin='20px',
-                flex_flow='row wrap'
-            )
-            # box = VBox((GridBox(layout=grid_layout), Accordion()))
 
-            if 'schema' in obj and obj['schema'] == 'lpy':
+            for category_name in self.__lp.get_category_names():
 
-                # box_options = HBox(layout=item_layout)
-                box_materials = HBox(layout=item_layout)
+                box_scalars = HBox(layout=item_layout)
+                box_curves = HBox(layout=item_layout)
 
-                for material in obj['materials']:
-                    ipt = MaterialEditor(**material, validator=self.__validate_name)
-                    ipt.observe(self.__observe_lpy('materials'))
-                    box_materials.children = (*box_materials.children, ipt)
+                for scalar in self.__lp.get_category_scalars(category_name):
 
-                acc_items = [
-                    # VBox([
-                    #     HBox((), layout=menu_layout),
-                    #     box_options
-                    # ]),
-                    VBox([
-                        HBox(self.__menu('materials', box_materials), layout=menu_layout),
-                        box_materials
-                    ])
-                ]
+                    editor = make_scalar_editor(scalar, False)
+                    if editor:
+                        editor.observe(self.__on_editor_changed(scalar))
+                        box_scalars.children = (*box_scalars.children, editor)
 
-                for category in obj['parameters']:
-                    box_scalars = HBox(layout=item_layout)
-                    box_curves = HBox(layout=item_layout)
-                    for scalar in category['scalars']:
-                        ipt = None
-                        if isinstance(scalar['value'], bool):
-                            ipt = BoolEditor(**scalar, validator=self.__validate_name)
-                        elif isinstance(scalar['value'], (int, float)):
-                            if scalar['type'] == 'Integer':
-                                ipt = IntEditor(**scalar, validator=self.__validate_name)
-                            elif scalar['type'] == 'Float':
-                                ipt = FloatEditor(**scalar, validator=self.__validate_name)
-                        if ipt is not None:
-                            box_scalars.children = (*box_scalars.children, ipt)
-                            ipt.observe(self.__observe_lpy('scalars', category['name']))
-                    for curve in category['curves']:
-                        ipt = CurveEditor(**curve, validator=self.__validate_name)
-                        box_curves.children = (*box_curves.children, ipt)
-                        ipt.observe(self.__observe_lpy('curves', category['name']))
+                for param in self.__lp.get_category_graphicalparameters(category_name):
 
-                    btn_delete = Button(description='Delete category')
-                    btn_delete.on_click(self.__del_category(category['name']))
-                    acc_items.append(VBox([
-                        HBox([btn_delete], layout=menu_layout),
-                        HBox(self.__menu('scalars', box_scalars, category['name']), layout=menu_layout),
-                        box_scalars,
-                        HBox(self.__menu('curves', box_curves, category['name']), layout=menu_layout),
-                        box_curves
-                    ]))
+                    editor = make_curve_editor(param, False)
+                    if editor:
+                        editor.observe(self.__on_editor_changed(param))
+                        box_curves.children = (*box_curves.children, editor)
 
-                acc = Accordion(acc_items)
-                # acc.set_title(0, 'options')
-                acc.set_title(0, 'materials')
-                for i, category in enumerate(obj['parameters']):
-                    acc.set_title(i + 1, category['name'])
-
-            children.append(acc)
+                children.append(VBox([
+                    self.__menu('scalars', box_scalars, category_name),
+                    box_scalars,
+                    self.__menu('curves', box_curves, category_name),
+                    box_curves
+                ]))
+                titles.append(category_name)
 
         return (children, titles)
 
@@ -654,78 +622,30 @@ class ParameterEditor(VBox):
 
         btn_add = Button(description='Add')
         ddn_add = Dropdown()
-        btn_del = Button(description='Delete')
-        ddn_del = Dropdown(options=[item.name for item in box.children])
-
-        def fn_del(self):
-
-            if ddn_del.value:
-                if category_name is not None:
-                    for category in self.lpy_context['parameters']:
-                        if category['name'] == category_name:
-                            category[parameter_type].pop(ddn_del.index)
-                            box.children = [child for i, child in enumerate(box.children) if i != ddn_del.index]
-                            ddn_del.options = [item.name for item in box.children]
-                            if self.__auto_save:
-                                self.__save_files()
-                            if self.__auto_apply:
-                                self.on_lpy_context_change(self.lpy_context)
-                            break
-                else:
-                    self.lpy_context[parameter_type].pop(ddn_del.index)
-                    box.children = [child for i, child in enumerate(box.children) if i != ddn_del.index]
-                    ddn_del.options = [item.name for item in box.children]
-                    if self.__auto_save:
-                        self.__save_files()
-                    if self.__auto_apply:
-                        self.on_lpy_context_change(self.lpy_context)
 
         if parameter_type == 'scalars':
 
             def fn_add(self):
 
-                parameter_name = f'{ddn_add.value}_{len(box.children)}'
-                item = None
+                value = None
 
                 if ddn_add.value == 'Integer':
-                    parameter = {
-                        'name': parameter_name,
-                        'type': 'Integer',
-                        'value': 5,
-                        'min': 1,
-                        'max': 10,
-                        'step': 1
-                    }
-                    item = IntEditor(**parameter, validator=self.__validate_name)
+                    value = 1
                 elif ddn_add.value == 'Float':
-                    parameter = {
-                        'name': parameter_name,
-                        'type': 'Float',
-                        'value': 0.5,
-                        'min': 0,
-                        'max': 1,
-                        'step': 0.1
-                    }
-                    item = FloatEditor(**parameter, validator=self.__validate_name)
+                    value = 1.0
                 elif ddn_add.value == 'Bool':
-                    parameter = {
-                        'name': parameter_name,
-                        'value': True
-                    }
-                    item = BoolEditor(**parameter, validator=self.__validate_name)
+                    value = True
 
-                if item is not None:
-                    box.children = (*box.children, item)
-                    for category in self.lpy_context['parameters']:
-                        if category['name'] == category_name:
-                            category[parameter_type].append(parameter)
-                            item.observe(self.__observe_lpy(parameter_type, category_name))
-                            ddn_del.options = [item.name for item in box.children]
-                            if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                                self.__save_files()
-                            if self.__auto_apply:
-                                self.on_lpy_context_change(self.lpy_context)
-                            break
+                name = f'{ddn_add.value}_{len(box.children)}'
+                scalar = self.__lp.add_scalar(name, value, category=category_name)
+                editor = make_scalar_editor(scalar)
+                editor.observe(self.__on_editor_changed(scalar))
+                box.children = (*box.children, editor)
+
+                if self.__auto_save:
+                    self.__save()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.__lp.dumps())
 
             ddn_add.options = ['Integer', 'Float', 'Bool']
 
@@ -733,23 +653,17 @@ class ParameterEditor(VBox):
 
             def fn_add(self):
 
-                index = len(box.children) + 1
-                material_name = f'{ddn_add.value}_{index}'
+                index = max(self.__lp.get_colors().keys()) + 1 if len(self.__lp.get_colors().keys()) else 0
 
-                material = {
-                    'name': material_name,
-                    'index': index,
-                    'ambient': [80, 80, 80]
-                }
-                item = MaterialEditor(**material, validator=self.__validate_name)
-                self.lpy_context['materials'].append(material)
-                box.children = (*box.children, item)
-                item.observe(self.__observe_lpy(parameter_type))
-                ddn_del.options = [item.name for item in box.children]
-                if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                    self.__save_files()
+                self.__lp.set_color(index, pgl.Material(ambient=(80, 80, 80), diffuse=1))
+                editor = make_color_editor(self.__lp.get_color(index), index, no_name=True)
+                editor.observe(self.__on_editor_changed(self.__lp.get_color(index)))
+                box.children = (*box.children, editor)
+
+                if self.__auto_save:
+                    self.__save()
                 if self.__auto_apply:
-                    self.on_lpy_context_change(self.lpy_context)
+                    self.on_lpy_context_change(self.__lp.dumps())
 
             ddn_add.options = ['Color']
 
@@ -757,41 +671,25 @@ class ParameterEditor(VBox):
 
             def fn_add(self):
 
-                parameter_name = f'{ddn_add.value}_{len(box.children)}'
-                parameter = {
-                    'name': parameter_name,
-                    'type': 'NurbsCurve2D' if ddn_add.value == 'Function' else ddn_add.value,
-                    'points': [],
-                    'is_function': ddn_add.value == 'Function'
-                }
+                name = f'{ddn_add.value}_{len(box.children)}'
                 if ddn_add.value == 'Function':
-                    parameter['points'] = [[0, 0], [0.25, 0], [0.5, 0], [0.75, 0], [1, 0]]
+                    curve = self.__lp.add_function(name, category=category_name)
                 else:
-                    parameter['points'] = [[-0.5, 0], [-0.25, 0], [0, 0], [0.25, 0], [0.5, 0]]
+                    curve = self.__lp.add_curve(name, category=category_name)
+                editor = make_curve_editor(curve)
+                editor.observe(self.__on_editor_changed(curve))
+                box.children = (*box.children, editor)
 
-                item = CurveEditor(**parameter, validator=self.__validate_name)
+                if self.__auto_save:
+                    self.__save()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.__lp.dumps())
 
-                box.children = (*box.children, item)
-                for category in self.lpy_context['parameters']:
-                    if category['name'] == category_name:
-                        category[parameter_type].append(parameter)
-                        item.observe(self.__observe_lpy(parameter_type, category_name))
-                        ddn_del.options = [item.name for item in box.children]
-                        if self.__auto_save and ParameterEditor.validate_schema(self.lpy_context):
-                            self.__save_files()
-                        if self.__auto_apply:
-                            self.on_lpy_context_change(self.lpy_context)
-                        break
-
-            ddn_add.options = ['NurbsCurve2D', 'BezierCurve2D', 'Polyline2D', 'Function']
+            ddn_add.options = ['Curve', 'Function']
 
         btn_add.on_click(lambda x: fn_add(self))
-        btn_del.on_click(lambda x: fn_del(self))
 
-        return (
-            HBox((btn_add, ddn_add)),
-            HBox((btn_del, ddn_del))
-        )
+        return HBox((btn_add, ddn_add))
 
     def __validate_name(self, name):
         if not _property_name_regex.match(name):
@@ -803,239 +701,47 @@ class ParameterEditor(VBox):
                 return False
         return True
 
-    @staticmethod
-    def validate_schema(obj):
-        # TODO: load files only once
-        is_valid = False
-        schema_path = os.path.join(os.path.dirname(__file__), 'schema')
-        with io.open(os.path.join(schema_path, 'lpy.json'), 'r') as schema_file:
-            try:
-                schema = json.loads(schema_file.read())
-            except json.JSONDecodeError as e:
-                print(e)
-            resolver = jsonschema.RefResolver(f'file:///{schema_path}/', schema)
-            try:
-                jsonschema.validate(obj, schema, format_checker=jsonschema.draft7_format_checker, resolver=resolver)
-                is_valid = True
-            except jsonschema.exceptions.ValidationError as e:
-                print('L-Py schema validation failed:', e.message)
-            except jsonschema.exceptions.RefResolutionError as e:
-                print('JSON schema $ref file not found:', e)
-        return is_valid
+    def __save(self):
+        if self.filename:
+            params = self.__lp.dumps()
+            with io.open(self.filename, 'w') as file:
+                file.write(json.dumps(json.loads(params), indent=4))
 
-    def __gather_files(self, thing, dirname, files={}):
-        if isinstance(thing, (dict, list)):
-            for key in thing:
-                if isinstance(key, str):
-                    self.__gather_files(thing[key], dirname, files)
-        elif isinstance(thing, str) and thing[-5:] == '.toml':
-            path = os.path.normpath(os.path.join(dirname, thing))
-            if path not in files:
-                with io.open(path, 'r') as file:
-                    files[path] = toml.loads(file.read())
-                    self.__gather_files(files[path], os.path.dirname(path), files)
+    def __on_editor_changed(self, param):
 
-    # def __widgets(self, toml, key='', file=None, path=''):
-    #     if hasattr(toml, 'body'):
-    #         return widgets.VBox([self.__widgets(toml[key], key, file, path) for key in toml.keys()])
-    #     elif isinstance(toml, (dict, list)):
-    #         acc = widgets.Accordion
-    #         box = widgets.VBox([self.__widgets(toml[key], key, file, path) for key in toml])
-    #         acc.children = [box]
-    #         return acc
-    #     else:
-    #         print(key)
-    #         txt = widgets.Label(key + ' :')
-    #         ipt = widgets.FloatText(toml) if isinstance(toml, (int, float)) else widgets.Text(toml)
-    #         ipt.observe(on_change(file, toml, path))
-    #         cmt = widgets.Label(toml.trivia.comment[1:].strip())
-    #         return widgets.HBox([txt, ipt, cmt])
-
-    # def __on_lpy_change(self, change):
-    #     owner = change['owner']
-    #     if isinstance(owner, ColorPicker):
-    #         hex = owner.value[1:] # rgb as hex
-    #         color = [int(v, 16) for v in [hex[i:i+2] for i in range(0, 6, 2)]]
-    #         print(owner.value)
-
-        # if isinstance(owner, CurveEditor):
-        #     if not self.on_lpy_context_change is None:
-        #         curve = NurbsCurve2D(Point3Array([Vector3(p[0], p[1], 1) for p in owner.control_points]))
-        #         if owner.is_function:
-        #             curve = QuantisedFunction(curve)
-        #         self.on_lpy_context_change(owner.name, curve)
-
-    def __on_change(self, file, toml, key, path, is_comment=False):
-        # _file = file
-        # _toml = toml
-        # _path = path
-        def fn(change):
-            print(change)
-            # if change['name'] == 'value':
-            #     comment = 'comment' if is_comment else ''
-            #     if is_comment:
-            #         if len(toml.trivia.comment) == 0:
-            #             toml.trivia.comment_ws = '  '
-            #         toml.trivia.comment = '# ' + change['new']
-            #     elif isinstance(toml, (int, float)):
-            #         toml._raw = str(change['new'])
-            #     elif isinstance(toml, str):
-            #         toml._original = change['new']
-
-            #     try:
-            #         self.status.clear_output()
-            #         with io.open(path, 'w') as toml_file:
-            #             toml_file.write(tomlkit.dumps(file))
-            #             with self.status:
-            #                 print(f'saved "{key}" {comment} to {path} ...')
-            #     except:
-            #         print(f'error saving "{key}" {comment} to {path}')
-        return fn
-
-    def __save_files(self):
-        if ParameterEditor.validate_schema(self.lpy_context):
-            with io.open(self.__filename, 'w') as file:
-                file.write(json.dumps(self.lpy_context, indent=4))
-
-    def __observe_lpy(self, parameter_type, category_name=None):
-        def fn(change):
-            owner = change['owner']
-            new = change['new']
-            prop = change['name']
-            name = owner.name if prop != 'name' else change['old']
-            obj = None
-
-            if category_name is not None:
-                for category in self.lpy_context['parameters']:
-                    if category['name'] == category_name:
-                        for parameter in category[parameter_type]:
-                            if parameter['name'] == name:
-                                obj = parameter
-                                break
-            else:
-                for parameter in self.lpy_context[parameter_type]:
-                    if parameter['name'] == name:
-                        obj = parameter
-                        break
-
-            if obj is not None:
-                if isinstance(owner, CurveEditor):
-                    if prop == 'value':
-                        obj['points'] = new
+        def on_param_changed(change):
+            if 'new' in change:
+                value = change['new']
+                name = change['name']
+                if isinstance(param, BaseScalar):
+                    if name == 'name':
+                        param.name = value
                     else:
-                        obj[prop] = new
+                        param.value = value
+                elif isinstance(param, tuple):
+                    if name == 'value':
+                        if isinstance(param[1], (pgl.NurbsCurve2D, pgl.BezierCurve2D)):
+                            param[1].ctrlPointList = pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in value])
+                        elif isinstance(param[1], pgl.Polyline2D):
+                            param[1].pointList = pgl.Point2Array([pgl.Vector2(p[0], p[1]) for p in value])
+                    else:
+                        param[1].name = value
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.__lp.dumps())
+                if self.__auto_save:
+                    self.__save()
+
+        def on_material_changed(change):
+            if 'new' in change:
+                if change['name'] == 'index':
+                    self.__lp.unset_color(change['old'])
+                    self.__lp.set_color(change['new'], param)
                 else:
-                    obj[prop] = new
+                    setattr(param, change['name'], change['new'])
 
-            if self.__auto_apply:
-                # A Material name is just a label
-                if not (isinstance(owner, MaterialEditor) and prop == 'name'):
-                    self.on_lpy_context_change(self.lpy_context)
-            if self.__auto_save:
-                self.__save_files()
+                if self.__auto_apply:
+                    self.on_lpy_context_change(self.__lp.dumps())
+                if self.__auto_save:
+                    self.__save()
 
-        return fn
-
-    def __widgets(self, thing, box, key='', file=None, path='', schema='', category=''):
-        if isinstance(thing, (dict, list)):
-            if schema == 'lpy':
-                if key == 'scalars':
-                    layout = box.children[0].children[1]
-                    for name in thing.keys():
-                        ipt = None
-                        if isinstance(thing[name]['value'], bool):
-                            ipt = BoolEditor(**thing[name], name=name, validator=self.__validate_name)
-                        elif isinstance(thing[name]['value'], (int, float)):
-                            if thing[name]['type'] == 'Integer':
-                                for key_, value in thing[name].items():
-                                    if isinstance(value, float):
-                                        thing[name][key_] = int(value)
-                                ipt = IntEditor(
-                                    **thing[name],
-                                    name=name,
-                                    validator=self.__validate_name
-                                )
-                            else:
-                                for key_, value in thing[name].items():
-                                    if isinstance(value, int):
-                                        thing[name][key_] = float(value)
-                                ipt = FloatEditor(
-                                    **thing[name],
-                                    name=name,
-                                    validator=self.__validate_name
-                                )
-                        if ipt is not None:
-                            layout.children = (*layout.children, ipt)
-                            ipt.observe(self.__observe_lpy(name, key))
-
-                elif key == 'materials':
-                    layout = box.children[1].children[1]
-                    for name in thing.keys():
-                        ipt = MaterialEditor(**thing[name], name=name, validator=self.__validate_name)
-                        layout.children = (*layout.children, ipt)
-                        ipt.observe(self.__observe_lpy(name, key))
-
-                elif key == 'functions':
-                    layout = box.children[2].children[1]
-                    for name in thing.keys():
-                        ipt = None
-                        if 'NurbsCurve2D' in thing[name]:
-                            val = thing[name]['NurbsCurve2D']
-                            ipt = CurveEditor(val, 'NurbsCurve2D', is_function=True, name=name, validator=self.__validate_name)
-                            layout.children = (*layout.children, ipt)
-
-                        if ipt is not None:
-                            ipt.observe(self.__observe_lpy(name, key))
-
-                elif key == 'curves':
-                    layout = box.children[3].children[1]
-                    for name in thing.keys():
-                        ipt = None
-                        if 'NurbsCurve2D' in thing[name]:
-                            val = thing[name]['NurbsCurve2D']
-                            ipt = CurveEditor(val, 'NurbsCurve2D', name=name, validator=self.__validate_name)
-                            layout.children = (*layout.children, ipt)
-                        elif 'BezierCurve2D' in thing[name]:
-                            val = thing[name]['BezierCurve2D']
-                            ipt = CurveEditor(val, 'BezierCurve2D', name=name, validator=self.__validate_name)
-                            layout.children = (*layout.children, ipt)
-                        elif 'Polyline2D' in thing[name]:
-                            val = thing[name]['Polyline2D']
-                            ipt = CurveEditor(val, 'Polyline2D', name=name, validator=self.__validate_name)
-                            layout.children = (*layout.children, ipt)
-
-                        if ipt is not None:
-                            ipt.observe(self.__observe_lpy(name, key))
-
-            else:
-                for key in thing.keys():
-                    self.__widgets(thing[key], box, key, file, path)
-            # pass
-            # acc = widgets.Accordion
-            # box = widgets.VBox([self.__widgets(toml[key], key, file, path) for key in toml])
-            # acc.children = [box]
-            # return acc
-        else:
-            if key != 'schema':
-                value = thing.val if hasattr(thing, 'comment') else thing
-                comment = thing.comment if hasattr(thing, 'comment') else ''
-                grid = box.children[0]
-                ipt = None
-                layout = Layout(width='auto', height='auto')
-                if isinstance(value, str):
-                    #  style=DescriptionStyle(description_width='width:200px')
-                    ipt = Text(value, description=key, continuous_update=False, layout=layout, style={'description_width': '150px'})
-                elif isinstance(value, float):
-                    ipt = FloatText(value, description=key, layout=layout, style={'description_width': '150px'})
-                elif isinstance(value, int):
-                    ipt = IntText(value, description=key, layout=layout, style={'description_width': '150px'})
-                if ipt is not None:
-                    ipt.observe(self.__on_change(file, toml, key, path))
-                    cmt = Text(
-                        comment[comment.find('#')+1:].strip(),
-                        placeholder='comment',
-                        continuous_update=False,
-                        layout=Layout(width='auto', height='auto')
-                    )
-                    cmt.observe(self.__on_change(file, toml, key, path, is_comment=True))
-                    grid.children = (*grid.children, ipt, cmt)
+        return on_material_changed if isinstance(param, pgl.Material) else on_param_changed

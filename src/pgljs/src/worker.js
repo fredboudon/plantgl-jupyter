@@ -162,14 +162,15 @@ self.onmessage = function (evt) {
                 if (inflated instanceof Uint8Array) {
                     data = inflated
                 }
-                const meshs = splitAndMerge(pgl.parse(data));
-                postMessage(meshs, meshs.reduce((arr, mesh) =>  {
+                const { triangleSets, bbox } = pgl.parse(data);
+                const geoms = splitAndMerge(triangleSets);
+                postMessage({ geoms, bbox }, geoms.reduce((arr, geom) =>  {
                     // arr.push(mesh.color);
-                    arr.push(mesh.index);
-                    arr.push(mesh.position);
+                    arr.push(geom.index);
+                    arr.push(geom.position);
                     // arr.push(mesh.normal);
-                    if (mesh.isInstanced) {
-                        arr.push(mesh.instances);
+                    if (geom.isInstanced) {
+                        arr.push(geom.instances);
                     }
                     return arr;
                 }, []));

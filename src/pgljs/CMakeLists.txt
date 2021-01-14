@@ -43,6 +43,7 @@ file(GLOB_RECURSE pgl_sources
   "plantgl/src/cpp/plantgl/scenegraph/appearance/texture.cpp"
   "plantgl/src/cpp/plantgl/scenegraph/function/function.cpp"
   "plantgl/src/cpp/plantgl/algo/base/matrixcomputer.cpp"
+  "plantgl/src/cpp/plantgl/algo/base/bboxcomputer.cpp"
   "plantgl/src/cpp/plantgl/math/*.cpp"
   "plantgl/src/cpp/plantgl/tool/util_array*"
   "plantgl/src/cpp/plantgl/tool/timer.cpp"

@@ -33,7 +33,7 @@ const getWorker = (): Worker => {
                     if (evt.data.error) {
                         reject({ error: evt.data.error, userData});
                     } else {
-                        resolve({ results: evt.data, userData });
+                        resolve({ ...evt.data, userData });
                     }
                 }
             }

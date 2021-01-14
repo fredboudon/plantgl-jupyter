@@ -10,8 +10,6 @@ include package.json
 include webpack.config.js
 include pgljupyter/labextension/*.tgz
 
-include pgljupyter/schema/*.json
-
 # Documentation
 #graft docs
 exclude docs/\#*

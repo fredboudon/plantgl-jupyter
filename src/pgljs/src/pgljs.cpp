@@ -2,6 +2,7 @@
 
 #include <plantgl/algo/base/tesselator.h>
 #include <plantgl/scenegraph/geometry/box.h>
+#include <plantgl/scenegraph/geometry/boundingbox.h>
 #include <plantgl/scenegraph/geometry/amapsymbol.h>
 #include <plantgl/scenegraph/geometry/asymmetrichull.h>
 #include <plantgl/scenegraph/geometry/beziercurve.h>
@@ -238,6 +239,9 @@ Tesselator::Tesselator(const std::string& filename) :
     if (parser.parse(filename)) {
         PGL::Scene* scene = parser.getScene();
         scene->apply(*this);
+        PGL::BBoxComputer bboxComputer(__tesselator);
+        bboxComputer.process(scene);
+        __bbox = bboxComputer.getBoundingBox();
     }
 
 }

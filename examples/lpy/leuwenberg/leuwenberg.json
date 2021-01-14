@@ -1,12 +1,7 @@
 {
     "schema": "lpy",
     "version": "1.1",
-    "options": {
-        "compilation": {},
-        "matching": {},
-        "processing": {},
-        "interaction": {}
-    },
+    "options": {},
     "parameters": [
         {
             "name": "leaf",
@@ -17,19 +12,17 @@
                     "type": "Integer",
                     "value": 3,
                     "min": 1,
-                    "max": 10,
-                    "step": 1
+                    "max": 10
                 },
                 {
                     "name": "leafold",
                     "type": "Integer",
                     "value": 2,
                     "min": 1,
-                    "max": 10,
-                    "step": 1
+                    "max": 10
                 }
             ],
-            "curves": []
+            "items": []
         },
         {
             "name": "trunk & branches",
@@ -40,8 +33,7 @@
                     "type": "Integer",
                     "value": 5,
                     "min": 1,
-                    "max": 10,
-                    "step": 1
+                    "max": 10
                 },
                 {
                     "name": "radinc",
@@ -49,24 +41,24 @@
                     "value": 0.03,
                     "min": 0.01,
                     "max": 0.1,
-                    "step": 0.01
+                    "precision": 2
                 },
                 {
                     "name": "nb_axes",
                     "type": "Integer",
                     "value": 4,
                     "min": 1,
-                    "max": 5,
-                    "step": 1
+                    "max": 5
                 }
             ],
-            "curves": []
+            "items": []
         }
     ],
     "materials": [
         {
             "name": "trunk",
             "index": 1,
+            "type": "Material",
             "ambient": [
                 91,
                 69,
@@ -89,6 +81,7 @@
         {
             "name": "leaf_new",
             "index": 2,
+            "type": "Material",
             "ambient": [
                 25,
                 87,
@@ -111,6 +104,7 @@
         {
             "name": "apex",
             "index": 3,
+            "type": "Material",
             "ambient": [
                 15,
                 196,
@@ -121,6 +115,7 @@
         {
             "name": "leaf_old",
             "index": 4,
+            "type": "Material",
             "ambient": [
                 225,
                 160,
