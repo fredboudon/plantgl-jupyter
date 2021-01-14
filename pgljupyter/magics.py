@@ -5,8 +5,7 @@ from IPython.core.magic import (
 from ipywidgets import HBox, Layout
 
 from openalea.lpy import Lsystem
-from openalea.lpy.lsysparameters import LsystemParameters
-from openalea.lpy.parameters.scalar import BaseScalar
+from openalea.lpy.lsysparameters import LsystemParameters, BaseScalar
 import openalea.plantgl.all as pgl
 
 from .widgets import SceneWidget, LsystemWidget
