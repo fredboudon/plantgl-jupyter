@@ -9,7 +9,7 @@ import bgeom from './widgets/geom';
 import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
-import { IRenderMimeRegistry, IRenderMime } from '@jupyterlab/rendermime';
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { MimeDocumentFactory } from '@jupyterlab/docregistry';
 
 const registerWidgets = (widgetRegistry: IJupyterWidgetRegistry) => {
@@ -36,42 +36,42 @@ const registerLpyFileType = (app: JupyterFrontEnd) => {
         displayName: 'Lpy File',
         extensions: ['.lpy'],
         mimeTypes: ['text/x-python'],
-        icon: pythonIcon
+        // icon: pythonIcon
     });
 
 };
 
-const registerGeomFileType = (app: JupyterFrontEnd, mimeRegistry: IRenderMimeRegistry) => {
-    mimeRegistry.addFactory(bgeom.rendererFactory);
-    bgeom.fileTypes.forEach((ft: any) => {
-        if (ft.icon) {
-          ft = { ...ft, icon: LabIcon.resolve({ icon: ft.icon }) };
-        }
-        app.docRegistry.addFileType(ft);
-      });
-    const options: any = bgeom.documentWidgetFactoryOptions;
-    options.forEach(option => {
-        const factory = new MimeDocumentFactory({
-            renderTimeout: option.renderTimeout,
-            dataType: option.dataType,
-            rendermime: mimeRegistry,
-            modelName: option.modelName,
-            name: option.name,
-            primaryFileType: app.docRegistry.getFileType(option.primaryFileType),
-            fileTypes: option.fileTypes,
-            defaultFor: option.defaultFor,
-            defaultRendered: option.defaultRendered
-        });
-        app.docRegistry.addWidgetFactory(factory);
-    });
-};
+// const registerGeomFileType = (app: JupyterFrontEnd, mimeRegistry: IRenderMimeRegistry) => {
+//     mimeRegistry.addFactory(bgeom.rendererFactory);
+//     bgeom.fileTypes.forEach((ft: any) => {
+//         // if (ft.icon) {
+//         //   ft = { ...ft, icon: LabIcon.resolve({ icon: ft.icon }) };
+//         // }
+//         app.docRegistry.addFileType(ft);
+//       });
+//     const options: any = bgeom.documentWidgetFactoryOptions;
+//     options.forEach(option => {
+//         const factory = new MimeDocumentFactory({
+//             renderTimeout: option.renderTimeout,
+//             dataType: option.dataType,
+//             rendermime: mimeRegistry,
+//             modelName: option.modelName,
+//             name: option.name,
+//             primaryFileType: app.docRegistry.getFileType(option.primaryFileType),
+//             fileTypes: option.fileTypes,
+//             defaultFor: option.defaultFor,
+//             defaultRendered: option.defaultRendered
+//         });
+//         app.docRegistry
+//     });
+// };
 
-const plugin = {
+const plugin: JupyterFrontEndPlugin<void> = {
     id: 'pgljupyter:plugin',
     requires: [IJupyterWidgetRegistry, IRenderMimeRegistry],
-    activate: (app: JupyterFrontEnd, widgetRegistry: IJupyterWidgetRegistry, mimeRegistry: IRenderMimeRegistry) => {
+    activate: (app, widgetRegistry: IJupyterWidgetRegistry, mimeRegistry: IRenderMimeRegistry) => {
         registerWidgets(widgetRegistry);
-        registerGeomFileType(app, mimeRegistry);
+        // registerGeomFileType(app, mimeRegistry);
         registerLpyFileType(app);
     },
     autoStart: true

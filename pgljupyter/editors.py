@@ -12,7 +12,7 @@ from ipywidgets.widgets import (
     Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText
 )
 from traitlets import Unicode, List, Float, Bool, Int
-from openalea.lpy.parameters.scalar import (
+from openalea.lpy.lsysparameters import (
     IntegerScalar, FloatScalar, BoolScalar, BaseScalar
 )
 import openalea.plantgl.all as pgl

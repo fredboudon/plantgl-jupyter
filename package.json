@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "PlantGL jupyter widget",
   "keywords": [
     "jupyter",
@@ -48,14 +48,14 @@
     "watch:nbextension": "webpack --watch --mode=development"
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^3.0.0",
-    "@jupyter-widgets/controls": "^2.0.0",
-    "@jupyterlab/application": "^2.2.6",
-    "@jupyterlab/codemirror": "^2.2.4",
-    "@jupyterlab/docregistry": "^2.2.4",
-    "@jupyterlab/rendermime": "^2.2.4",
-    "@jupyterlab/rendermime-interfaces": "^2.2.1",
-    "@jupyterlab/ui-components": "^2.2.4",
+    "@jupyter-widgets/base": "^4.0.0",
+    "@jupyter-widgets/controls": "^3.0.0",
+    "@jupyterlab/application": "^3.0.3",
+    "@jupyterlab/codemirror": "^3.0.2",
+    "@jupyterlab/docregistry": "^3.0.3",
+    "@jupyterlab/rendermime": "^3.0.3",
+    "@jupyterlab/rendermime-interfaces": "^3.0.2",
+    "@jupyterlab/ui-components": "^3.0.2",
     "@material/mwc-circular-progress": "^0.18.0",
     "@material/mwc-formfield": "^0.18.0",
     "@material/mwc-icon-button": "^0.18.0",
@@ -68,11 +68,11 @@
     "three": "^0.123.0"
   },
   "devDependencies": {
-    "@lumino/application": "^1.11.1",
-    "@lumino/widgets": "^1.14.1",
+    "@lumino/application": "^1.15.0",
+    "@lumino/widgets": "^1.18.0",
     "@types/d3": "^5.16.4",
     "@types/expect.js": "^0.3.29",
-    "@types/node": "^10.17.46",
+    "@types/node": "^10.17.51",
     "@types/webpack-env": "^1.16.0",
     "css-loader": "^3.6.0",
     "expect.js": "^0.3.1",
@@ -85,12 +85,13 @@
     "svg-inline-loader": "^0.8.2",
     "terser-webpack-plugin": "^3.1.0",
     "ts-loader": "^5.2.1",
-    "typescript": "^3.9.7",
-    "webpack": "^4.44.2",
+    "typescript": "~4.0.1",
+    "webpack": "^4.46.0",
     "webpack-bundle-analyzer": "^3.9.0",
     "webpack-cli": "^3.3.12"
   },
   "jupyterlab": {
-    "extension": "lib/labplugin"
+    "extension": "lib/labplugin",
+    "outputDir": "pgljupyter/labextension/"
   }
 }
