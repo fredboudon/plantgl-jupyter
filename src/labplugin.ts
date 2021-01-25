@@ -9,7 +9,7 @@ import bgeom from './widgets/geom';
 import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
-import { IRenderMimeRegistry, IRenderMime } from '@jupyterlab/rendermime';
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { MimeDocumentFactory } from '@jupyterlab/docregistry';
 
 const registerWidgets = (widgetRegistry: IJupyterWidgetRegistry) => {
@@ -49,27 +49,26 @@ const registerGeomFileType = (app: JupyterFrontEnd, mimeRegistry: IRenderMimeReg
         }
         app.docRegistry.addFileType(ft);
       });
-    const options: any = bgeom.documentWidgetFactoryOptions;
-    options.forEach(option => {
-        const factory = new MimeDocumentFactory({
-            renderTimeout: option.renderTimeout,
-            dataType: option.dataType,
-            rendermime: mimeRegistry,
-            modelName: option.modelName,
-            name: option.name,
-            primaryFileType: app.docRegistry.getFileType(option.primaryFileType),
-            fileTypes: option.fileTypes,
-            defaultFor: option.defaultFor,
-            defaultRendered: option.defaultRendered
-        });
-        app.docRegistry.addWidgetFactory(factory);
+    const option: any = bgeom.documentWidgetFactoryOptions;
+    const factory = new MimeDocumentFactory({
+        renderTimeout: option.renderTimeout,
+        dataType: option.dataType,
+        rendermime: mimeRegistry,
+        modelName: option.modelName,
+        name: option.name,
+        primaryFileType: app.docRegistry.getFileType(option.primaryFileType),
+        fileTypes: option.fileTypes,
+        defaultFor: option.defaultFor,
+        defaultRendered: option.defaultRendered
     });
+    app.docRegistry.addWidgetFactory(factory);
 };
 
-const plugin = {
+const plugin: JupyterFrontEndPlugin<void> = {
     id: 'pgljupyter:plugin',
     requires: [IJupyterWidgetRegistry, IRenderMimeRegistry],
-    activate: (app: JupyterFrontEnd, widgetRegistry: IJupyterWidgetRegistry, mimeRegistry: IRenderMimeRegistry) => {
+    activate: (app, widgetRegistry: IJupyterWidgetRegistry, mimeRegistry: IRenderMimeRegistry) => {
+        debugger
         registerWidgets(widgetRegistry);
         registerGeomFileType(app, mimeRegistry);
         registerLpyFileType(app);

@@ -138,13 +138,13 @@ const extension: IRenderMime.IExtension = {
         mimeTypes: [MIME_TYPE],
         extensions: ['.bgeom']
     }],
-    documentWidgetFactoryOptions: [{
+    documentWidgetFactoryOptions: {
         name: 'plantgl-jupyter bgeom viewer',
         primaryFileType: 'bgeom',
         modelName: 'base64',
         fileTypes: ['bgeom'],
         defaultFor: ['bgeom']
-    }]
+    }
 };
 
 export default extension;
