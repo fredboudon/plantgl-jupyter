@@ -86,17 +86,10 @@ setup_args = dict(
     include_package_data=True,
     install_requires=[
         'ipython>=7.0.0',
-<<<<<<< HEAD
-        'jupyterlab>=2.2.0,<3.0.0',
-        'ipywidgets>=7.5.0',
-        'openalea.lpy>="3.6.0,<4.0.0',
-        'openalea.plantgl>="3.8.0,<4.0.0'
-=======
         'jupyterlab>=3.0.0',
         'ipywidgets>=7.5.0',
         'openalea.lpy>=3.6.0,<4.0.0',
         'openalea.plantgl>=3.8.0,<4.0.0'
->>>>>>> jlab3
     ],
     python_requires='>=3.7',
     extras_require={
