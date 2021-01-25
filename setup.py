@@ -88,8 +88,8 @@ setup_args = dict(
         'ipython>=7.0.0',
         'jupyterlab>=3.0.0',
         'ipywidgets>=7.5.0',
-        'openalea.lpy>=3.6.0',
-        'openalea.plantgl>=3.8.0'
+        'openalea.lpy>=3.6.0,<4.0.0',
+        'openalea.plantgl>=3.8.0,<4.0.0'
     ],
     python_requires='>=3.7',
     extras_require={
