@@ -85,7 +85,7 @@ Arguments:
 
 ### Install with pip - inside conda env
 
-Jupyterlab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
+JupyterLab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
 `conda create` command.
 
 ```bash
@@ -102,9 +102,19 @@ conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
 
 Some examples also require `matplotlib` and `rpy2`.
 
+For JupyterLab 3:
+
 ```bash
 conda activate pgl
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
 pip install pgljupyter
+```
+
+For JupyterLab 2:
+
+```bash
+conda activate pgl
+pip install "pgljupyter<1.0.0"
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 jupyter lab build && jupyter lab
 ```
