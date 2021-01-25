@@ -80,15 +80,16 @@ setup_args = dict(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Framework :: Jupyter',
     ],
     include_package_data=True,
     install_requires=[
         'ipython>=7.0.0',
-        'jupyterlab>=2.2.0',
+        'jupyterlab>=2.2.0,<3.0.0',
         'ipywidgets>=7.5.0',
-        'openalea.lpy>="3.5.0',
-        'openalea.plantgl>="3.5.0'
+        'openalea.lpy>="3.6.0,<4.0.0',
+        'openalea.plantgl>="3.8.0,<4.0.0'
     ],
     python_requires='>=3.7',
     extras_require={

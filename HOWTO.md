@@ -18,6 +18,8 @@
 
 ## build python pkgs and publish them
 
+    Check that there are not multiple versions in dist/ that will be published, packed together
+
     npm run clean
     python3 setup.py sdist bdist_wheel
     twine upload dist/*{0.x.xx}*
