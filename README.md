@@ -185,9 +185,9 @@ Run jupyter as docker container locally. Replace `/examples` with the path to yo
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
-docker pull jvail/plantgl-jupyter:0.2.1
+docker pull jvail/plantgl-jupyter:1.0.0
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.2.1 \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.0.0 \
     jupyter lab
 ```
