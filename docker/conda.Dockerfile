@@ -1,4 +1,4 @@
-FROM jupyter/base-notebook:lab-3.x.x
+FROM jupyter/base-notebook:lab-3.0.5
 USER root
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y libgl1-mesa-dev && \
