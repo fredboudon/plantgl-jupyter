@@ -100,7 +100,7 @@ conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
     openalea.lpy jupyterlab ipywidgets ipython=7
 ```
 
-Some examples also require `matplotlib` and `rpy2`.
+Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
 
 For JupyterLab 3:
 
