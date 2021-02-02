@@ -376,7 +376,7 @@ export class SceneWidgetView extends PGLWidgetView {
             const scene = scenes[i];
             if(!this.scene.getObjectByName(scene.id)) {
                 const { id, data, position, scale } = scene;
-                decoder.decode({ data: data.buffer, userData: { position, scale, id } })
+                decoder.decode({ data: data.buffer, userData: { position, scale, id, i } })
                     .then(result => {
                         const scene = new THREE.Scene();
                         const { geoms: results, userData: { position, scale, id } } = result;
@@ -400,6 +400,18 @@ export class SceneWidgetView extends PGLWidgetView {
                     .catch(err => console.log(err));
             }
         }
+
+        // clear scenes already rendered but not in new scenes array
+        this.scene.remove(...this.scene.children
+            .filter(obj => {
+                return obj instanceof THREE.Scene && !scenes.some(scene => scene.id === obj.name)
+            })
+            .map(scene => {
+                scene.visible = false;
+                disposeScene(scene as THREE.Scene);
+                return scene;
+            })
+        );
 
     }
 

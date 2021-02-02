@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PlantGL jupyter widget",
   "keywords": [
     "jupyter",

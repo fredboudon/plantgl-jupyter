@@ -8,8 +8,6 @@
     - pgljupyter/_frontend.py
     - pgljupyter/_version.py
 
-## merge changes into master and push
-
 ## test if npm builds and publish npm pkg
 
     npm run clean
@@ -23,6 +21,8 @@
     npm run clean
     python3 setup.py sdist bdist_wheel
     twine upload dist/*{0.x.xx}*
+
+## merge changes into master and push
 
 ## tag and check if docker build was successful
 
