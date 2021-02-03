@@ -142,6 +142,7 @@ class SceneWidget(PGLWidget):
 
     def set_scenes(self, objs, positions=(0., 0., 0.), scales=1.):
         scenes = []
+        objs = objs if type(positions) == list else [objs]
         for i, obj in enumerate(objs):
             scene = to_scene(obj)
             serialized = serialize_scene(scene)
