@@ -68,7 +68,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
     id: 'pgljupyter:plugin',
     requires: [IJupyterWidgetRegistry, IRenderMimeRegistry],
     activate: (app, widgetRegistry: IJupyterWidgetRegistry, mimeRegistry: IRenderMimeRegistry) => {
-        debugger
         registerWidgets(widgetRegistry);
         registerGeomFileType(app, mimeRegistry);
         registerLpyFileType(app);
