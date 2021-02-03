@@ -8,6 +8,8 @@
     - pgljupyter/_frontend.py
     - pgljupyter/_version.py
 
+## commit all changes
+
 ## test if npm builds and publish npm pkg
 
     npm run clean
