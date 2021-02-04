@@ -140,8 +140,9 @@ class SceneWidget(PGLWidget):
         })
         self.send_state('scenes')
 
-    def set_scenes(self, objs, scales=1., positions=(0., 0., 0.)):
+    def set_scenes(self, objs, positions=(0., 0., 0.), scales=1.):
         scenes = []
+        objs = objs if type(positions) == list else [objs]
         for i, obj in enumerate(objs):
             scene = to_scene(obj)
             serialized = serialize_scene(scene)
@@ -149,8 +150,8 @@ class SceneWidget(PGLWidget):
                 'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
                 'data': serialized,
                 'scene': scene,
-                'position': positions[i] if type(positions) == list else (0., 0., 0.),
-                'scale':  scales[i] if type(scales) == list else 1.
+                'position': positions[i] if type(positions) == list else positions,
+                'scale':  scales[i] if type(scales) == list else scales
             })
         self.scenes = scenes
 
