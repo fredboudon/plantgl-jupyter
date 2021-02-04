@@ -428,18 +428,6 @@ export class SceneWidgetView extends PGLWidgetView {
             }
         }
 
-
-        this.scene.remove(...this.scene.children
-            .filter(obj => {
-                return obj instanceof THREE.Scene && !scenes.some(scene => scene.id === obj.name)
-            })
-            .map(scene => {
-                scene.visible = false;
-                disposeScene(scene as THREE.Scene);
-                return scene;
-            })
-        );
-
     }
 
     remove() {
