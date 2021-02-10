@@ -130,7 +130,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.scene.add(lightTop);
 
         this.light = new THREE.DirectionalLight(0xFFFFFF, 1);
-        this.light.shadow.bias = -0.0018
+        this.light.shadow.bias = -0.01
         this.light.castShadow = true;
         this.light.position.set(x_size / 2, y_size / 2, Math.max(x_size, y_size) / 2);
         this.light.target.position.set(0, 0, 0);
@@ -641,7 +641,15 @@ export class LsystemWidgetView extends PGLWidgetView {
         currentScene.scale.multiplyScalar(scale);
         currentScene.position.set(x, y, z);
         if (meshs.length) {
-            if (bbox && this.unit === LsystemUnit.NONE) {
+            // if there is no unit we try to fit the view to the bbox
+            if (this.unit === LsystemUnit.NONE) {
+                if (!bbox) { // draco encoded Mesh has no bbox
+                    meshs[0].geometry.computeBoundingBox();
+                    bbox = [
+                        meshs[0].geometry.boundingBox.min.toArray(),
+                        meshs[0].geometry.boundingBox.max.toArray()
+                    ];
+                }
                 this.fitBounds(bbox);
             }
             currentScene.add(...meshs);

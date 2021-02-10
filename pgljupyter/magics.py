@@ -42,7 +42,17 @@ class PGLMagics(Magics):
             lp.generate_py_code() if lp else ''
         ])
 
-        lsw = LsystemWidget(None, code=code, size_display=size_display, size_world=world, unit=unit, animate=animate, context=context, lp=lp)
+        lsw = LsystemWidget(
+            None,
+            code=code,
+            size_display=size_display,
+            size_world=world,
+            unit=unit,
+            animate=animate,
+            context=context,
+            lp=lp,
+            compression=0
+        )
         editors = []
 
         def on_value_changed(param):
@@ -104,6 +114,7 @@ class PGLMagics(Magics):
     @argument('file', type=str, help='L-Py file path')
     @argument('--size', '-s', default='400,400', type=str, help='Width and hight of the canvas')
     @argument('--cell', '-c', default=1., type=float, help='Size of cell for a single derivation step')
+    @argument('--compression', '-z', default=2, type=int, help='Compression level for geometry (0-5)')
     def lpy_plot(self, line):
 
         from math import ceil, sqrt, floor
@@ -116,7 +127,7 @@ class PGLMagics(Magics):
         args = parse_argstring(self.lpy_plot, line)
         file = args.file
         sizes = [int(i.strip()) for i in args.size.split(',')]
-
+        compression = args.compression
         cell = args.cell
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
 
@@ -124,7 +135,7 @@ class PGLMagics(Magics):
         rows = cols = ceil(sqrt(ls.derivationLength + 1))
         size = rows * cell
         start = -size/2 + cell/2
-        sw = SceneWidget(size_display=size_display, size_world=size)
+        sw = SceneWidget(size_display=size_display, size_world=size, compression=compression)
         sw.add(ls.sceneInterpretation(ls.axiom), position=(start, start, 0))
 
         def plot():

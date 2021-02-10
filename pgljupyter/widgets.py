@@ -32,12 +32,14 @@ class Unit(Enum):
     mm = 3
 
 
-# TODO: serialize in thread?
-def scene_to_bytes(scene):
-    # serialized = pgl_scene_to_bytes(scene, single_mesh)
-    # if not serialized.status:
-    #     raise ValueError('scene serialization failed')
-    return zlib.compress(pgl.tobinarystring(scene, False), 9)
+def scene_to_bytes(scene, compression=2):
+    if compression == 0:
+        return zlib.compress(pgl.tobinarystring(scene, False), 9)
+    else:
+        encoded = pgl.draco_encode(scene, compression)
+        if not encoded.status:
+            raise ValueError('scene compression failed')
+        return encoded.data.tobytes() if encoded.data else b''
 
 
 def scene_to_json(x, obj):
@@ -65,8 +67,8 @@ def to_scene(obj):
     return scene
 
 
-def serialize_scene(scene):
-    return scene_to_bytes(scene)
+def serialize_scene(scene, compression):
+    return scene_to_bytes(scene, compression)
 
 
 @register
@@ -86,6 +88,7 @@ class PGLWidget(DOMWidget):
     light_helper = Bool(False).tag(sync=True)
     plane = Bool(True).tag(sync=True)
     single_mesh = False
+    compression = Int(0, min=0, max=5).tag(sync=False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -109,11 +112,12 @@ class SceneWidget(PGLWidget):
         'position': Tuple(Float(0.0), Float(0.0), Float(0.0)),
         'scale': Float(1.0)
     })).tag(sync=True, to_json=scene_to_json)
-    # compress = Bool(False).tag(sync=False)
 
     def __init__(self, obj=None, position=(0.0, 0.0, 0.0), scale=1.0, **kwargs):
+
+        super().__init__(**kwargs)
         scene = to_scene(obj)
-        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene, self.compression)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         # self.compress = compress
         self.scenes = [{
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
@@ -123,14 +127,12 @@ class SceneWidget(PGLWidget):
             'scale':  scale
         }]
 
-        super().__init__(**kwargs)
-
     # TODO: avoid re-sending all scenes after a scene was added.
     # - Partially syncing a state is not available out of the box
     # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
     def add(self, obj, position=(0, 0, 0), scale=1.0):
         scene = to_scene(obj)
-        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene, self.compression)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.scenes.append({
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -145,7 +147,7 @@ class SceneWidget(PGLWidget):
         objs = objs if type(positions) == list else [objs]
         for i, obj in enumerate(objs):
             scene = to_scene(obj)
-            serialized = serialize_scene(scene)
+            serialized = serialize_scene(scene, self.compression)
             scenes.append({
                 'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
                 'data': serialized,
@@ -196,6 +198,7 @@ class LsystemWidget(PGLWidget):
 
     def __init__(self, filename=None, code=None, unit=Unit.none, animate=False, dump='', context={}, lp=None, **kwargs):
 
+        super().__init__(**kwargs)
         if filename:
             if filename.endswith('.lpy'):
                 self.__filename = filename
@@ -228,8 +231,6 @@ class LsystemWidget(PGLWidget):
             self.__initialize_parameters()
         self.__initialize_lsystem()
         self.__set_scene(0)
-
-        super().__init__(**kwargs)
 
     @property
     def editor(self):
@@ -329,7 +330,7 @@ class LsystemWidget(PGLWidget):
     def __set_scene(self, step):
         # print('__set_scene', step, self.__trees)
         scene = self.__lsystem.sceneInterpretation(self.__trees[step])
-        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene, self.compression)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
             'data': serialized,
             'scene': scene,

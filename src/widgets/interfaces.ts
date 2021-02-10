@@ -28,7 +28,7 @@ export interface IMeshOptions {
 
 export interface ITaskResult {
     geoms: IGeom[];
-    bbox: number[][];
+    bbox?: number[][];
     userData: any;
 }
 
@@ -85,10 +85,15 @@ export interface IMaterial {
 
 export interface IGeom {
     index: ArrayBuffer,
-    // color: ArrayBuffer,
+    color?: ArrayBuffer,
     position: ArrayBuffer,
     // normal: ArrayBuffer,
-    instances: ArrayBuffer
-    isInstanced: boolean,
-    material: IMaterial
+    instances?: ArrayBuffer
+    isInstanced?: boolean,
+    material?: IMaterial
+}
+
+export interface IWorker extends Worker {
+    initialized: boolean;
+    isDraco: boolean;
 }
