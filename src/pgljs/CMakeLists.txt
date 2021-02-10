@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.5)
 if(DEFINED ENV{EMSDK})
   set(EMSCRIPTEN_ROOT "$ENV{EMSDK}/upstream/emscripten")
   message(STATUS "EMSCRIPTEN_ROOT set to ${EMSCRIPTEN_ROOT}")
-  include(FindPythonInterp)
-  if(NOT PYTHONINTERP_FOUND)
+  include(FindPython3)
+  if(NOT Python3_Interpreter_FOUND)
     message(
       FATAL_ERROR
-        "Python required for Emscripten builds, but cmake cannot find it.")
+        "Python 3 required for Emscripten builds, but cmake cannot find it.")
   endif()
   set(CMAKE_TOOLCHAIN_FILE "${EMSCRIPTEN_ROOT}/cmake/Modules/Platform/Emscripten.cmake")
 else()
@@ -43,6 +43,7 @@ file(GLOB_RECURSE pgl_sources
   "plantgl/src/cpp/plantgl/scenegraph/appearance/texture.cpp"
   "plantgl/src/cpp/plantgl/scenegraph/function/function.cpp"
   "plantgl/src/cpp/plantgl/algo/base/matrixcomputer.cpp"
+  "plantgl/src/cpp/plantgl/algo/base/bboxcomputer.cpp"
   "plantgl/src/cpp/plantgl/math/*.cpp"
   "plantgl/src/cpp/plantgl/tool/util_array*"
   "plantgl/src/cpp/plantgl/tool/timer.cpp"
@@ -107,7 +108,7 @@ endif()
 
 set(idl ${CMAKE_CURRENT_SOURCE_DIR}/src/pgljs.webidl)
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE}
+execute_process(COMMAND ${Python3_EXECUTABLE}
     ${EMSCRIPTEN_ROOT}/tools/webidl_binder.py
     ${idl} ${CMAKE_BINARY_DIR}/glue)
 
@@ -116,7 +117,7 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/glue.cpp)
  endif()
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/glue.cpp
-  COMMAND ${PYTHON_EXECUTABLE}
+  COMMAND ${Python3_EXECUTABLE}
          ${EMSCRIPTEN_ROOT}/tools/webidl_binder.py
          ${idl} ${CMAKE_BINARY_DIR}/glue
  DEPENDS ${idl}

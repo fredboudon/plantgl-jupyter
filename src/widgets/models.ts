@@ -6,7 +6,7 @@ import {
     MODULE_NAME, MODULE_VERSION
 } from '../version';
 
-import { LsystemUnit } from './interfaces';
+import { LsystemUnit } from './consts';
 
 export class PGLWidgetModel extends DOMWidgetModel {
 
@@ -83,9 +83,10 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             _view_module_version: LsystemWidgetModel.view_module_version,
             derivationLength: 0,
             scene: null,
-            unit: LsystemUnit.M,
+            unit: LsystemUnit.NONE,
             animate: false,
-            is_magic: false
+            is_magic: false,
+            progress: 0
         };
     }
 
@@ -256,6 +257,7 @@ export class _CurveEditorModel extends DOMWidgetModel {
             _view_module: _CurveEditorModel.view_module,
             _view_module_version: _CurveEditorModel.view_module_version,
             name: '',
+            show_name: false,
             points: [],
             is_function: false,
             type: ''

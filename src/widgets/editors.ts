@@ -70,6 +70,7 @@ export class _CurveEditorView extends DOMWidgetView {
     height = 250;
     margin = 15;
     name = '';
+    showName = false;
     isFunction = false;
     curveType: CurveType;
     controlPoints: number[][] = [];
@@ -88,6 +89,7 @@ export class _CurveEditorView extends DOMWidgetView {
             .style('width', this.width)
             .style('height', this.height);
         this.name = this.model.get('name');
+        this.showName = this.model.get('show_name');
         this.isFunction = this.model.get('is_function');
         this.controlPoints = this.model.get('points').slice();
         this.curveType = this.model.get('type');
@@ -116,6 +118,14 @@ export class _CurveEditorView extends DOMWidgetView {
 
         const dx = ((this.width / 2) - (xScale(maxx) + xScale(minx)) / 2);
         const dy = ((this.height / 2) - (yScale(maxy) + yScale(miny)) / 2);
+
+        if (this.showName) {
+            svg.append('text')
+                .text(this.name)
+                .attr('x', this.width / 2)
+                .attr('y', 20)
+                .attr('text-anchor', 'middle');
+        }
 
         const g = svg.append('g')
             .attr('transform', `translate(${dx},${dy})`);

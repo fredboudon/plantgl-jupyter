@@ -10,11 +10,9 @@
 
 - notebook magics - champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
 
-- notebook magics - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
+- notebook magics with scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
 
-- notebook magics - integration [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/integration.ipynb)
-
-
+- notebook magics with curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
 
 
 ## Usage
@@ -62,16 +60,32 @@ import pgljupyter
 Arguments:
 
 - `--size`, `-s` int,int: same as `size_display`
-- `--unit`, `-u` enum: same as `unit`
 - `--world`, `-w` float: same as `size_world`
+- `--unit`, `-u` enum: same as `unit`
+- `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
+
+**%lpy_plot**
+
+A line magic to plot all derivation steps of an Lsystem on a square plane
+
+```python
+# activated by importing pgljupyter
+import pgljupyter
+```
+
+Arguments:
+
+- `arg0`, string: L-Py file
+- `--size`, `-s` int,int: width and hight of the canvas
+- `--cell`, `-c` float: size of cell for a single derivation step
 
 
 ## Installation
 
 ### Install with pip - inside conda env
 
-Jupyterlab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
+JupyterLab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
 `conda create` command.
 
 ```bash
@@ -86,9 +100,21 @@ conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
     openalea.lpy jupyterlab ipywidgets ipython=7
 ```
 
+Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
+
+For JupyterLab 3:
+
 ```bash
 conda activate pgl
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
 pip install pgljupyter
+```
+
+For JupyterLab 2:
+
+```bash
+conda activate pgl
+pip install "pgljupyter<1.0.0"
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 jupyter lab build && jupyter lab
 ```
@@ -159,9 +185,9 @@ Run jupyter as docker container locally. Replace `/examples` with the path to yo
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
-docker pull jvail/plantgl-jupyter:0.1.21
+docker pull jvail/plantgl-jupyter:1.0.2
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:0.1.21 \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.0.2 \
     jupyter lab
 ```

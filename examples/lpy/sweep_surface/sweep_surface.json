@@ -1,0 +1,118 @@
+{
+    "schema": "lpy",
+    "version": "1.0",
+    "options": {},
+    "materials": [],
+    "parameters": [
+        {
+            "visible": true,
+            "name": "default",
+            "enabled": true,
+            "scalars": [],
+            "items": [
+                {
+                    "type": "NurbsCurve2D",
+                    "id": 94881444449736,
+                    "ctrlPointList": {
+                        "type": "Point3Array",
+                        "id": 94881444416848,
+                        "data": [
+                            [
+                                -0.5,
+                                0.0,
+                                1.0
+                            ],
+                            [
+                                -0.192641,
+                                0.281385,
+                                1.0
+                            ],
+                            [
+                                0.0238095,
+                                -0.177489,
+                                1.0
+                            ],
+                            [
+                                0.5,
+                                0.0,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "name": "path",
+                    "is_function": false
+                },
+                {
+                    "type": "NurbsCurve2D",
+                    "id": 94881444451384,
+                    "ctrlPointList": {
+                        "type": "Point3Array",
+                        "id": 94881444451280,
+                        "data": [
+                            [
+                                -0.508658,
+                                0.112554,
+                                1.0
+                            ],
+                            [
+                                -0.162338,
+                                -0.155844,
+                                1.0
+                            ],
+                            [
+                                -0.0238095,
+                                0.158009,
+                                1.0
+                            ],
+                            [
+                                0.192641,
+                                -0.177489,
+                                1.0
+                            ],
+                            [
+                                0.582251,
+                                0.168831,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "name": "section",
+                    "is_function": false
+                },
+                {
+                    "type": "NurbsCurve2D",
+                    "id": 94881444451624,
+                    "ctrlPointList": {
+                        "type": "Point3Array",
+                        "id": 94881444451520,
+                        "data": [
+                            [
+                                0.0,
+                                0.0137255,
+                                1.0
+                            ],
+                            [
+                                0.320346,
+                                0.341991,
+                                1.0
+                            ],
+                            [
+                                0.649351,
+                                0.121212,
+                                1.0
+                            ],
+                            [
+                                1.0,
+                                0.0,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "name": "leafwidth",
+                    "is_function": true
+                }
+            ]
+        }
+    ],
+    "credits": {}
+}

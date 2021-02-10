@@ -3,13 +3,13 @@ import {
     DOMWidgetView, WidgetView
 } from '@jupyter-widgets/base';
 import decoder from './decoder';
-import { PGLControls, LsystemControls } from './controls';
+import { PGLControls, LsystemControls, PGLProgress } from './controls';
 import {
     IScene,
     IPGLControlsState,
     ILsystemControlsState,
     ILsystemScene,
-    ITaskResult
+    ITaskResult, IPGLProgressState
 } from './interfaces';
 import { THREE, disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
@@ -31,10 +31,13 @@ export class PGLWidgetView extends DOMWidgetView {
 
     sizeDisplay: number[];
     sizeWorld: number;
+    isMagic: boolean;
 
     pglControls: PGLControls = null;
     pglControlsState: IPGLControlsState = null;
     pglControlsEl: HTMLDivElement = null;
+
+    pglProgressState: IPGLProgressState = null;
 
     disposables: THREE.Scene[] = [];
     isDetached = false;
@@ -43,6 +46,7 @@ export class PGLWidgetView extends DOMWidgetView {
         super.initialize(parameters);
         this.sizeDisplay = parameters.model.attributes['size_display'];
         this.sizeWorld = parameters.model.attributes['size_world'];
+        this.isMagic = parameters.model.attributes['is_magic'];
     }
 
     render() {
@@ -65,7 +69,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.containerEl = document.createElement('div');
         const canvas = document.createElement('canvas');
         canvas.width = width;
-        canvas.height = height
+        canvas.height = height;
         const context = (canvas.getContext('webgl2', { alpha: false }) ||
             canvas.getContext('experimental-webgl', { alpha: false }) ||
             canvas.getContext('webgl', { alpha: false })) as WebGLRenderingContext;
@@ -82,6 +86,12 @@ export class PGLWidgetView extends DOMWidgetView {
             ev.stopPropagation();
             return false;
         });
+
+        const progressEl = document.createElement('div');
+        progressEl.setAttribute('class', 'pgl-jupyter-pgl-widget-progress');
+        this.containerEl.appendChild(progressEl);
+        const pglProgress = new PGLProgress({ busy: 0 }, progressEl);
+        this.pglProgressState = pglProgress.state;
 
         const x_size = this.sizeWorld;
         const y_size = this.sizeWorld;
@@ -173,6 +183,7 @@ export class PGLWidgetView extends DOMWidgetView {
                         if (!this.pglControlsState.autoRotate) {
                             window.cancelAnimationFrame(id)
                         }
+                        const [x, y, z] = this.camera.position.toArray();
                         this.orbitControl.update();
                         this.renderer.render(this.scene, this.camera);
                     };
@@ -263,7 +274,7 @@ export class PGLWidgetView extends DOMWidgetView {
             const [width, height] = this.sizeDisplay;
             this.resizeDisplay(width, height);
         });
-        this.listenTo(this.model, 'change:size_world', this.resizeWorld);
+        // this.listenTo(this.model, 'change:size_world', this.resizeWorld);
         this.containerEl.onfullscreenchange = () => {
             this.pglControlsState.fullscreen = (document.fullscreenElement === this.containerEl);
             if (this.pglControlsState.fullscreen) {
@@ -295,7 +306,7 @@ export class PGLWidgetView extends DOMWidgetView {
                 }
                 break;
             case 'after-attach':
-                if (this.el.closest('.jp-LinkedOutputView')) {
+                if (this.el.closest('.jp-LinkedOutputView') && !this.isMagic) {
                     this.pWidget.addClass('pgl-resizable');
                     this.containerEl.classList.add('pgl-resizable');
                     this.isDetached = true;
@@ -311,8 +322,28 @@ export class PGLWidgetView extends DOMWidgetView {
         }
     }
 
-    resizeWorld() {
-        const size = this.model.get('size_world');
+    // resizeWorld() {
+    //     const size = this.model.get('size_world');
+    // }
+
+    fitBounds(bbox: number[][]) {
+
+        this.orbitControl.target = new THREE.Vector3(
+            0,
+            (bbox[0][1] + bbox[1][1]) / 2,
+            (bbox[0][2] + bbox[1][2]) / 2
+        );
+
+        this.camera.position.set(
+            Math.max((bbox[1][1] - bbox[0][1]), (bbox[1][2] - bbox[0][2])) * 2,
+            (bbox[0][1] + bbox[1][1]) / 2,
+            (bbox[0][2] + bbox[1][2]) / 2
+        );
+
+        this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+        this.orbitControl.update();
+
     }
 
     remove() {
@@ -324,6 +355,10 @@ export class PGLWidgetView extends DOMWidgetView {
 }
 
 export class SceneWidgetView extends PGLWidgetView {
+
+    decoding = [];
+    in = 0;
+    out = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -337,17 +372,34 @@ export class SceneWidgetView extends PGLWidgetView {
         });
     }
 
+    updateProgress() {
+        this.pglProgressState.busy = 1 - (this.out / this.in);
+    }
+
     setScenes(scenes: IScene[]) {
 
+        // TODO: add option to decode in sequence
         for (let i = 0; i < scenes.length; i++) {
             const scene = scenes[i];
-            if(!this.scene.getObjectByName(scene.id)) {
+            // ignore scenes that are already rendered or still being decoded
+            if(!this.scene.getObjectByName(scene.id) && !(this.decoding.indexOf(scene.id) > -1)) {
                 const { id, data, position, scale } = scene;
+                this.decoding.push(id);
+                this.in++;
+                this.updateProgress();
                 decoder.decode({ data: data.buffer, userData: { position, scale, id } })
                     .then(result => {
+                        this.out++;
+                        this.updateProgress();
+
                         const scene = new THREE.Scene();
-                        const { results, userData: { position, scale, id } } = result;
+                        const { geoms: results, userData: { position, scale, id } } = result;
                         const [x, y, z] = position;
+
+                        this.decoding.splice(this.decoding.indexOf(scene.id));
+                        const toRemove = this.scene.children.filter(obj => {
+                            return obj instanceof THREE.Scene && !scenes.some(scene => scene.id === obj.name)
+                        })
 
                         if (results.length > 0) {
                             scene.add(...meshify(results, {
@@ -357,16 +409,36 @@ export class SceneWidgetView extends PGLWidgetView {
                             scene.name = id;
                             scene.position.set(x, y, z);
                             scene.scale.multiplyScalar(scale);
+                            toRemove.forEach(scene => scene.visible = false);
 
                             this.scene.add(scene);
-                            this.disposables.push(scene);
                             this.renderer.render(this.scene, this.camera);
                             this.orbitControl.update();
+
+                            this.disposables.push(scene);
                         }
+
+                        // clear scenes already rendered but not in new scenes array
+                        this.renderer.render(this.scene, this.camera);
+                        this.scene.remove(...toRemove);
+                        toRemove.forEach(scene => disposeScene(scene as THREE.Scene));
+
                     })
                     .catch(err => console.log(err));
             }
         }
+
+
+        this.scene.remove(...this.scene.children
+            .filter(obj => {
+                return obj instanceof THREE.Scene && !scenes.some(scene => scene.id === obj.name)
+            })
+            .map(scene => {
+                scene.visible = false;
+                disposeScene(scene as THREE.Scene);
+                return scene;
+            })
+        );
 
     }
 
@@ -380,10 +452,12 @@ export class SceneWidgetView extends PGLWidgetView {
 
 export class LsystemWidgetView extends PGLWidgetView {
 
-    unit: LsystemUnit = LsystemUnit.M;
+    unit: LsystemUnit = LsystemUnit.NONE;
     controls: LsystemControls = null;
     queue: {[key:number]: ITaskResult} = {};
     no = 0;
+    in = 0;
+    out = 0;
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -482,7 +556,11 @@ export class LsystemWidgetView extends PGLWidgetView {
 
         this.unit = this.model.get('unit');
         const scene = this.model.get('scene') as ILsystemScene;
-        this.decode(scene);
+        try {
+            this.decode(scene);
+        } catch (err) {
+            console.log(err);
+        }
 
         this.listenTo(this.model, 'change:unit', () => {
             this.unit = this.model.get('unit')
@@ -507,10 +585,10 @@ export class LsystemWidgetView extends PGLWidgetView {
             const decoded = this.queue[no];
             if (decoded) {
                 delete this.queue[no];
-                this.setScene(decoded.userData.step, meshify(decoded.results, {
+                this.setScene(decoded.userData.step, meshify(decoded.geoms, {
                     flatShading: this.pglControlsState.flatShading,
                     wireframe: this.pglControlsState.wireframe,
-                }));
+                }), decoded.bbox);
                 this.controls.state.derivationStep = decoded.userData.step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
@@ -528,17 +606,18 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     decode(scene: ILsystemScene) {
+        this.pglProgressState.busy = 1 - (this.out / ++this.in);
         decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
             .then(res => {
                 // TODO: use increasing number for a seq. of tasks and not step
-                const { results, userData: { step, no } } = res;
+                const { geoms, bbox, userData: { step, no } } = res;
                 if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
                     this.queue[no] = res;
                 } else {
-                    this.setScene(step, meshify(results, {
+                    this.setScene(step, meshify(geoms, {
                         flatShading: this.pglControlsState.flatShading,
                         wireframe: this.pglControlsState.wireframe,
-                    }));
+                    }), bbox);
                     this.controls.state.derivationStep = step;
                     if (this.controls.state.busy > 0) {
                         this.controls.state.busy--;
@@ -563,14 +642,22 @@ export class LsystemWidgetView extends PGLWidgetView {
             });
     }
 
-    setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, position = [0, 0, 0]) {
-
+    setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, bbox=null, position=[0, 0, 0]) {
+        this.pglProgressState.busy = 1 - (++this.out / this.in);
+        if (this.in === this.out) {
+            this.in = this.out = 0;
+        }
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];
         currentScene.scale.multiplyScalar(scale);
         currentScene.position.set(x, y, z);
-        currentScene.add(...meshs);
+        if (meshs.length) {
+            if (bbox && this.unit === LsystemUnit.NONE) {
+                this.fitBounds(bbox);
+            }
+            currentScene.add(...meshs);
+        }
         currentScene.userData = { step };
         currentScene.name = 'lsystem';
 

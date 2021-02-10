@@ -6,10 +6,7 @@ import random
 import string
 import io
 import os
-import inspect
-import textwrap
 import zlib
-import json
 from enum import Enum
 from pathlib import Path
 
@@ -21,12 +18,14 @@ from traitlets import (
 
 import openalea.plantgl.all as pgl
 import openalea.lpy as lpy
+from openalea.lpy.lsysparameters import LsystemParameters
 
-from .editors import ParameterEditor, make_default_lpy_context, DotDict
+from .editors import ParameterEditor
 from ._frontend import module_name, module_version
 
 
 class Unit(Enum):
+    none = -1
     m = 0
     dm = 1
     cm = 2
@@ -66,124 +65,8 @@ def to_scene(obj):
     return scene
 
 
-class PseudoContext(dict):
-
-    __materials = []
-    __options = {}
-    __items = {}
-
-    def __init__(self, **kwargs):
-        self.turtle = DotDict({
-            'setMaterial': self.__set_material
-        })
-        self.options = DotDict({
-            'setSelection': self.__set_selection
-        })
-
-    def __setitem__(self, key, value):
-        self.__items[key] = value
-
-    def __set_material(self, index, material):
-        self.__materials.append({
-            'index': index,
-            'material': material
-        })
-
-    def __set_selection(self, key, value):
-        self.__options[key] = value
-
-    def get_context_obj(self):
-        context = make_default_lpy_context()
-
-        for m in self.__materials:
-            material = m['material']
-            if isinstance(material, pgl.Material):
-                context.materials.append({
-                    'index': m['index'],
-                    'name': material.name,
-                    'ambient': [material.ambient.red, material.ambient.green, material.ambient.blue],
-                    'specular': [material.specular.red, material.specular.green, material.specular.blue],
-                    'emission': [material.emission.red, material.emission.green, material.emission.blue],
-                    'diffuse': material.diffuse,
-                    'transparency': material.transparency,
-                    'shininess': material.shininess
-                })
-
-        category_by_name = {}
-        if '__scalars__' in self.__items:
-            for s in self.__items['__scalars__']:
-                if s[1] == 'Category':
-                    context.parameters.append(DotDict({
-                        'name': s[0],
-                        'enabled': True,
-                        'scalars': [],
-                        'curves': []
-                    }))
-                    category_by_name[s[0]] = context.parameters[-1]
-                else:
-                    if len(context.parameters) == 0:
-                        context.parameters.append(DotDict({
-                            'name': 'Category',
-                            'enabled': True,
-                            'scalars': [],
-                            'curves': []
-                        }))
-                    if s[1] == 'Bool':
-                        context.parameters[-1].scalars.append({
-                            'name': s[0],
-                            'value': s[2]
-                        })
-                    else:
-                        context.parameters[-1].scalars.append({
-                            'name': s[0],
-                            'type': s[1],
-                            'value': s[2],
-                            'min': s[3],
-                            'max': s[4],
-                            'step': s[5] if s[1] == 'Float' else 1
-                        })
-        if '__parameterset__' in self.__items:
-            for s in self.__items['__parameterset__']:
-                if s[0]['name'] in category_by_name:
-                    parameters = category_by_name[s[0]['name']]
-                else:
-                    parameters = DotDict({
-                        'name': s[0]['name'],
-                        'enabled': s[0]['active'],
-                        'scalars': [],
-                        'curves': []
-                    })
-                    context.parameters.append(parameters)
-                for p in s[1]:
-                    if isinstance(p[1], pgl.BezierCurve2D):
-                        type = 'BezierCurve2D'
-                    elif isinstance(p[1], pgl.Polyline2D):
-                        type = 'Polyline2D'
-                    elif isinstance(p[1], pgl.NurbsCurve2D):
-                        type = 'NurbsCurve2D'
-                    else:
-                        raise ValueError(f'{p[1]} not a valid curve instance')
-                    if p[0] == 'Curve2D':
-                        curve = DotDict({
-                            'name': p[1].name,
-                            'type': type
-                        })
-                        if type == 'Polyline2D':
-                            curve['points'] = [[v[0], v[1]] for v in p[1].pointList]
-                        else:
-                            curve['points'] = [[v[0], v[1]] for v in p[1].ctrlPointList]
-                        if type == 'NurbsCurve2D':
-                            curve['is_function'] = False
-                        parameters.curves.append(curve)
-                    elif p[0] == 'Function':
-                        parameters.curves.append(DotDict({
-                            'name': p[1].name,
-                            'type': 'NurbsCurve2D',
-                            'points': [[v[0], v[1]] for v in p[1].ctrlPointList],
-                            'is_function': True
-                        }))
-
-        return context
+def serialize_scene(scene):
+    return scene_to_bytes(scene)
 
 
 @register
@@ -230,7 +113,7 @@ class SceneWidget(PGLWidget):
 
     def __init__(self, obj=None, position=(0.0, 0.0, 0.0), scale=1.0, **kwargs):
         scene = to_scene(obj)
-        serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         # self.compress = compress
         self.scenes = [{
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
@@ -239,6 +122,7 @@ class SceneWidget(PGLWidget):
             'position': position,
             'scale':  scale
         }]
+
         super().__init__(**kwargs)
 
     # TODO: avoid re-sending all scenes after a scene was added.
@@ -246,7 +130,7 @@ class SceneWidget(PGLWidget):
     # - Dynamic traits are discouraged: https://github.com/ipython/traitlets/issues/585
     def add(self, obj, position=(0, 0, 0), scale=1.0):
         scene = to_scene(obj)
-        serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         self.scenes.append({
             'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
             'data': serialized,
@@ -255,6 +139,21 @@ class SceneWidget(PGLWidget):
             'scale':  scale
         })
         self.send_state('scenes')
+
+    def set_scenes(self, objs, positions=(0., 0., 0.), scales=1.):
+        scenes = []
+        objs = objs if type(positions) == list else [objs]
+        for i, obj in enumerate(objs):
+            scene = to_scene(obj)
+            serialized = serialize_scene(scene)
+            scenes.append({
+                'id': ''.join(random.choices(string.ascii_letters + string.digits, k=25)),
+                'data': serialized,
+                'scene': scene,
+                'position': positions[i] if type(positions) == list else positions,
+                'scale':  scales[i] if type(scales) == list else scales
+            })
+        self.scenes = scenes
 
 
 @register
@@ -274,7 +173,7 @@ class LsystemWidget(PGLWidget):
 
     units = Unit
     derivationLength = Int(0, min=0).tag(sync=True)
-    unit = UseEnum(Unit).tag(sync=True, to_json=lambda e, o: e.value)
+    unit = UseEnum(Unit, default_value=Unit.none).tag(sync=True, to_json=lambda e, o: e.value)
     scene = Dict(traits={
         'data': Bytes(),
         'scene': Instance(pgl.Scene),
@@ -284,14 +183,18 @@ class LsystemWidget(PGLWidget):
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
     is_magic = Bool(False).tag(sync=True)
+    progress = Float(0.0).tag(sync=True)
 
     __editor = None
+    __lp = None
     __codes = []
     __derivationStep = 0
+    __in_queue = 0
+    __out_queue = 0
     __lsystem = None
     __extra_context = {}
 
-    def __init__(self, filename=None, code=None, unit=Unit.m, animate=False, dump='', context={}, **kwargs):
+    def __init__(self, filename=None, code=None, unit=Unit.none, animate=False, dump='', context={}, lp=None, **kwargs):
 
         if filename:
             if filename.endswith('.lpy'):
@@ -304,6 +207,7 @@ class LsystemWidget(PGLWidget):
 
         self.__lsystem = lpy.Lsystem()
         self.__extra_context = context
+        self.__lp = lp
         code_ = ''
         if self.__filename and Path(self.__filename).is_file():
             with io.open(self.__filename, 'r') as file:
@@ -312,52 +216,40 @@ class LsystemWidget(PGLWidget):
             self.is_magic = True
             code_ = code
 
-        if not code_:
-            raise ValueError('Neither lpy file nor code provided')
-
         self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
-        initialise_context_code = self.__codes[1] if len(self.__codes) > 1 else ''
         self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
-
-        if self.__filename and Path(self.__filename[0:-3] + 'json').is_file():
-            self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-            self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-            self.__on_lpy_context_change(self.__editor.lpy_context)
-        elif self.__filename:
-            scope = {}
-            exec(compile(initialise_context_code + '\n', '<string>', 'exec'), scope)
-            if '__initialiseContext__' in scope:
-                pc = PseudoContext()
-                scope['__initialiseContext__'](pc)
-                context_obj = pc.get_context_obj()
-                if ParameterEditor.validate_schema(context_obj):
-                    with io.open(self.__filename[0:-3] + 'json', 'w') as file:
-                        file.write(json.dumps(context_obj, indent=4))
-        else:
-            self.__initialize_lsystem()
-            self.__set_scene(0)
 
         self.unit = unit
         self.animate = animate
         self.dump = dump
         self.on_msg(self.__on_custom_msg)
 
+        if not isinstance(self.__lp, LsystemParameters):
+            self.__initialize_parameters()
+        self.__initialize_lsystem()
+        self.__set_scene(0)
+
         super().__init__(**kwargs)
 
     @property
     def editor(self):
-        if self.__filename:
-            filename = self.__filename[0:-3] + 'json'
-            if self.__editor is None and not Path(filename).exists():
-                lpy_context = make_default_lpy_context()
-                if ParameterEditor.validate_schema(lpy_context):
-                    with io.open(filename, 'w') as file:
-                        file.write(json.dumps(lpy_context, indent=4))
-                    self.__editor = ParameterEditor(filename)
-                    self.__editor.on_lpy_context_change = self.__on_lpy_context_change
+        if not self.is_magic:
+            self.__editor = ParameterEditor(self.__lp, filename=self.__filename.split('.lpy')[0] + '.json')
+            self.__editor.on_lpy_context_change = self.set_parameters
             return self.__editor
         else:
             return None
+
+    def __initialize_parameters(self):
+        self.__lp = LsystemParameters()
+        if not self.is_magic:
+            json_filename = self.__filename.split('.lpy')[0] + '.json'
+            if Path(json_filename).exists():
+                with io.open(json_filename, 'r') as file:
+                    self.__lp.load(file)
+            else:
+                self.__lp.retrieve_from(lpy.Lsystem(self.__filename))
+            self.__lp.filename = json_filename
 
     def get_lstring(self):
         if self.__derivationStep < len(self.__trees):
@@ -369,96 +261,55 @@ class LsystemWidget(PGLWidget):
         result.update(self.__lsystem.context().globals())
         return result
 
-    def __initialize_lsystem(self):
-        self.__lsystem.filename = self.__filename if self.__filename else ''
-        self.__lsystem.set(''.join(self.__codes), self.__extra_context)
-        # context = self.__lsystem.context()
-        # for key, value in self.__extra_context.items():
-        #     context[key] = value
-        self.derivationLength = self.__lsystem.derivationLength + 1
-        self.__trees = [self.__lsystem.axiom]
+    def set_parameters(self, parameters):
+        """Update Lsystem parameters in context.
 
-    def __on_lpy_context_change(self, context_obj):
+        Parameters
+        ----------
+        parameters : json
+            A valid parameter json string.
+        """
+
         if not self.animate:
-            if len(self.__codes) == 2:
-                self.__codes.append(self.__initialisation_function(context_obj))
-            else:
-                self.__codes[2] = self.__initialisation_function(context_obj)
+            lp = LsystemParameters()
+            try:
+                lp.loads(parameters)
+            except AssertionError:
+                return False
+            self.__in_queue = self.__in_queue + 1
+            self.progress = self.__out_queue / self.__in_queue
+            self.send_state('progress')
+
             self.__lsystem.clear()
-            self.__lsystem.filename = self.__filename
-            self.__lsystem.set(''.join(self.__codes), {})
+            self.__lsystem.set(''.join([
+                self.__codes[0],
+                lp.generate_py_code()
+            ]), self.__extra_context)
             self.derivationLength = self.__lsystem.derivationLength + 1
             self.__trees = []
             self.__trees.append(self.__lsystem.axiom)
             self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
             self.__derive(self.__derivationStep)
 
-    def __initialisation_function(self, context_obj):
-        def build_context(context_obj, context):
-            for material in context_obj['materials']:
-                material = dict(material)
-                index = material.pop('index')
-                name = material.pop('name')
-                context[name] = pgl.Material(**material)
-                context.turtle.setMaterial(index, context[name])
-            for catergory in context_obj['parameters']:
-                if catergory['enabled']:
-                    for scalar in catergory['scalars']:
-                        context[scalar['name']] = scalar['value']
-                    for curve in catergory['curves']:
-                        if curve['type'] == 'NurbsCurve2D':
-                            if curve['is_function']:
-                                context[curve['name']] = pgl.QuantisedFunction(
-                                    pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                                )
-                            else:
-                                context[curve['name']] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                        elif curve['type'] == 'BezierCurve2D':
-                            context[curve['name']] = pgl.BezierCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
-                        elif curve['type'] == 'Polyline2D':
-                            context[curve['name']] = pgl.Polyline2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in curve['points']]))
+            self.__out_queue = self.__out_queue + 1
+            self.progress = self.__out_queue / self.__in_queue
+            if self.progress == 1:
+                self.__out_queue = self.__in_queue = 0
 
-            # for key, value in context_obj.items():
-            #     if isinstance(value, dict):
-            #         if key == 'scalars':
-            #             for name, scalar in value.items():
-            #                 context[name] = scalar['value']
-            #         elif key == 'materials':
-            #             for name, material in value.items():
-            #                 m = dict(material)
-            #                 index = m.pop('index')
-            #                 context[name] = pgl.Material(**m)
-            #                 context.turtle.setMaterial(index, context[name])
-            #         elif key == 'functions':
-            #             for name, function in value.items():
-            #                 if 'NurbsCurve2D' in function:
-            #                     points = function['NurbsCurve2D']
-            #                     context[name] = pgl.QuantisedFunction(
-            #                         pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
-            #                     )
-            #         elif key == 'curves':
-            #             for name, curve in value.items():
-            #                 if 'NurbsCurve2D' in curve:
-            #                     points = curve['NurbsCurve2D']
-            #                     context[name] = pgl.NurbsCurve2D(pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in points]))
+            return True
 
-        codes = [
-            '\n__lpy_code_version__ = 1.1',
-            f'\ndef {lpy.LsysContext.InitialisationFunctionName}(context):',
-            '\n    import openalea.plantgl.all as pgl',
-            f'\n{textwrap.indent(textwrap.dedent(inspect.getsource(build_context)), "    ")}',
-            f'\n    context_obj={str(context_obj)}',
-            '\n    build_context(context_obj, context)'
-        ]
+        return False
 
-        return ''.join(codes)
-
-    # @observe('animate')
-    # def on_animate_changed(self, change):
-    #     # print('on_animate_changed', change['old'], change['new'])
-    #     if change['old'] and not change['new']:
-    #         print('__do_abort')
-    #         # __do_abort = True
+    def __initialize_lsystem(self):
+        self.__lsystem.clear()
+        self.__lsystem.filename = self.__filename if self.__filename else ''
+        self.__lsystem.set(''.join([
+            self.__codes[0],
+            self.__lp.generate_py_code()
+        ]), self.__extra_context)
+        self.__derivationStep = 0
+        self.derivationLength = self.__lsystem.derivationLength + 1
+        self.__trees = [self.__lsystem.axiom]
 
     def __on_custom_msg(self, widget, content, buffers):
         if 'derive' in content:
@@ -472,32 +323,13 @@ class LsystemWidget(PGLWidget):
             self.__rewind()
 
     def __rewind(self):
-        self.__lsystem.clear()
-        self.__derivationStep = 0
-
-        if self.__filename:
-            with io.open(self.__filename, 'r') as file:
-                self.__codes = file.read().split(lpy.LpyParsing.InitialisationBeginTag)
-                self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
-            if len(self.__codes) < 2:
-                raise ValueError('No L_Py code found')
-            if self.__editor is not None:
-                self.__on_lpy_context_change(self.__editor.lpy_context)
-            elif Path(self.__filename[0:-3] + 'json').is_file():
-                self.__editor = ParameterEditor(self.__filename[0:-3] + 'json')
-                self.__editor.on_lpy_context_change = self.__on_lpy_context_change
-                self.__on_lpy_context_change(self.__editor.lpy_context)
-            else:
-                self.__initialize_lsystem()
-                self.__set_scene(0)
-        else:
-            self.__initialize_lsystem()
-            self.__set_scene(0)
+        self.__initialize_lsystem()
+        self.__set_scene(0)
 
     def __set_scene(self, step):
-        # print('__set_scene', step)
+        # print('__set_scene', step, self.__trees)
         scene = self.__lsystem.sceneInterpretation(self.__trees[step])
-        serialized = scene_to_bytes(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
+        serialized = serialize_scene(scene)  # bytes(scene_to_draco(scene, True).data) if self.compress else scene_to_bytes(scene)
         serialized_scene = {
             'data': serialized,
             'scene': scene,

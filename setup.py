@@ -39,8 +39,7 @@ jstargets = [
 package_data_spec = {
     name: [
         'nbextension/static/*.*js*',
-        'labextension/*.tgz',
-        'schema/*.json'
+        'labextension/*.tgz'
     ]
 }
 
@@ -81,16 +80,16 @@ setup_args = dict(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Framework :: Jupyter',
     ],
     include_package_data=True,
     install_requires=[
-        'jupyterlab>=2.2.0',
+        'ipython>=7.0.0',
+        'jupyterlab>=3.0.0',
         'ipywidgets>=7.5.0',
-        'toml>=0.10.1',
-        'jsonschema>="3.2.0',
-        'openalea.lpy>="3.4.0',
-        'openalea.plantgl>="3.4.0'
+        'openalea.lpy>=3.6.0,<4.0.0',
+        'openalea.plantgl>=3.8.0,<4.0.0'
     ],
     python_requires='>=3.7',
     extras_require={
