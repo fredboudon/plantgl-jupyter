@@ -6,9 +6,21 @@
 #include <plantgl/scenegraph/core/action.h>
 #include <plantgl/algo/base/matrixcomputer.h>
 #include <plantgl/algo/base/bboxcomputer.h>
+#include <sanitizer/lsan_interface.h>
 
 namespace PGLJS
 {
+
+class Debug {
+    public:
+        void doLeakCheck() {
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+        __lsan_do_recoverable_leak_check();
+#endif
+#endif
+        };
+};
 
 class TriangleSet {
     public:

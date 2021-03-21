@@ -27,6 +27,8 @@ set(pgljs_sources src/pgljs.cpp)
 
 file(GLOB_RECURSE pgl_sources
   "plantgl/src/cpp/plantgl/algo/codec/scne_binaryparser.cpp"
+  "plantgl/src/cpp/plantgl/algo/codec/printer.cpp"
+  "plantgl/src/cpp/plantgl/algo/base/statisticcomputer.cpp"
   "plantgl/src/cpp/plantgl/algo/codec/binaryprinter.cpp"
   "plantgl/src/cpp/plantgl/algo/base/discretizer.cpp"
   "plantgl/src/cpp/plantgl/algo/base/tesselator.cpp"
@@ -62,6 +64,8 @@ set(DEBUG_FLAGS
   "-s DEMANGLE_SUPPORT=1"
   "-s DISABLE_EXCEPTION_CATCHING=0"
   "-g4"
+  "-fsanitize=address"
+  "-s ENVIRONMENT=web"
   )
 
   set(RELEASE_FLAGS
@@ -71,6 +75,7 @@ set(DEBUG_FLAGS
   "-DPGL_USE_FLOAT"
   "-s ASSERTIONS=0"
   "-s DISABLE_EXCEPTION_CATCHING=1"
+  "-s ENVIRONMENT=web"
 )
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -81,27 +86,30 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_EXE_LINKER_FLAGS
-    "-s INITIAL_MEMORY=8MB\
+    "-s INITIAL_MEMORY=512MB\
     -s ALLOW_MEMORY_GROWTH=1\
     -s ASSERTIONS=2\
     -s EXPORT_ES6=1\
     -s USE_ES6_IMPORT_META=0\
     -s MODULARIZE=1\
     -s EXPORT_NAME='PGL'\
+    -s ENVIRONMENT='web'\
     --no-entry\
     -s LLD_REPORT_UNDEFINED\
     -s DISABLE_EXCEPTION_CATCHING=0\
-    -g4\
+    -g3\
+    -fsanitize=address\
     --source-map-base http://localhost:5000/build/"
   )
 else()
   set(CMAKE_EXE_LINKER_FLAGS
-    "-s INITIAL_MEMORY=8MB\
+    "-s INITIAL_MEMORY=64MB\
     -s ALLOW_MEMORY_GROWTH=1\
     -s EXPORT_ES6=1\
     -s USE_ES6_IMPORT_META=0\
     -s MODULARIZE=1\
     -s EXPORT_NAME='PGL'\
+    -s ENVIRONMENT='web'\
     --no-entry"
   )
 endif()

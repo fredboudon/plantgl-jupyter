@@ -92,3 +92,8 @@ export interface IGeom {
     isInstanced: boolean,
     material: IMaterial
 }
+
+export interface IWorker extends Worker {
+    initialized: boolean;
+    processed: number;
+}

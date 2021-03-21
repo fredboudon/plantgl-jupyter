@@ -1,10 +1,10 @@
 import pgljs from '../pgljs/dist/index.js';
-import { IDecodingTask, ITaskData, ITaskResult } from './interfaces';
+import { IDecodingTask, ITaskData, ITaskResult, IWorker } from './interfaces';
 
 let MAX_WORKER = 10;
-const workers: Map<Worker, IDecodingTask[]> = new Map();
+const workers: Map<IWorker, IDecodingTask[]> = new Map();
 
-const getWorker = (): Worker => {
+const getWorker = (): IWorker => {
 
     const avg = Array.from(workers.values()).reduce((s, v) => s + v.length / workers.size, 0);
 
@@ -14,15 +14,14 @@ const getWorker = (): Worker => {
         worker.onerror = function (evt) {
             console.log(evt);
         }
-        worker.onmessage = function(this: Worker, evt) {
+        worker.onmessage = function (this: IWorker, evt) {
 
             if (evt.data && 'initialized' in evt.data) {
                 if (evt.data.initialized) {
-                    // console.log('initialized');
                     workers.get(this).forEach(task => this.postMessage(task.data));
-                    (this as any).initialized = true;
+                    this.initialized = true;
+                    this.processed = 0;
                 } else {
-                    // console.log('terminate on error');
                     workers.get(this).forEach(task => task.reject({ err: 'initialization failed', userData: task.userData }));
                     this.terminate();
                     workers.delete(this);
@@ -39,20 +38,25 @@ const getWorker = (): Worker => {
             }
 
             if (workers.get(this).length === 0) {
-                setTimeout((self => (() => {
-                    if (workers.get(self) && workers.get(self).length === 0) {
-                        workers.delete(self);
-                        // console.log('terminated');
-                        self.terminate();
-                    }
-                }))(this), 60000);
+                // avoid mem issues in long running workers:
+                // terminate if it has processed a certain amount of data or it is idle for a certain time
+                if (this.processed > 50) {
+                    workers.delete(this);
+                    this.terminate();
+                } else {
+                    setTimeout((self => (() => {
+                        if (workers.get(self) && workers.get(self).length === 0) {
+                            workers.delete(self);
+                            self.terminate();
+                        }
+                    }))(this), 60000);
+                }
             }
         };
-        // console.log('workers', Array.from(workers.values()).map(w => w.length));
         return worker;
 
     } else {
-        let worker = workers.keys().next().value;
+        let worker: IWorker = workers.keys().next().value;
         for (const key of workers.keys()) {
             if (!workers.get(key).length) {
                 worker = key;
@@ -62,7 +66,6 @@ const getWorker = (): Worker => {
                 worker = key;
             }
         }
-        // console.log('workers', Array.from(workers.values()).map(w => w.length));
         return worker;
     }
 
@@ -74,7 +77,8 @@ class Decoder {
         const worker = getWorker();
         return new Promise((resolve, reject) => {
             workers.get(worker).push({ taskId: taskId, resolve, reject, ...task });
-            if ((worker as any).initialized) {
+            if (worker.initialized) {
+                worker.processed += task.data.byteLength / (1024 * 1024);
                 worker.postMessage(task.data);
             }
         });

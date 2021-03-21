@@ -39,7 +39,6 @@ export class PGLWidgetView extends DOMWidgetView {
 
     pglProgressState: IPGLProgressState = null;
 
-    disposables: THREE.Scene[] = [];
     isDetached = false;
 
     initialize(parameters: WidgetView.InitializeParameters) {
@@ -414,8 +413,6 @@ export class SceneWidgetView extends PGLWidgetView {
                             this.scene.add(scene);
                             this.renderer.render(this.scene, this.camera);
                             this.orbitControl.update();
-
-                            this.disposables.push(scene);
                         }
 
                         // clear scenes already rendered but not in new scenes array
@@ -432,7 +429,11 @@ export class SceneWidgetView extends PGLWidgetView {
 
     remove() {
         // TODO: dispose helpers etc.?
-        this.disposables.forEach(scene => disposeScene(scene));
+        this.scene.children.forEach(child => {
+            if (child instanceof THREE.Scene) {
+                disposeScene(child)
+            }
+        })
         super.remove();
     }
 
@@ -666,6 +667,11 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     remove() {
+        this.scene.children.forEach(child => {
+            if (child instanceof THREE.Scene) {
+                disposeScene(child)
+            }
+        })
         super.remove();
     }
 

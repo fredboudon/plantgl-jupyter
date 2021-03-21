@@ -58,3 +58,9 @@ interface Tesselator {
     TriangleSet trianglesAt(unsigned long i);
     BoundingBox bbox();
 };
+
+[Prefix="PGLJS::"]
+interface Debug {
+    void Debug();
+    void doLeakCheck();
+};

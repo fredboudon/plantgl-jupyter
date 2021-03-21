@@ -8,13 +8,13 @@ function parse (bgeom) {
     }
 
     const filename = 'bgeom';
-    FS.createDataFile('/', filename, bgeom, true, true);
+    FS.writeFile(filename, bgeom);
     const tesselator = new Module.Tesselator(filename);
     const _bbox = tesselator.bbox();
     const bbox = [
         [_bbox.getXMin(), _bbox.getYMin(), _bbox.getZMin()],
         [_bbox.getXMax(), _bbox.getYMax(), _bbox.getZMax()]
-    ]
+    ];
     const ii = tesselator.trianglesSize();
 
     for (let i = 0; i < ii; i++) {
@@ -77,7 +77,7 @@ function parse (bgeom) {
     }
 
     Module.destroy(tesselator);
-    FS.unlink('/' + filename);
+    FS.unlink(filename);
     return {
         triangleSets,
         bbox
