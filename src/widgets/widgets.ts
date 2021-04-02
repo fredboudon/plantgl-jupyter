@@ -11,7 +11,7 @@ import {
     ILsystemScene,
     ITaskResult, IPGLProgressState
 } from './interfaces';
-import { THREE, disposeScene, meshify } from './utilities';
+import { THREE, OrbitControls, disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
@@ -157,7 +157,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.render(this.scene, this.camera);
 
-        this.orbitControl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
         this.orbitControl.addEventListener('change', () => {
             this.renderer.render(this.scene, this.camera)

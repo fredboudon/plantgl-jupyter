@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-THREE.OrbitControls = OrbitControls
 import {
     IMeshOptions,
     IGeom
@@ -169,6 +168,7 @@ function meshify(geoms: IGeom[], options: IMeshOptions = meshOptions):  Array<TH
 
 export {
     THREE,
+    OrbitControls,
     disposeScene,
     debounce,
     meshify

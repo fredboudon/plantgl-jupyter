@@ -2,7 +2,7 @@ import { Widget } from '@lumino/widgets';
 import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
 import { imageIcon } from '@jupyterlab/ui-components';
 
-import { THREE, disposeScene, meshify } from './utilities';
+import { THREE, OrbitControls, disposeScene, meshify } from './utilities';
 import decoder from './decoder';
 
 const MIME_TYPE = 'application/octet-stream';
@@ -56,7 +56,7 @@ export class GeomWidget extends Widget implements IRenderMime.IRenderer {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.render(this.scene, this.camera);
 
-        this.orbitControl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
         this.orbitControl.addEventListener('change', () => {
             this.renderer.render(this.scene, this.camera)
