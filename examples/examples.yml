@@ -10,8 +10,6 @@ dependencies:
   - toml
   - matplotlib
   - pandas
-  - xarray-simlab
+  - xarray-simlab=0.5.*
   - rpy2
   - pip
-  - pip:
-    - pgljupyter

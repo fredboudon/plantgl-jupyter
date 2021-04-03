@@ -179,24 +179,16 @@ self.onmessage = function (evt) {
             postMessage({ error: err.toString() });
         }
     } else {
-        const { wasmURL } = data;
-        if (wasmURL) {
-            try {
-                fetch(wasmURL)
-                    .then(res => res.arrayBuffer())
-                    .then(buffer => {
-                        PGL({ wasmBinary: new Uint8Array(buffer) })
-                            .then(pgl_ => {
-                                pgl = pgl_;
-                                self.postMessage({ initialized: true });
-                            });
-                    })
-                    .catch(err => console.log(err))
-            } catch (err) {
-                console.log(err)
-            }
+        const { wasmBinary } = data;
+        if (wasmBinary) {
+            PGL({ wasmBinary })
+                .then(pgl_ => {
+                    pgl = pgl_;
+                    self.postMessage({ initialized: true });
+                })
+                .catch(err => console.log(err))
         } else {
-            console.log('wasm URL missing')
+            console.log('wasm missing')
         }
     }
 

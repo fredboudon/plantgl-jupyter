@@ -92,38 +92,18 @@ Arguments:
 
 ### Install with pip - inside conda env
 
-JupyterLab < 3.0 requires nodejs. In case it is not available on your system add `nodejs` to the
-`conda create` command.
+Building JupyterLab extensions requires nodejs. In case it is not available on your system add `nodejs` to the
+`conda create` command. Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
 
 ```bash
 conda create -y -n pgl -c fredboudon -c conda-forge \
-    openalea.lpy jupyterlab ipywidgets ipython=7
+    openalea.lpy jupyterlab ipywidgets ipython=7 pip
 ```
-
-For **windows** specify python 3.7 (there are some issues with jupyter on windows with python 3.8)
-
-```bash
-conda create -y -n pgl -c fredboudon -c conda-forge python=3.7 \
-    openalea.lpy jupyterlab ipywidgets ipython=7
-```
-
-Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
-
-For JupyterLab 3:
 
 ```bash
 conda activate pgl
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
 pip install pgljupyter
-```
-
-For JupyterLab 2:
-
-```bash
-conda activate pgl
-pip install "pgljupyter<1.0.0"
-jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
-jupyter lab build && jupyter lab
 ```
 
 ### Build, install and run from source
@@ -192,9 +172,9 @@ Run jupyter as docker container locally. Replace `/examples` with the path to yo
 Tag `latest` might not always be up-to-date since docker is primarily used for binder
 
 ```
-docker pull jvail/plantgl-jupyter:1.0.3
+docker pull jvail/plantgl-jupyter:1.0.4
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.0.3 \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.0.4 \
     jupyter lab
 ```
