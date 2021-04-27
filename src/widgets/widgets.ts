@@ -380,19 +380,11 @@ export class SceneWidgetView extends PGLWidgetView {
 
         if (!this.interval) {
             this.interval = (() => {
-                let time = 0;
                 return setInterval(() => {
-                        if (this.queue.length > 0 && this.queue[0].result) {
-                            const render = this.queue.shift()
-                            this.renderScene(render.result, render.keep)
-                            time = 0;
-                        } else {
-                            time += 1
-                            // if (time > 100) {
-                            //     clearInterval(this.interval)
-                            //     this.interval = null
-                            // }
-                        }
+                    if (this.queue.length > 0 && this.queue[0].result) {
+                        const render = this.queue.shift()
+                        this.renderScene(render.result, render.keep)
+                    }
                 }, 10)
             })();
         }
@@ -446,17 +438,17 @@ export class SceneWidgetView extends PGLWidgetView {
 
             this.scene.add(scene);
             this.renderer.render(this.scene, this.camera);
-            this.orbitControl.update();
-            toRemove.forEach(scene => scene.visible = false);
+            // this.orbitControl.update();
+            // toRemove.forEach(scene => scene.visible = false);
         }
 
-        this.out++;
-        this.updateProgress();
 
         // clear scenes already rendered but not in new scenes array
-        this.renderer.render(this.scene, this.camera);
         this.scene.remove(...toRemove);
+        this.renderer.render(this.scene, this.camera);
         toRemove.forEach(scene => disposeScene(scene as THREE.Scene));
+        this.out++;
+        this.updateProgress();
 
     }
 
