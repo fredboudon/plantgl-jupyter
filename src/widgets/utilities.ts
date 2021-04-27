@@ -1,53 +1,33 @@
-import {
-    Scene,
-    Mesh,
-    InstancedMesh,
-    BufferGeometry,
-    BufferAttribute,
-    Matrix4,
-    Color,
-    DoubleSide,
-    MeshPhongMaterial,
-    PerspectiveCamera,
-    Vector3,
-    AmbientLight,
-    DirectionalLight,
-    WebGLRenderer,
-    PCFSoftShadowMap,
-    Box3,
-    PlaneBufferGeometry,
-    AxesHelper,
-    CameraHelper,
-    DirectionalLightHelper
-} from 'three';
+import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import {
+    IMeshOptions,
+    IGeom
+} from './interfaces';
 
-import { IMeshOptions,
-    IGeom } from './interfaces';
-
-const THREE = {
-    Scene,
-    Mesh,
-    InstancedMesh,
-    BufferGeometry,
-    BufferAttribute,
-    Matrix4,
-    Color,
-    DoubleSide,
-    MeshPhongMaterial,
-    OrbitControls,
-    PerspectiveCamera,
-    Vector3,
-    AmbientLight,
-    DirectionalLight,
-    WebGLRenderer,
-    PCFSoftShadowMap,
-    Box3,
-    PlaneBufferGeometry,
-    AxesHelper,
-    CameraHelper,
-    DirectionalLightHelper
-}
+// export const THREE = {
+//     Scene,
+//     Mesh,
+//     InstancedMesh,
+//     BufferGeometry,
+//     BufferAttribute,
+//     Matrix4,
+//     Color,
+//     DoubleSide,
+//     MeshPhongMaterial,
+//     OrbitControls,
+//     PerspectiveCamera,
+//     Vector3,
+//     AmbientLight,
+//     DirectionalLight,
+//     WebGLRenderer,
+//     PCFSoftShadowMap,
+//     Box3,
+//     PlaneBufferGeometry,
+//     AxesHelper,
+//     CameraHelper,
+//     DirectionalLightHelper
+// }
 
 function disposeScene(scene: THREE.Scene) {
     scene.children.forEach(child => {
@@ -188,6 +168,7 @@ function meshify(geoms: IGeom[], options: IMeshOptions = meshOptions):  Array<TH
 
 export {
     THREE,
+    OrbitControls,
     disposeScene,
     debounce,
     meshify

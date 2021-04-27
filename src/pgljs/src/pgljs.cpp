@@ -56,8 +56,9 @@ TriangleSet::TriangleSet(TriangleSetPtr triangleSet, PGL::MaterialPtr material) 
 TriangleSet::TriangleSet() {};
 
 TriangleSet::~TriangleSet() {
-    instancesColors.clear();
     instancesMaterials.clear();
+    instances.clear();
+    instancesColors.clear();
     if (_indexData) delete[] _indexData;
     if (_pointData) delete[] _pointData;
     // if (_normalData) delete[] _normalData;
@@ -236,8 +237,9 @@ Tesselator::Tesselator(const std::string& filename) :
 {
 
     PGL::BinaryParser parser(std::cout);
+    PGL::parserVerbose(false);
     if (parser.parse(filename)) {
-        PGL::Scene* scene = parser.getScene();
+        PGL::ScenePtr scene = parser.getScene();
         scene->apply(*this);
         PGL::BBoxComputer bboxComputer(__tesselator);
         bboxComputer.process(scene);
@@ -252,6 +254,7 @@ Tesselator::~Tesselator() {
         delete t;
     }
     triangles.clear();
+    triangleMap.clear();
 }
 
 bool Tesselator::beginProcess()

@@ -1,4 +1,4 @@
-FROM jupyter/base-notebook:lab-3.0.5
+FROM jupyter/base-notebook:lab-3.0.12
 USER root
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y libgl1-mesa-dev && \
@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install --no-upgrade --no-install-recommends -y li
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
     conda install -y -c fredboudon -c conda-forge 'openalea.lpy>=3.6.0' 'ipywidgets>=7.5.0' 'ipython>=7.0.0' xarray-simlab pandas matplotlib rpy2 && \
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager && \
+    jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
     pip3 install pgljupyter --no-cache && \
     jupyter lab build && \
     conda clean -y --all --force-pkgs-dirs && \

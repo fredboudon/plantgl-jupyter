@@ -44,67 +44,74 @@
     orbitControl.update();
 
     import PGL from '../build/pgl.js';
-    import getWorker from '../build/index-debug.js';
-    // fetch('../build/pgl-debug.wasm')
-    // .then(res => res.arrayBuffer())
-    //     .then(buffer => {
-    //       PGL({ wasmBinary: new Uint8Array(buffer) })
-    //       .then(pgl => {
-    //         fetch('./fspm_logo.bgeom')
-    //         .then(res => res.arrayBuffer())
-    //         .then(buffer => {
-    //           const geoms = pgl.parse(new Uint8Array(buffer));
-    //                   console.log(geoms);
-    //                 });
-    //               });
-    //             });
-    const worker = getWorker();
-    worker.onerror = (err) => {
-      console.log(err);
-    }
-    worker.onmessage = (msg) => {
-      if (msg.data.initialized) {
-        fetch('./vmango.bgeom')
-        .then(res => res.arrayBuffer())
+    // import getWorker from '../build/index.js';
+    fetch('../build/pgl.wasm')
+    .then(res => res.arrayBuffer())
         .then(buffer => {
-          worker.postMessage(buffer);
-        });
-      } else {
-        console.log(msg);
-        let meshs = msg.data.map((geom) => {
-          let mesh;
-          const geometry = new THREE.BufferGeometry();
-          geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(geom.index), 1));
-          geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
-          const material = new THREE.MeshPhongMaterial({
-              side: THREE.DoubleSide,
-              shadowSide: THREE.BackSide,
-              color: new THREE.Color(...geom.material.ambient),
-              emissive: new THREE.Color(...geom.material.emission),
-              specular: new THREE.Color(...geom.material.specular),
-              shininess: geom.material.shininess * 100,
-              transparent: geom.material.transparency > 0,
-              opacity: 1 - geom.material.transparency,
-              vertexColors: false
-          });
-          if (geom.isInstanced) {
-              const instances = new Float32Array(geom.instances);
-              mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
-              for (let i = 0; i < instances.length / 16; i++) {
-                  mesh.setMatrixAt(i, (new THREE.Matrix4()).set(...instances.slice(i * 16, i * 16 + 16)));
+          PGL({ wasmBinary: new Uint8Array(buffer) })
+          .then(pgl => {
+            fetch('./fspm_logo.bgeom')
+            .then(res => res.arrayBuffer())
+            .then(buffer => {
+              for (let i = 0; i < 20; i++) {
+                try {
+                  const geoms = pgl.parse(new Uint8Array(buffer));
+                  console.log(i);
+                } catch (err) {
+                  console.log(err)
+                }
               }
-          } else {
-              mesh = new THREE.Mesh(geometry, material);
-          }
-          geometry.computeVertexNormals();
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          return mesh;
-        });
-        scene.add(...meshs);
-        renderer.render(scene, camera);
-      }
-    }
+                    });
+                  });
+                })
+
+    // const worker = getWorker();
+    // worker.onerror = (err) => {
+    //   console.log(err);
+    // }
+    // worker.onmessage = (msg) => {
+    //   if (msg.data.initialized) {
+    //     fetch('./vmango.bgeom')
+    //     .then(res => res.arrayBuffer())
+    //     .then(buffer => {
+    //       worker.postMessage(buffer);
+    //     });
+    //   } else {
+    //     console.log(msg);
+    //     let meshs = msg.data.map((geom) => {
+    //       let mesh;
+    //       const geometry = new THREE.BufferGeometry();
+    //       geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(geom.index), 1));
+    //       geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geom.position), 3));
+    //       const material = new THREE.MeshPhongMaterial({
+    //           side: THREE.DoubleSide,
+    //           shadowSide: THREE.BackSide,
+    //           color: new THREE.Color(...geom.material.ambient),
+    //           emissive: new THREE.Color(...geom.material.emission),
+    //           specular: new THREE.Color(...geom.material.specular),
+    //           shininess: geom.material.shininess * 100,
+    //           transparent: geom.material.transparency > 0,
+    //           opacity: 1 - geom.material.transparency,
+    //           vertexColors: false
+    //       });
+    //       if (geom.isInstanced) {
+    //           const instances = new Float32Array(geom.instances);
+    //           mesh = new THREE.InstancedMesh(geometry, material, instances.length / 16);
+    //           for (let i = 0; i < instances.length / 16; i++) {
+    //               mesh.setMatrixAt(i, (new THREE.Matrix4()).set(...instances.slice(i * 16, i * 16 + 16)));
+    //           }
+    //       } else {
+    //           mesh = new THREE.Mesh(geometry, material);
+    //       }
+    //       geometry.computeVertexNormals();
+    //       mesh.castShadow = true;
+    //       mesh.receiveShadow = true;
+    //       return mesh;
+    //     });
+    //     scene.add(...meshs);
+    //     renderer.render(scene, camera);
+    //   }
+    // }
   </script>
 </body>
 </html>

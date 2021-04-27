@@ -179,17 +179,16 @@ self.onmessage = function (evt) {
             postMessage({ error: err.toString() });
         }
     } else {
-        const { wasmBinary } = data;
+        const { wasmBinary } = data;
         if (wasmBinary) {
-            try {
-                PGL({ wasmBinary })
-                    .then(pgl_ => {
-                        pgl = pgl_;
-                        self.postMessage({ initialized: true });
-                    });
-            } catch (err) {
-                console.log(err)
-            }
+            PGL({ wasmBinary })
+                .then(pgl_ => {
+                    pgl = pgl_;
+                    self.postMessage({ initialized: true });
+                })
+                .catch(err => console.log(err))
+        } else {
+            console.log('wasm missing')
         }
     }
 

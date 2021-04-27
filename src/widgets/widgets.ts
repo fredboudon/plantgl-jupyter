@@ -11,7 +11,7 @@ import {
     ILsystemScene,
     ITaskResult, IPGLProgressState
 } from './interfaces';
-import { THREE, disposeScene, meshify } from './utilities';
+import { THREE, OrbitControls, disposeScene, meshify } from './utilities';
 import { SCALES, LsystemUnit } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
@@ -39,7 +39,6 @@ export class PGLWidgetView extends DOMWidgetView {
 
     pglProgressState: IPGLProgressState = null;
 
-    disposables: THREE.Scene[] = [];
     isDetached = false;
 
     initialize(parameters: WidgetView.InitializeParameters) {
@@ -158,7 +157,7 @@ export class PGLWidgetView extends DOMWidgetView {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.render(this.scene, this.camera);
 
-        this.orbitControl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
         this.orbitControl.addEventListener('change', () => {
             this.renderer.render(this.scene, this.camera)
@@ -414,8 +413,6 @@ export class SceneWidgetView extends PGLWidgetView {
                             this.scene.add(scene);
                             this.renderer.render(this.scene, this.camera);
                             this.orbitControl.update();
-
-                            this.disposables.push(scene);
                         }
 
                         // clear scenes already rendered but not in new scenes array
@@ -428,23 +425,15 @@ export class SceneWidgetView extends PGLWidgetView {
             }
         }
 
-
-        this.scene.remove(...this.scene.children
-            .filter(obj => {
-                return obj instanceof THREE.Scene && !scenes.some(scene => scene.id === obj.name)
-            })
-            .map(scene => {
-                scene.visible = false;
-                disposeScene(scene as THREE.Scene);
-                return scene;
-            })
-        );
-
     }
 
     remove() {
         // TODO: dispose helpers etc.?
-        this.disposables.forEach(scene => disposeScene(scene));
+        this.scene.children.forEach(child => {
+            if (child instanceof THREE.Scene) {
+                disposeScene(child)
+            }
+        })
         super.remove();
     }
 
@@ -678,6 +667,11 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     remove() {
+        this.scene.children.forEach(child => {
+            if (child instanceof THREE.Scene) {
+                disposeScene(child)
+            }
+        })
         super.remove();
     }
 
