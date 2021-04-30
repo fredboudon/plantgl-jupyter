@@ -427,26 +427,25 @@ export class SceneWidgetView extends PGLWidgetView {
             return obj instanceof THREE.Scene && keep.indexOf(obj.name) === -1
         })
 
-        if (results.length > 0) {
-            scene.add(...meshify(results, {
-                flatShading: this.pglControlsState.flatShading,
-                wireframe: this.pglControlsState.wireframe,
-            }));
-            scene.name = id;
-            scene.position.set(x, y, z);
-            scene.scale.multiplyScalar(scale);
-
-            this.scene.add(scene);
+        window.requestAnimationFrame(() => {
+            if (results.length > 0) {
+                scene.add(...meshify(results, {
+                    flatShading: this.pglControlsState.flatShading,
+                    wireframe: this.pglControlsState.wireframe,
+                }));
+                scene.name = id;
+                scene.position.set(x, y, z);
+                scene.scale.multiplyScalar(scale);
+                toRemove.forEach(scene => scene.visible = false);
+                this.scene.add(scene);
+            }
+            // clear scenes already rendered but not in new scenes array
             this.renderer.render(this.scene, this.camera);
-            // this.orbitControl.update();
-            // toRemove.forEach(scene => scene.visible = false);
-        }
+            this.orbitControl.update();
+            this.scene.remove(...toRemove);
+            toRemove.forEach(scene => disposeScene(scene as THREE.Scene));
+        });
 
-
-        // clear scenes already rendered but not in new scenes array
-        this.scene.remove(...toRemove);
-        this.renderer.render(this.scene, this.camera);
-        toRemove.forEach(scene => disposeScene(scene as THREE.Scene));
         this.out++;
         this.updateProgress();
 
