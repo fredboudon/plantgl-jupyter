@@ -355,9 +355,10 @@ export class PGLWidgetView extends DOMWidgetView {
 
 export class SceneWidgetView extends PGLWidgetView {
 
-    decoding = [];
     in = 0;
     out = 0;
+    queue = []
+    interval = null
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -365,9 +366,9 @@ export class SceneWidgetView extends PGLWidgetView {
 
     render() {
         super.render();
-        this.setScenes(this.model.get('scenes') as IScene[]);
+        this.decode(this.model.get('scenes') as IScene[]);
         this.listenTo(this.model, 'change:scenes', () => {
-            this.setScenes(this.model.get('scenes') as IScene[]);
+            this.decode(this.model.get('scenes') as IScene[]);
         });
     }
 
@@ -375,66 +376,90 @@ export class SceneWidgetView extends PGLWidgetView {
         this.pglProgressState.busy = 1 - (this.out / this.in);
     }
 
-    setScenes(scenes: IScene[]) {
+    decode(scenes: IScene[]) {
 
-        // TODO: add option to decode in sequence
+        if (!this.interval) {
+            this.interval = (() => {
+                return setInterval(() => {
+                    if (this.queue.length > 0 && this.queue[0].result) {
+                        const render = this.queue.shift()
+                        this.renderScene(render.result, render.keep)
+                    }
+                }, 10)
+            })();
+        }
+
+        const keep = scenes.map(s => s.id)
         for (let i = 0; i < scenes.length; i++) {
             const scene = scenes[i];
             // ignore scenes that are already rendered or still being decoded
-            if(!this.scene.getObjectByName(scene.id) && !(this.decoding.indexOf(scene.id) > -1)) {
+            if (!this.scene.getObjectByName(scene.id) && !this.queue.some(q => q.id === scene.id)) {
                 const { id, data, position, scale } = scene;
-                this.decoding.push(id);
+                this.queue.push({
+                    id,
+                    result: null,
+                    keep
+                })
                 this.in++;
                 this.updateProgress();
                 decoder.decode({ data: data.buffer, userData: { position, scale, id } })
                     .then(result => {
-                        this.out++;
-                        this.updateProgress();
-
-                        const scene = new THREE.Scene();
-                        const { geoms: results, userData: { position, scale, id } } = result;
-                        const [x, y, z] = position;
-
-                        this.decoding.splice(this.decoding.indexOf(scene.id));
-                        const toRemove = this.scene.children.filter(obj => {
-                            return obj instanceof THREE.Scene && !scenes.some(scene => scene.id === obj.name)
-                        })
-
-                        if (results.length > 0) {
-                            scene.add(...meshify(results, {
-                                flatShading: this.pglControlsState.flatShading,
-                                wireframe: this.pglControlsState.wireframe,
-                            }));
-                            scene.name = id;
-                            scene.position.set(x, y, z);
-                            scene.scale.multiplyScalar(scale);
-                            toRemove.forEach(scene => scene.visible = false);
-
-                            this.scene.add(scene);
-                            this.renderer.render(this.scene, this.camera);
-                            this.orbitControl.update();
+                        for (let i = 0; i < this.queue.length; i++) {
+                            if (this.queue[i].id === result.userData.id) {
+                                this.queue[i].result = result
+                                break;
+                            }
                         }
-
-                        // clear scenes already rendered but not in new scenes array
-                        this.renderer.render(this.scene, this.camera);
-                        this.scene.remove(...toRemove);
-                        toRemove.forEach(scene => disposeScene(scene as THREE.Scene));
-
-                    })
+                    }) // TODO: remove from queue on error
                     .catch(err => console.log(err));
             }
         }
 
     }
 
+    renderScene(result: ITaskResult, keep: string[]) {
+
+        const scene = new THREE.Scene();
+        const { geoms: results, userData: { position, scale, id } } = result;
+        const [x, y, z] = position;
+
+        const toRemove = this.scene.children.filter(obj => {
+            return obj instanceof THREE.Scene && keep.indexOf(obj.name) === -1
+        })
+
+        window.requestAnimationFrame(() => {
+            if (results.length > 0) {
+                scene.add(...meshify(results, {
+                    flatShading: this.pglControlsState.flatShading,
+                    wireframe: this.pglControlsState.wireframe,
+                }));
+                scene.name = id;
+                scene.position.set(x, y, z);
+                scene.scale.multiplyScalar(scale);
+                toRemove.forEach(scene => scene.visible = false);
+                this.scene.add(scene);
+            }
+            // clear scenes already rendered but not in new scenes array
+            this.renderer.render(this.scene, this.camera);
+            this.orbitControl.update();
+            this.scene.remove(...toRemove);
+            toRemove.forEach(scene => disposeScene(scene as THREE.Scene));
+        });
+
+        this.out++;
+        this.updateProgress();
+
+    }
+
     remove() {
-        // TODO: dispose helpers etc.?
+            // TODO: dispose helpers etc.?
         this.scene.children.forEach(child => {
             if (child instanceof THREE.Scene) {
                 disposeScene(child)
             }
         })
         super.remove();
+        clearInterval(this.interval)
     }
 
 }
