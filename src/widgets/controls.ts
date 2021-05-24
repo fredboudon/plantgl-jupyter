@@ -44,6 +44,11 @@ export class PGLControls {
     private renderControls = (state: IPGLControlsState, handlers: IPGLControlsHandlers) => {
         return html`<div class='pgl-jupyter-pgl-widget-controls-container' style=${styleMap(state.showControls ? { 'background-color': 'rgba(160, 160, 160, 0.1)' } : {})}>
             <div class='pgl-jupyter-pgl-widget-controls-header' style=${styleMap(state.showControls || state.showHeader ? { 'display': 'block' } : { 'display': 'none' })}>
+                <mwc-icon-button
+                    icon='&#9974;'
+                    @click=${() => handlers.onCaptureClicked()}
+                    style=${styleMap(state.showHeader && !state.showControls ? { 'display': 'block', 'float': 'left' } : { 'display': 'none' })}>
+                </mwc-icon-button>
                 <mwc-icon-button icon="&#9881;" @click=${() => state.showControls = !state.showControls}></mwc-icon-button>
             </div>
             <div class='pgl-jupyter-pgl-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
@@ -66,17 +71,8 @@ export class PGLControls {
                         @change=${(evt) => handlers.onWireframeToggled(evt.target.checked)} ?checked=${state.wireframe}>
                     </mwc-switch>
                 </mwc-formfield>
-                </div>
-                </div>`;
-                // <mwc-formfield label='axes helper'>
-                //     <mwc-switch @change=${(evt) => handlers.onAxesHelperToggled(evt.target.checked)} ?checked=${state.axesHelper}></mwc-switch>
-                // </mwc-formfield>
-                // <mwc-formfield label='light helper'>
-                //     <mwc-switch
-                //         @change=${(evt) => handlers.onLightHelperToggled(evt.target.checked)} ?checked=${state.lightHelper}>
-                //     </mwc-switch>
-                // </mwc-formfield>
-            };
+            </div></div>`;
+        };
 }
 
 export class PGLProgress {

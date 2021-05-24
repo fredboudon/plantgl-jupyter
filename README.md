@@ -121,8 +121,8 @@ jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```bash
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install latest
-./emsdk activate latest
+./emsdk install 2.0.20
+./emsdk activate 2.0.20
 source ./emsdk_env.sh
 cd ..
 ```
@@ -175,6 +175,6 @@ Tag `latest` might not always be up-to-date since docker is primarily used for b
 docker pull jvail/plantgl-jupyter:1.0.5
 docker run --rm \
     -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.0.4 \
+    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.0.6 \
     jupyter lab
 ```

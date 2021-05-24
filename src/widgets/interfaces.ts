@@ -56,6 +56,7 @@ export interface IPGLControlsHandlers {
     onLightHelperToggled: Function;
     onFlatShadingToggled: Function;
     onWireframeToggled: Function;
+    onCaptureClicked: Function;
 }
 
 export interface ILsystemControlsState {

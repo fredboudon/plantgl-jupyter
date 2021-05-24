@@ -252,6 +252,15 @@ export class PGLWidgetView extends DOMWidgetView {
                     }
                 });
                 this.renderer.render(this.scene, this.camera);
+            },
+            onCaptureClicked: () => {
+                const a = document.createElement('a');
+                this.renderer.render(this.scene, this.camera);
+                a.href = this.renderer.domElement.toDataURL('image/png');
+                a.download = (new Date(Date.now()).toISOString()) + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             }
         }, this.pglControlsEl);
         this.pglControlsState = this.pglControls.state;
@@ -389,11 +398,14 @@ export class SceneWidgetView extends PGLWidgetView {
             })();
         }
 
+
         const keep = scenes.map(s => s.id)
-        for (let i = 0; i < scenes.length; i++) {
-            const scene = scenes[i];
-            // ignore scenes that are already rendered or still being decoded
-            if (!this.scene.getObjectByName(scene.id) && !this.queue.some(q => q.id === scene.id)) {
+        // ignore scenes that are already rendered or still being decoded
+        const toDecode = scenes.filter(scene => !this.scene.getObjectByName(scene.id) && !this.queue.some(q => q.id === scene.id));
+        if (toDecode.length > 0) {
+            this.in = this.in - this.out;
+            this.out = 0;
+            toDecode.forEach(scene => {
                 const { id, data, position, scale } = scene;
                 this.queue.push({
                     id,
@@ -412,7 +424,8 @@ export class SceneWidgetView extends PGLWidgetView {
                         }
                     }) // TODO: remove from queue on error
                     .catch(err => console.log(err));
-            }
+            })
+
         }
 
     }
