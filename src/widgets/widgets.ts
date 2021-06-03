@@ -272,7 +272,6 @@ export class PGLWidgetView extends DOMWidgetView {
                 if (capture) {
                     this.mediaRecorder.start();
                 } else {
-                    debugger
                     this.mediaRecorder.stop();
                 }
             },
