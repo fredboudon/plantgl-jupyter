@@ -2,6 +2,9 @@
 
 [PlantGL](https://github.com/fredboudon/plantgl) & [L-Py](https://github.com/fredboudon/lpy) jupyter widgets
 
+
+![Leuvenberg](docs/lpy_leuwenberg.gif)
+
 ## Quick Examples
 
 ### L-Py
