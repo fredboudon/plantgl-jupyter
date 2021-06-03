@@ -42,6 +42,7 @@ export interface IPGLControlsState {
     autoRotate: boolean;
     showHeader: boolean;
     showControls: boolean;
+    capturingVideo: boolean;
 }
 
 export interface IPGLProgressState {
@@ -56,7 +57,8 @@ export interface IPGLControlsHandlers {
     onLightHelperToggled: Function;
     onFlatShadingToggled: Function;
     onWireframeToggled: Function;
-    onCaptureClicked: Function;
+    onCaptureImageClicked: Function;
+    onCaptureVideoClicked: Function;
 }
 
 export interface ILsystemControlsState {

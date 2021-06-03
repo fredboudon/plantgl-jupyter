@@ -40,6 +40,8 @@ export class PGLWidgetView extends DOMWidgetView {
     pglProgressState: IPGLProgressState = null;
 
     isDetached = false;
+    mediaRecorder = null;
+    mediaData = []
 
     initialize(parameters: WidgetView.InitializeParameters) {
         super.initialize(parameters);
@@ -60,7 +62,8 @@ export class PGLWidgetView extends DOMWidgetView {
             fullscreen: false,
             autoRotate: false,
             showHeader: false,
-            showControls: false
+            showControls: false,
+            capturingVideo: false
         };
 
         const [width, height] = this.sizeDisplay;
@@ -166,6 +169,17 @@ export class PGLWidgetView extends DOMWidgetView {
         this.orbitControl.target.set(0, 0, 0);
         this.orbitControl.update();
 
+        // @ts-ignore
+        this.mediaRecorder = new MediaRecorder(this.renderer.domElement.captureStream(), {
+            mimeType: 'video/webm'
+        });
+        this.mediaRecorder.ondataavailable = (evt) => this.mediaData.push(evt.data);
+        this.mediaRecorder.onstop = () => {
+            const url = URL.createObjectURL(new Blob(this.mediaData, { type: "video/webm" }));
+            this.download(url, 'webm');
+            this.mediaData = []
+        };
+
         this.pglControls = new PGLControls(initialState, {
             onFullscreenToggled: () => {
                 if (document.fullscreenElement === this.containerEl) {
@@ -253,16 +267,21 @@ export class PGLWidgetView extends DOMWidgetView {
                 });
                 this.renderer.render(this.scene, this.camera);
             },
-            onCaptureClicked: () => {
-                const a = document.createElement('a');
+            onCaptureVideoClicked: (capture: boolean) => {
+                this.pglControlsState.capturingVideo = capture;
+                if (capture) {
+                    this.mediaRecorder.start();
+                } else {
+                    debugger
+                    this.mediaRecorder.stop();
+                }
+            },
+            onCaptureImageClicked: () => {
                 this.renderer.render(this.scene, this.camera);
-                a.href = this.renderer.domElement.toDataURL('image/png');
-                a.download = (new Date(Date.now()).toISOString()) + '.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                this.download(this.renderer.domElement.toDataURL('image/png'), 'png');
             }
         }, this.pglControlsEl);
+
         this.pglControlsState = this.pglControls.state;
 
         this.containerEl.addEventListener('mouseover', () => this.pglControlsState.showHeader = true);
@@ -292,6 +311,16 @@ export class PGLWidgetView extends DOMWidgetView {
                 this.resizeDisplay(width, height);
             }
         }
+    }
+
+    download(objectUrl: string, suffix: string) {
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = `${(new Date(Date.now()).toISOString())}.${suffix}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(objectUrl)
     }
 
     resizeDisplay(width, height) {

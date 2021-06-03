@@ -43,13 +43,25 @@ export class PGLControls {
 
     private renderControls = (state: IPGLControlsState, handlers: IPGLControlsHandlers) => {
         return html`<div class='pgl-jupyter-pgl-widget-controls-container' style=${styleMap(state.showControls ? { 'background-color': 'rgba(160, 160, 160, 0.1)' } : {})}>
-            <div class='pgl-jupyter-pgl-widget-controls-header' style=${styleMap(state.showControls || state.showHeader ? { 'display': 'block' } : { 'display': 'none' })}>
+            <div class='pgl-jupyter-pgl-widget-controls-header'>
                 <mwc-icon-button
-                    icon='&#9974;'
-                    @click=${() => handlers.onCaptureClicked()}
-                    style=${styleMap(state.showHeader && !state.showControls ? { 'display': 'block', 'float': 'left' } : { 'display': 'none' })}>
+                    title='Capture Image'
+                    icon='&#9880;'
+                    @click=${() => handlers.onCaptureImageClicked()}
+                    style=${styleMap(state.showHeader && !state.showControls ? { 'display': 'inline', 'float': 'left' } : { 'display': 'none' })}>
                 </mwc-icon-button>
-                <mwc-icon-button icon="&#9881;" @click=${() => state.showControls = !state.showControls}></mwc-icon-button>
+                <mwc-icon-button-toggle
+                    title=${state.capturingVideo ? 'Stop Capturing..' : 'Capture Video'}
+                    offIcon='&#9974;'
+                    onIcon='&#9889;'
+                    @click=${(evt) => handlers.onCaptureVideoClicked(evt.target.on)}
+                    style=${styleMap(('MediaRecorder' in window) && (state.capturingVideo || (state.showHeader && !state.showControls)) ? { 'display': 'inline', 'float': 'left' } : { 'display': 'none' })}>
+                </mwc-icon-button-toggle>
+                <mwc-icon-button
+                    icon="&#9881;"
+                    @click=${() => state.showControls = !state.showControls}
+                    style=${styleMap(state.showControls || state.showHeader ? { 'display': 'inline' } : { 'display': 'none' })}>
+                </mwc-icon-button>
             </div>
             <div class='pgl-jupyter-pgl-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
                 <mwc-formfield label='fullscreen'>
