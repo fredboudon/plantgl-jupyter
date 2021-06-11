@@ -5,6 +5,9 @@
 
 ![Leuvenberg](docs/lpy_leuwenberg.gif)
 
+
+[![DOI](https://zenodo.org/badge/252633303.svg)](https://zenodo.org/badge/latestdoi/252633303)
+
 ## Quick Examples
 
 ### L-Py
