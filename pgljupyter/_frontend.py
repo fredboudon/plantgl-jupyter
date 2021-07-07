@@ -3,4 +3,4 @@ Information about the frontend package of the widgets.
 """
 
 module_name = "pgljupyter"
-module_version = "^1.0.5"
+module_version = "^1.1.0"
