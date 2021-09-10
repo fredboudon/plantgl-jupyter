@@ -73,9 +73,9 @@ Arguments:
 - `size_world` float: extend on the 3D scene in all directions
 
 Important attributes/mdethods:
-- self.editor : display an editor of the graphical parameters
-- self.get_lstring() : return the lstring corresponding to the current step of the simulation display in the widget.
-- self.get_namespace() : return the namespace of variables of the simulation
+- `self.editor` : display an editor of the graphical parameters
+- `self.get_lstring()` : return the lstring corresponding to the current step of the simulation display in the widget.
+- `self.get_namespace()` : return the namespace of variables of the simulation
 
 Example:
 
@@ -114,12 +114,11 @@ import pgljupyter
 ```python
 %%lpy -u cm 
 from openalea.plantgl.all import *
-Axiom: ;(1)+(10)_(2)F(10);(0)@g(Paraboloid(10,10,2,False))F(7)
+Axiom: ;(1)+(10)_(2)F(10);(0)@g(Paraboloid(10,10,2,False))
 derivation length: 100
 production:
 F(x) --> F(x+0.2)
-@g(p) :
-  produce @g(Paraboloid(p.radius + 0.15, p.height + 0.2, 2, False))
+@g(p) --> @g(Paraboloid(p.radius + 0.15, p.height + 0.2, 2, False))
 _(x) --> _(x+0.02)
 ```
 
