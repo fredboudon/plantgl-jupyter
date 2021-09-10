@@ -10,6 +10,10 @@
 
 ## Quick Examples
 
+### PlantGL
+
+- simple PlantGL shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+
 ### L-Py
 
 - a tree model - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
@@ -22,10 +26,6 @@
 
 - magics with curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
 
-
-### PlantGL
-
-- simple PlantGL shapes - spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
 
 
 ## Usage
@@ -46,6 +46,18 @@ Arguments:
 - `size_display` tuple (int, int): width and height of the canvas (minimum 400)
 - `size_world` float: extend on the 3D scene in all directions
 
+Example: 
+
+```python
+from openalea.plantgl.all import *
+from pgljupyter import SceneWidget
+
+s = Scene([Sphere()])
+sw = SceneWidget(s)
+sw
+```
+Tutorial: 
+-  Display of spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
 
 **LsystemWidget**
 
@@ -60,15 +72,29 @@ Arguments:
 - `size_display` tuple (int, int): width and height of the canvas (minimum 400)
 - `size_world` float: extend on the 3D scene in all directions
 
+Important attributes/mdethods:
+- self.editor : display an editor of the graphical parameters
+- self.get_lstring() : return the lstring corresponding to the current step of the simulation display in the widget.
+- self.get_namespace() : return the namespace of variables of the simulation
+
+Example:
+
+```python
+from pgljupyter import LsystemWidget
+
+lw = LsystemWidget('myfile.lpy')
+lw
+```
+```python
+lw.editor
+```
+
+Tutorial:
+- Display of the simulation of a lpy file :  [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
 
 **%%lpy**
 
 A cell magic to inline L-Py code in a notebook
-
-```python
-# activated by importing pgljupyter
-import pgljupyter
-```
 
 Arguments:
 
@@ -78,14 +104,54 @@ Arguments:
 - `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
 
-**%lpy_plot**
-
-A line magic to plot all derivation steps of an Lsystem on a square plane
+Example:
 
 ```python
 # activated by importing pgljupyter
 import pgljupyter
 ```
+
+```python
+%%lpy -u cm 
+from openalea.plantgl.all import *
+Axiom: ;(1)+(10)_(2)F(10);(0)@g(Paraboloid(10,10,2,False))F(7)
+derivation length: 100
+production:
+F(x) --> F(x+0.2)
+@g(p) :
+  produce @g(Paraboloid(p.radius + 0.15, p.height + 0.2, 2, False))
+_(x) --> _(x+0.02)
+```
+
+Example with graphical parameters:
+
+```python
+# activated by importing pgljupyter
+import pgljupyter
+from openalea.lpy.lsysparameters import LsystemParameters
+```
+
+```python
+lp = LsystemParameters()
+lp.add_scalar(name='a', value=1, minvalue=0, maxvalue=100)
+lp.add_function(name='b') # default graphical function created
+```
+
+```python
+%%lpy -p lp
+
+Axiom: SetGuide(b,a)F(a)
+```
+
+Tutorials:
+- simple L-systems [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
+- graphical scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
+- graphical curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
+
+
+**%lpy_plot**
+
+A line magic to plot all derivation steps of an Lsystem on a square plane
 
 Arguments:
 
@@ -93,6 +159,18 @@ Arguments:
 - `--size`, `-s` int,int: width and hight of the canvas
 - `--cell`, `-c` float: size of cell for a single derivation step
 
+Example:
+
+```python
+# activated by importing pgljupyter
+import pgljupyter
+```
+
+```python
+%lpy_plot myfile.lpy
+```
+Tutorial:
+- Display of the simulation from a lpy file :[@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/lpy_plot_magic.ipynb)
 
 ## Installation
 
