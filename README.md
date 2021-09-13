@@ -49,7 +49,7 @@ Arguments:
 Example: 
 
 ```python
-from openalea.plantgl.all import *
+from openalea.plantgl.all import Scene, Sphere
 from pgljupyter import SceneWidget
 
 s = Scene([Sphere()])
@@ -72,10 +72,10 @@ Arguments:
 - `size_display` tuple (int, int): width and height of the canvas (minimum 400)
 - `size_world` float: extend on the 3D scene in all directions
 
-Important attributes/mdethods:
-- `self.editor` : display an editor of the graphical parameters
-- `self.get_lstring()` : return the lstring corresponding to the current step of the simulation display in the widget.
-- `self.get_namespace()` : return the namespace of variables of the simulation
+Important property/methods:
+- `editor` : display an editor of the graphical parameters
+- `get_lstring(self)` : return the lstring corresponding to the current step of the simulation display in the widget.
+- `get_namespace(self)` : return the namespace of variables of the simulation
 
 Example:
 
