@@ -3,7 +3,7 @@ channels:
   - fredboudon
   - conda-forge
 dependencies:
-  - openalea.lpy>=3.6.0
+  - openalea.lpy>=3.8.0
   - jupyterlab>=3.0.0
   - jupyterlab_widgets
   - ipython=7

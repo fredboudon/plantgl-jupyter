@@ -49,7 +49,7 @@
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
     --mdc-theme-secondary: rgb(75, 75, 75);
-    --mdc-theme-primary: #f57c24;
+    --mdc-theme-primary: #F37726;
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
 }
@@ -63,7 +63,7 @@
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
-    --mdc-theme-secondary: #f57c24;
+    --mdc-theme-secondary: #F37726;
     --mdc-theme-primary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
@@ -106,7 +106,7 @@
     --mdc-typography-body1-font-size: 12px;
     --mdc-typography-body2-font-size: 12px;
     --mdc-typography-body2-color: white;
-    --mdc-theme-primary: #f57c24;
+    --mdc-theme-primary: #F37726;
     --mdc-theme-secondary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
@@ -121,12 +121,12 @@
     margin: 5px 12px;
     display: block;
     text-align: left;
-    --mdc-theme-primary: #f57c24;
+    --mdc-theme-primary: #F37726;
     --mdc-theme-secondary: rgb(75, 75, 75);
 }
 
 mwc-icon-button-toggle, mwc-icon-button {
-    color: #f57c24;
+    color: #F37726;
     --mdc-icon-button-ripple-opacity: 0
 }
 
@@ -156,13 +156,13 @@ mwc-icon-button-toggle, mwc-icon-button {
 }
 
 .pgl-curve-editor-svg .curve {
-    stroke: #f57c24;
+    stroke: #F37726;
     fill: none;
     stroke-width: 2;
 }
 
 .pgl-curve-editor-svg .point {
-    fill: #f57c24;
+    fill: #F37726;
     cursor: pointer;
 }
 

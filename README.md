@@ -46,7 +46,7 @@ Arguments:
 - `size_display` tuple (int, int): width and height of the canvas (minimum 400)
 - `size_world` float: extend on the 3D scene in all directions
 
-Example: 
+Example:
 
 ```python
 from openalea.plantgl.all import Scene, Sphere
@@ -56,7 +56,7 @@ s = Scene([Sphere()])
 sw = SceneWidget(s)
 sw
 ```
-Tutorial: 
+Tutorial:
 -  Display of spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
 
 **LsystemWidget**
@@ -112,7 +112,7 @@ import pgljupyter
 ```
 
 ```python
-%%lpy -u cm 
+%%lpy -u cm
 from openalea.plantgl.all import *
 Axiom: ;(1)+(10)_(2)F(10);(0)@g(Paraboloid(10,10,2,False))
 derivation length: 100
