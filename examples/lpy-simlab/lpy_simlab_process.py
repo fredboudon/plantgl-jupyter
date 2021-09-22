@@ -2,6 +2,8 @@ import xsimlab as xs
 from paramtable import ParamTable, ArrayParameterSet
 import openalea.lpy as lpy
 
+predefined_variables = ['nsteps', 'step', 'step_start', 'step_delta']
+
 def get_caller_namespace():
     """ Retrieve namespace of the caller function to insert it elements """
     import inspect
@@ -14,6 +16,9 @@ def gen_param_structs(modules, process):
 def gen_initialize(lpyfile):
     """ Generate an initialize function for xs Process build from the given lpyfile """
     def initialize(self):
+        for name, pnames in self.modules:
+            for pname in pnames:
+                setattr(self, name+'_'+pname, np.arrays([], dtype=float))
         parameters = { 'process': self }
         for n in self.externs:
             parameters[n]=getattr(self, n)
@@ -26,7 +31,7 @@ def gen_initialize(lpyfile):
 def run_step(self, nsteps, step, step_start, step_delta):
     """ A run step function to run an lsystem """
     parameters = {}
-    for n in ['nsteps', 'step', 'step_start', 'step_delta']:
+    for n in predefined_variables:
         parameters[n]=locals()[n]
     # Do we need to set it before each iteration ?
     for n in self.externs:
@@ -35,6 +40,8 @@ def run_step(self, nsteps, step, step_start, step_delta):
     self.lstring = self.lsystem.derive(self.lstring, 1)
     # How to setup the display delay ?
     self.lscene = self.lsystem.sceneInterpretation(self.lstring)
+
+
 
 def parse_file(lpyfile, modulestoconsider = None):
     """ Parse an lpyfile to retrieve its modules and expected extern parameters """
@@ -46,6 +53,7 @@ def parse_file(lpyfile, modulestoconsider = None):
     code = ''.join([l for l in lines if l.startswith('extern')])
     n = {'extern' : f, 'externs' : externs}
     exec(code, n, n)
+    externs = externs.difference(predefined_variables)
             
     code2 = ''.join([l for l in lines if l.startswith('module')])
     from openalea.lpy import Lsystem
@@ -59,25 +67,26 @@ def parse_file(lpyfile, modulestoconsider = None):
     l.done()
     return externs, modules
         
-def gen_properties(lpyfile, modulestoconsider = None):
+def gen_properties(lpyfile, modulestoconsider = None, propertymapping = {}):
     """ Generate the properties of the xs Process class that will run the lpyfile """
+    import numpy as np
     properties = {}
     externs, modules = parse_file(lpyfile, modulestoconsider)
     properties['modules'] = modules
     for m, v in modules.items():
         properties[m] = xs.index(dims=m)
         for p in v:
-            properties[m+'_'+p] = xs.variable( dims=m, intent='out')
+            properties[m+'_'+p] = propertymapping.get(m+'_'+p,xs.variable( dims=m, intent='inout', encoding={'dtype': np.float}))
     properties['externs'] = externs
     for e in externs:
         properties[e] = xs.variable()
     return properties
 
-def xs_lpyprocess(name, lpyfile,  modulestoconsider = None):
+def xs_lpyprocess(name, lpyfile,  modulestoconsider = None, propertymapping = {}):
     """ Generate the xs process class under the given name with adequate properties from the lpy file. """
-    properties = gen_properties(lpyfile, modulestoconsider)
+    properties = gen_properties(lpyfile, modulestoconsider, propertymapping)
     properties['initialize'] = gen_initialize(lpyfile)
-    properties['run_step'] = xs.runtime(run_step, args=('nsteps', 'step', 'step_start', 'step_delta'))
+    properties['run_step'] = xs.runtime(run_step, args=predefined_variables)
     properties['lscene'] = xs.any_object()
     properties['lstring']  = xs.any_object()
     process = xs.process(type(name, (), properties))
