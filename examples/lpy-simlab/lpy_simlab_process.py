@@ -1,6 +1,7 @@
 import xsimlab as xs
 from paramtable import ParamTable, ArrayParameterSet
 import openalea.lpy as lpy
+import numpy as np
 
 predefined_variables = ['nsteps', 'step', 'step_start', 'step_delta']
 
@@ -8,7 +9,7 @@ def get_caller_namespace():
     """ Retrieve namespace of the caller function to insert it elements """
     import inspect
     return inspect.getouterframes(inspect.currentframe())[2][0].f_locals
- 
+
 def gen_param_structs(modules, process):
     """ Generate Parameter structure, based on ArrayParameterSet,  for the given modules """
     return dict([(module+'Params', type(module+'Params', (ArrayParameterSet,), {'table' : ParamTable(process, module) })) for module in modules])
@@ -16,9 +17,9 @@ def gen_param_structs(modules, process):
 def gen_initialize(lpyfile):
     """ Generate an initialize function for xs Process build from the given lpyfile """
     def initialize(self):
-        for name, pnames in self.modules:
+        for name, pnames in self.modules.items():
             for pname in pnames:
-                setattr(self, name+'_'+pname, np.arrays([], dtype=float))
+                setattr(self, name+'_'+pname, np.array([], dtype=float))
         parameters = { 'process': self }
         for n in self.externs:
             parameters[n]=getattr(self, n)
@@ -54,7 +55,7 @@ def parse_file(lpyfile, modulestoconsider = None):
     n = {'extern' : f, 'externs' : externs}
     exec(code, n, n)
     externs = externs.difference(predefined_variables)
-            
+
     code2 = ''.join([l for l in lines if l.startswith('module')])
     from openalea.lpy import Lsystem
     l = Lsystem()
@@ -66,7 +67,7 @@ def parse_file(lpyfile, modulestoconsider = None):
             modules[m.name] = m.parameterNames
     l.done()
     return externs, modules
-        
+
 def gen_properties(lpyfile, modulestoconsider = None, propertymapping = {}):
     """ Generate the properties of the xs Process class that will run the lpyfile """
     import numpy as np
@@ -76,7 +77,7 @@ def gen_properties(lpyfile, modulestoconsider = None, propertymapping = {}):
     for m, v in modules.items():
         properties[m] = xs.index(dims=m)
         for p in v:
-            properties[m+'_'+p] = propertymapping.get(m+'_'+p,xs.variable( dims=m, intent='inout', encoding={'dtype': np.float}))
+            properties[m+'_'+p] = propertymapping.get(m+'_'+p,xs.variable( dims=m, intent='out', encoding={'dtype': np.float}))
     properties['externs'] = externs
     for e in externs:
         properties[e] = xs.variable()
