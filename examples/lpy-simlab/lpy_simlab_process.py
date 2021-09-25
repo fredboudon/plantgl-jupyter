@@ -1,7 +1,7 @@
 import xsimlab as xs
 from paramtable import ParamTable, ArrayParameterSet
 import openalea.lpy as lpy
-
+import numpy as np
 predefined_variables = ['nsteps', 'step', 'step_start', 'step_delta']
 
 def get_caller_namespace():
@@ -13,37 +13,46 @@ def gen_param_structs(modules, process):
     """ Generate Parameter structure, based on ArrayParameterSet,  for the given modules """
     return dict([(module+'Params', type(module+'Params', (ArrayParameterSet,), {'table' : ParamTable(process, module) })) for module in modules])
 
-def gen_initialize(lpyfile):
-    """ Generate an initialize function for xs Process build from the given lpyfile """
+class AbstractLpyProcess:
+
+    #lscene = xs.any_object()
+    #lstring  = xs.any_object()
+    lpyfile = None
+    graphicalparameters = None
+
     def initialize(self):
-        for name, pnames in self.modules:
-            for pname in pnames:
-                setattr(self, name+'_'+pname, np.arrays([], dtype=float))
+            #for name, pnames in self.modules.items():
+            #    for pname in pnames:
+            #        setattr(self, name+'_'+pname, np.array([], dtype=float))
         parameters = { 'process': self }
         for n in self.externs:
             parameters[n]=getattr(self, n)
         parameters.update(gen_param_structs(self.modules, self))
-        self.lsystem = lpy.Lsystem(lpyfile, parameters)
+        if not self.graphicalparameters is None:
+            code = open(self.lpyfile,'r').read()
+            self.lsystem = lpy.Lsystem()
+            self.lsystem.set(code+self.graphicalparameters.generate_py_code(), parameters)
+        else:
+            self.lsystem = lpy.Lsystem(self.lpyfile, parameters)
         self.lstring = self.lsystem.axiom
         self.scene = self.lsystem.sceneInterpretation(self.lstring)
-    return initialize
 
-def run_step(self, nsteps, step, step_start, step_delta):
-    """ A run step function to run an lsystem """
-    parameters = {}
-    for n in predefined_variables:
-        parameters[n]=locals()[n]
-    # Do we need to set it before each iteration ?
-    for n in self.externs:
-        parameters[n]=getattr(self, n)
-    self.lsystem.execContext().updateNamespace(parameters)
-    self.lstring = self.lsystem.derive(self.lstring, 1)
-    # How to setup the display delay ?
-    self.lscene = self.lsystem.sceneInterpretation(self.lstring)
-
+    @xs.runtime(args=predefined_variables)
+    def run_step(self, nsteps, step, step_start, step_delta):
+        """ A run step function to run an lsystem """
+        parameters = {}
+        for n in predefined_variables:
+            parameters[n]=locals()[n]
+        # Do we need to set it before each iteration ?
+        for n in self.externs:
+            parameters[n]=getattr(self, n)
+        self.lsystem.execContext().updateNamespace(parameters)
+        self.lstring = self.lsystem.derive(self.lstring, 1)
+        self.lscene = self.lsystem.sceneInterpretation(self.lstring)
 
 
-def parse_file(lpyfile, modulestoconsider = None):
+
+def parse_extern_modules(lpyfile):
     """ Parse an lpyfile to retrieve its modules and expected extern parameters """
     lines = list(open(lpyfile).readlines())
     externs = set()
@@ -53,7 +62,7 @@ def parse_file(lpyfile, modulestoconsider = None):
     code = ''.join([l for l in lines if l.startswith('extern')])
     n = {'extern' : f, 'externs' : externs}
     exec(code, n, n)
-    externs = externs.difference(predefined_variables)
+    
             
     code2 = ''.join([l for l in lines if l.startswith('module')])
     from openalea.lpy import Lsystem
@@ -62,49 +71,70 @@ def parse_file(lpyfile, modulestoconsider = None):
     l.makeCurrent()
     modules = {}
     for m in l.execContext().declaredModules():
-        if modulestoconsider is None or m.name in modulestoconsider:
-            modules[m.name] = m.parameterNames
+        modules[m.name] = m.parameterNames
     l.done()
     return externs, modules
+
+def retrieve_extern_modules(lsystem):
+    externs = set(getattr(lsystem, '__extern__',set()))
+    lsystem.makeCurrent()
+    modules = {}
+    for m in lsystem.execContext().declaredModules():
+        modules[m.name] = m.parameterNames
+    lsystem.done()
+    return externs, modules
         
-def gen_properties(lpyfile, modulestoconsider = None, propertymapping = {}):
+def gen_properties(externs, modules, modulestoconsider = None, propertymapping = {}):
     """ Generate the properties of the xs Process class that will run the lpyfile """
     import numpy as np
+    externs = externs.difference(predefined_variables)
+    if not modulestoconsider is None:
+        mmodules = dict()
+        for name, pnames in modules.items():
+            if name in modulestoconsider:
+                mmodules[name] = pnames
+        modules = mmodules
     properties = {}
-    externs, modules = parse_file(lpyfile, modulestoconsider)
     properties['modules'] = modules
     for m, v in modules.items():
         properties[m] = xs.index(dims=m)
         for p in v:
-            properties[m+'_'+p] = propertymapping.get(m+'_'+p,xs.variable( dims=m, intent='inout', encoding={'dtype': np.float}))
+            properties[m+'_'+p] = propertymapping.get(m+'_'+p,xs.variable( dims=m, intent='out', encoding={'dtype': np.float}))
     properties['externs'] = externs
     for e in externs:
         properties[e] = xs.variable()
     return properties
 
-def xs_lpyprocess(name, lpyfile,  modulestoconsider = None, propertymapping = {}):
+
+def xs_lpyprocess(name, lpyfile,  graphicalparameters = None, modulestoconsider = None, independent = {}, propertymapping = {}):
     """ Generate the xs process class under the given name with adequate properties from the lpy file. """
-    properties = gen_properties(lpyfile, modulestoconsider, propertymapping)
-    properties['initialize'] = gen_initialize(lpyfile)
-    properties['run_step'] = xs.runtime(run_step, args=predefined_variables)
-    properties['lscene'] = xs.any_object()
+    externs, modules = parse_extern_modules(lpyfile)
+
+    properties = gen_properties(externs, modules, modulestoconsider, propertymapping)
+    properties['lpyfile']  = lpyfile
+    properties['graphicalparameters']  = graphicalparameters
+    properties['lscene']  = xs.any_object()
     properties['lstring']  = xs.any_object()
-    process = xs.process(type(name, (), properties))
+    process = xs.process(type(name, (AbstractLpyProcess,), properties))
     get_caller_namespace()[name] = process
     return process
 
-def xs_lpydisplay_hook(processname, scales):
+def xs_lpydisplay_hook(processname, scale = 1, delay = 0.02):
     """ Generate a hook to display the lpy simulation from process given by processname """
     import pgljupyter
     from IPython.display import display
     from xsimlab.monitoring import ProgressBar
+    from openalea.plantgl.all import Sequencer
 
     view = pgljupyter.SceneWidget()
     display(view)
+    s = Sequencer(delay)
 
     @xs.runtime_hook('run_step')
     def hook(model, context, state):
-        view.set_scenes([state[('devel', 'lscene')]], scales=scales)
+        s.touch()
+        view.set_scenes([state[('devel', 'lscene')]], scales=scale)
+
 
     return [hook, ProgressBar()]
 
