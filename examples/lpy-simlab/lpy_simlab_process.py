@@ -19,6 +19,7 @@ class AbstractLpyProcess:
     #lstring  = xs.any_object()
     lpyfile = None
     graphicalparameters = None
+    globaldependencies = {} 
 
     def initialize(self):
             #for name, pnames in self.modules.items():
@@ -49,6 +50,14 @@ class AbstractLpyProcess:
         self.lsystem.execContext().updateNamespace(parameters)
         self.lstring = self.lsystem.derive(self.lstring, 1)
         self.lscene = self.lsystem.sceneInterpretation(self.lstring)
+
+    @classmethod
+    def init_vars(clss, initproperties):
+        for pname, dep in clss.globaldependencies.items():
+            v = initproperties.get(dep,{})
+            v[pname] = np.array([], dtype=float)
+            initproperties[dep] = v
+        return initproperties
 
 
 
@@ -84,7 +93,7 @@ def retrieve_extern_modules(lsystem):
     lsystem.done()
     return externs, modules
         
-def gen_properties(externs, modules, modulestoconsider = None, propertymapping = {}):
+def gen_properties(externs, modules, modulestoconsider = None, globaldependencies = {}, propertymapping = {}):
     """ Generate the properties of the xs Process class that will run the lpyfile """
     import numpy as np
     externs = externs.difference(predefined_variables)
@@ -99,18 +108,23 @@ def gen_properties(externs, modules, modulestoconsider = None, propertymapping =
     for m, v in modules.items():
         properties[m] = xs.index(dims=m)
         for p in v:
-            properties[m+'_'+p] = propertymapping.get(m+'_'+p,xs.variable( dims=m, intent='out', encoding={'dtype': np.float}))
+            pname = m+'_'+p
+            properties[pname] = propertymapping.get(pname,
+                                    xs.global_ref(pname, intent='in')
+                                    if pname in globaldependencies else
+                                    xs.variable( dims=m, intent='out', encoding={'dtype': np.float}))
+    properties['globaldependencies'] = globaldependencies
     properties['externs'] = externs
     for e in externs:
         properties[e] = xs.variable()
     return properties
 
 
-def xs_lpyprocess(name, lpyfile,  graphicalparameters = None, modulestoconsider = None, independent = {}, propertymapping = {}):
+def xs_lpyprocess(name, lpyfile,  graphicalparameters = None, modulestoconsider = None, globaldependencies = {}, propertymapping = {}):
     """ Generate the xs process class under the given name with adequate properties from the lpy file. """
     externs, modules = parse_extern_modules(lpyfile)
 
-    properties = gen_properties(externs, modules, modulestoconsider, propertymapping)
+    properties = gen_properties(externs, modules, modulestoconsider, globaldependencies, propertymapping)
     properties['lpyfile']  = lpyfile
     properties['graphicalparameters']  = graphicalparameters
     properties['lscene']  = xs.any_object()
