@@ -16,15 +16,15 @@
 
 ### L-Py
 
-- a tree model - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
+- a tree model - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
 
-- plot magic - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/lpy_plot_magic.ipynb)
+- plot magic - leuwenberg [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/lpy_plot_magic.ipynb)
 
-- champignon [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
+- champignon [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
 
-- magics with scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
+- magics with scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
 
-- magics with curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
+- magics with curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
 
 
 
@@ -57,7 +57,7 @@ sw = SceneWidget(s)
 sw
 ```
 Tutorial:
--  Display of spheres [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/spheres.ipynb)
+-  Display of spheres [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/spheres.ipynb)
 
 **LsystemWidget**
 
@@ -90,7 +90,7 @@ lw.editor
 ```
 
 Tutorial:
-- Display of the simulation of a lpy file :  [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
+- Display of the simulation of a lpy file :  [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/leuwenberg.ipynb)
 
 **%%lpy**
 
@@ -143,9 +143,9 @@ Axiom: SetGuide(b,a)F(a)
 ```
 
 Tutorials:
-- simple L-systems [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
-- graphical scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
-- graphical curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
+- simple L-systems [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/magic_champignon.ipynb)
+- graphical scalar parameters - broccoli [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/broccoli.ipynb)
+- graphical curve parameters - sweep surface [@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/lpy/sweep_surface/sweep_surface.ipynb)
 
 
 **%lpy_plot**
@@ -169,7 +169,7 @@ import pgljupyter
 %lpy_plot myfile.lpy
 ```
 Tutorial:
-- Display of the simulation from a lpy file :[@nbviewer](https://nbviewer.jupyter.org/github/jvail/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/lpy_plot_magic.ipynb)
+- Display of the simulation from a lpy file :[@nbviewer](https://nbviewer.jupyter.org/github/fredboudon/plantgl-jupyter/blob/master/examples/lpy/leuwenberg/lpy_plot_magic.ipynb)
 
 ## Installation
 
