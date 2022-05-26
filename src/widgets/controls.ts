@@ -1,5 +1,5 @@
 import { render, html } from 'lit-html';
-import { styleMap } from 'lit-html/directives/style-map'
+import { styleMap } from 'lit-html/directives/style-map.js';
 import '@material/mwc-switch';
 import '@material/mwc-formfield';
 import '@material/mwc-icon-button-toggle';
@@ -52,12 +52,13 @@ export class PGLControls {
                 </mwc-icon-button>
                 <mwc-icon-button-toggle
                     title=${state.capturingVideo ? 'Stop Capturing..' : 'Capture Video'}
-                    offIcon='&#9974;'
+                    offIcon='&#128253;'
                     onIcon='&#9889;'
                     @click=${(evt) => handlers.onCaptureVideoClicked(evt.target.on)}
                     style=${styleMap(('MediaRecorder' in window) && (state.capturingVideo || (state.showHeader && !state.showControls)) ? { 'display': 'inline', 'float': 'left' } : { 'display': 'none' })}>
                 </mwc-icon-button-toggle>
                 <mwc-icon-button
+                    title=${state.showControls ? 'Close Controls' : 'Open Controls'}
                     icon="&#9881;"
                     @click=${() => state.showControls = !state.showControls}
                     style=${styleMap(state.showControls || state.showHeader ? { 'display': 'inline' } : { 'display': 'none' })}>
@@ -65,22 +66,22 @@ export class PGLControls {
             </div>
             <div class='pgl-jupyter-pgl-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
                 <mwc-formfield label='fullscreen'>
-                    <mwc-switch @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)} ?checked=${state.fullscreen}></mwc-switch>
+                    <mwc-switch @click=${(evt) => handlers.onFullscreenToggled()} ?selected=${state.fullscreen}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='auto rotate'>
-                    <mwc-switch @change=${(evt) => handlers.onAutoRotateToggled(evt.target.checked)} ?checked=${state.autoRotate}></mwc-switch>
+                    <mwc-switch @click=${(evt) => handlers.onAutoRotateToggled(evt.target.selected)} ?selected=${state.autoRotate}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='plane'>
-                    <mwc-switch @change=${(evt) => handlers.onPlaneToggled(evt.target.checked)} ?checked=${state.plane}></mwc-switch>
+                    <mwc-switch @click=${(evt) => handlers.onPlaneToggled(evt.target.selected)} ?selected=${state.plane}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='flat shading'>
                     <mwc-switch
-                        @change=${(evt) => handlers.onFlatShadingToggled(evt.target.checked)} ?checked=${state.flatShading}>
+                        @click=${(evt) => handlers.onFlatShadingToggled(evt.target.selected)} ?selected=${state.flatShading}>
                     </mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='wireframe'>
                     <mwc-switch
-                        @change=${(evt) => handlers.onWireframeToggled(evt.target.checked)} ?checked=${state.wireframe}>
+                        @click=${(evt) => handlers.onWireframeToggled(evt.target.selected)} ?selected=${state.wireframe}>
                     </mwc-switch>
                 </mwc-formfield>
             </div></div>`;

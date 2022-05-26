@@ -120,7 +120,7 @@ class SceneWidget(PGLWidget):
             'data': serialized,
             'scene': scene,
             'position': position,
-            'scale':  scale
+            'scale': scale
         }]
 
         super().__init__(**kwargs)
@@ -136,7 +136,7 @@ class SceneWidget(PGLWidget):
             'data': serialized,
             'scene': scene,
             'position': position,
-            'scale':  scale
+            'scale': scale
         })
         self.send_state('scenes')
 
@@ -156,7 +156,7 @@ class SceneWidget(PGLWidget):
                     'data': serialized,
                     'scene': scene,
                     'position': positions[i] if type(positions) == list else positions,
-                    'scale':  scales[i] if type(scales) == list else scales
+                    'scale': scales[i] if type(scales) == list else scales
                 })
         self.scenes = scenes
 

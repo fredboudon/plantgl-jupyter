@@ -189,14 +189,13 @@ jupyter labextension install @jupyter-widgets/jupyterlab-manager
 pip install pgljupyter
 ```
 
-### Build, install and run from source
+### Development install
 
  - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
 ```bash
-conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets
-conda activate pgl
-jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
+mamba env create -f environment-dev.yml
+conda activate pgljupyter-dev
 ```
 
  - install emsdk: https://emscripten.org/docs/getting_started/downloads.html
@@ -204,8 +203,8 @@ jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```bash
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install 2.0.20
-./emsdk activate 2.0.20
+./emsdk install 2.0.29
+./emsdk activate 2.0.29
 source ./emsdk_env.sh
 cd ..
 ```
@@ -226,28 +225,29 @@ npm install
 cd ../..
 ```
 
- - install pgljupyter deps and build (requires activation of emsdk i.e. source ./emsdk_env.sh)
+ - install pgljupyter deps and build (requires activated emsdk i.e. source ./emsdk_env.sh)
 
 ```bash
 npm install
 npm run build:all
-```
-
- - install python modules and jupyter extensions
-
-```bash
 pip install -e .
-jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
-jupyter nbextension enable --sys-prefix --py pgljupyter
-jupyter labextension install .
-jupyter lab clean
+jupyter labextension develop . --overwrite
 ```
-
- - run the lab
+ - run lab
 
 ```bash
 jupyter lab --notebook-dir=./examples
 ```
+
+### Development uninstall
+
+```bash
+pip uninstall pgljupyter
+```
+
+In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
+command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
+folder is located. Then you can remove the symlink named `pgljupyter` within that folder.
 
 ## Docker
 

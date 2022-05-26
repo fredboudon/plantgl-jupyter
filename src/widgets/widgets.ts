@@ -196,7 +196,7 @@ export class PGLWidgetView extends DOMWidgetView {
                         if (!this.pglControlsState.autoRotate) {
                             window.cancelAnimationFrame(id)
                         }
-                        const [x, y, z] = this.camera.position.toArray();
+                        // const [x, y, z] = this.camera.position.toArray();
                         this.orbitControl.update();
                         this.renderer.render(this.scene, this.camera);
                     };

@@ -67,6 +67,19 @@
     --mdc-theme-primary: rgb(75, 75, 75);
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
+    --mdc-switch-selected-handle-color: #F37726;
+    --mdc-switch-selected-hover-handle-color: #F37726;
+    --mdc-switch-selected-pressed-handle-color: #F37726;
+    --mdc-switch-selected-focus-handle-color: #F37726;
+    --mdc-switch-selected-track-color: rgb(100, 100, 100);
+    --mdc-switch-selected-hover-track-color: rgb(100, 100, 100);
+    --mdc-switch-selected-pressed-track-color: rgb(100, 100, 100);
+    --mdc-switch-selected-focus-track-color: rgb(100, 100, 100);
+    --mdc-switch-unselected-track-color: rgb(100, 100, 100);
+    --mdc-switch-unselected-handle-color: rgb(100, 100, 100);
+    --mdc-switch-unselected-hover-handle-color: rgb(100, 100, 100);
+    --mdc-switch-unselected-pressed-handle-color: rgb(100, 100, 100);
+    --mdc-switch-unselected-focus-handle-color: rgb(100, 100, 100);
 }
 
 .pgl-jupyter-pgl-widget-controls-header {

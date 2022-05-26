@@ -59,7 +59,8 @@ const registerGeomFileType = (app: JupyterFrontEnd, mimeRegistry: IRenderMimeReg
         primaryFileType: app.docRegistry.getFileType(option.primaryFileType),
         fileTypes: option.fileTypes,
         defaultFor: option.defaultFor,
-        defaultRendered: option.defaultRendered
+        defaultRendered: option.defaultRendered,
+
     });
     app.docRegistry.addWidgetFactory(factory);
 };
