@@ -2,6 +2,8 @@
 
 [PlantGL](https://github.com/fredboudon/plantgl) & [L-Py](https://github.com/fredboudon/lpy) jupyter widgets
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/fredboudon/plantgl-jupyter/HEAD?labpath=%2Fexamples%2Fbroccoli.ipynb)
+
 
 ![Leuvenberg](docs/lpy_leuwenberg.gif)
 
@@ -103,6 +105,7 @@ Arguments:
 - `--unit`, `-u` enum: same as `unit`
 - `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
+- `--advanced-editor`, `-e` False: show/hide advanced parameter controls
 
 Example:
 
@@ -157,6 +160,7 @@ Arguments:
 - `arg0`, string: L-Py file
 - `--size`, `-s` int,int: width and hight of the canvas
 - `--cell`, `-c` float: size of cell for a single derivation step
+- `--derive`, `-d` int[,int[,int]]: start, stop, step derivation
 
 Example:
 
@@ -185,7 +189,6 @@ conda create -y -n pgl -c fredboudon -c conda-forge \
 
 ```bash
 conda activate pgl
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
 pip install pgljupyter
 ```
 
@@ -248,16 +251,3 @@ pip uninstall pgljupyter
 In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
 command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
 folder is located. Then you can remove the symlink named `pgljupyter` within that folder.
-
-## Docker
-
-Run jupyter as docker container locally. Replace `/examples` with the path to your notebooks.
-Tag `latest` might not always be up-to-date since docker is primarily used for binder
-
-```
-docker pull jvail/plantgl-jupyter:1.1.0
-docker run --rm \
-    -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.1.0 \
-    jupyter lab
-```
