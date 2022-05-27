@@ -290,7 +290,7 @@ class LsystemWidget(PGLWidget):
                 self.__codes[0],
                 lp.generate_py_code()
             ]), self.__extra_context)
-            self.derivationLength = self.__lsystem.derivationLength + 1
+            self.derivationLength = self.__lsystem.derivationLength
             self.__trees = []
             self.__trees.append(self.__lsystem.axiom)
             self.__derivationStep = self.__derivationStep if self.__derivationStep < self.derivationLength else self.derivationLength - 1
@@ -313,11 +313,13 @@ class LsystemWidget(PGLWidget):
             self.__lp.generate_py_code()
         ]), self.__extra_context)
         self.__derivationStep = 0
+        # the axiom is treated as derivationStep 0 therefor we need one step more
         self.derivationLength = self.__lsystem.derivationLength + 1
         self.__trees = [self.__lsystem.axiom]
 
     def __on_custom_msg(self, widget, content, buffers):
         if 'derive' in content:
+            print(content)
             step = content['derive']
             if step < self.derivationLength:
                 if step < len(self.__trees):
@@ -357,6 +359,7 @@ class LsystemWidget(PGLWidget):
                     self.__set_scene(step)
                     break
                 else:
-                    self.__trees.append(self.__lsystem.derive(self.__trees[-1], len(self.__trees), 1))
+                    # do derive len(self.__trees) - 1 because we are one step ahead since the axiom is step 0
+                    self.__trees.append(self.__lsystem.derive(self.__trees[-1], len(self.__trees) - 1, 1))
         else:
             raise ValueError(f'derivation step {step} out of Lsystem bounds')
