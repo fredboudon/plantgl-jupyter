@@ -36,8 +36,7 @@ Activate conda dev env and emsdk e.g.
 conda activate pgljupyter-dev
 source ~/emsdk/emsdk_env.sh
 ```
-
-To create a Python source package (`.tar.gz`) and the binary package (`.whl`) in the `dist/` directory, do:
+You need build and twine installed. To create a Python source package (`.tar.gz`) and the binary package (`.whl`) in the `dist/` directory, do:
 
 ```bash
 python -m build
@@ -47,7 +46,7 @@ Make sure there are no old/oudated files in dist/
 Then to upload the package to PyPI, do:
 
 ```bash
-twine upload dist/*
+twine upload dist/pgljupyter-*
 ```
 
 ## Test if npm builds and publish npm pkg

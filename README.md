@@ -2,6 +2,8 @@
 
 [PlantGL](https://github.com/fredboudon/plantgl) & [L-Py](https://github.com/fredboudon/lpy) jupyter widgets
 
+Currently supports openalea.lpy>=3.9.0 and openalea.plantgl>=3.14.0 from conda channel ['fredboudon'](https://anaconda.org/fredboudon/openalea.lpy).
+
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/fredboudon/plantgl-jupyter/HEAD?labpath=%2Fexamples%2Fbroccoli.ipynb)
 
 
@@ -179,12 +181,11 @@ Tutorial:
 
 ### Install with pip - inside conda env
 
-Building JupyterLab extensions requires nodejs. In case it is not available on your system add `nodejs` to the
-`conda create` command. Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
+Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
 
 ```bash
 conda create -y -n pgl -c fredboudon -c conda-forge \
-    openalea.lpy jupyterlab ipywidgets ipython=7 pip
+    openalea.lpy jupyterlab ipywidgets pip
 ```
 
 ```bash

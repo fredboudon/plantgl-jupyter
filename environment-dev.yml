@@ -12,6 +12,5 @@ dependencies:
   - flake8
   - pip
   - pip:
-    # build & release: see https://github.com/jupyterlab/extension-cookiecutter-ts
+    # for build & release: see https://github.com/jupyterlab/extension-cookiecutter-ts
     - build
-    - twine
