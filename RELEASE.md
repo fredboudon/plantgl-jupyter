@@ -1,44 +1,68 @@
-# Releasing
+## Manual release
 
-## bump version in **all** relevant files:
+This extension can be distributed as Python packages. All of the Python packaging instructions in the `pyproject.toml` file to wrap your extension in a Python package. Before generating a package, we first need to install `build`.
 
-    - package.json
-    - package-lock.json
-    - binder/Dockerfile
-    - pgljupyter/_frontend.py
-    - pgljupyter/_version.py
+```bash
+pip install build twine
+```
 
-    And update README
+## Bump version in **all** relevant files
 
-## commit all changes
+- package.json
+- package-lock.json
+- pgljupyter/_frontend.py
+- pgljupyter/_version.py
 
-## test if npm builds and publish npm pkg
 
-    npm run clean
-    npm run build:all
-    npm publish
+## Update README
 
-## build python pkgs and publish them
+- version
+- API spec
+- descriptions
 
-    Check that there are not multiple versions in dist/ that will be published, packed together
+## Commit all changes in branch develop
 
-    npm run clean
-    python3 setup.py sdist bdist_wheel
-    twine upload dist/*{0.x.xx}*
+## Clean-up everything
 
-## merge changes into master and push
+```bash
+npm run clean:all
+```
 
-## tag and check if docker build was successful
+## Build python pkgs and publish them
 
-    git tag -a v0.x.xx -m "v0.x.xx"
-    git push --tags
+Activate conda dev env and emsdk e.g.
 
-## if docker build failed
+```bash
+conda activate pgljupyter-dev
+source ~/emsdk/emsdk_env.sh
+```
 
-    - fix docker build
-    - delete tag in local and remote:
-        git push --delete origin v0.x.xx
-        git tag -d v0.x.xx
-    - re-tag with the **same** tag you just removed to trigger a new docker build:
-        git tag -a v0.x.xx -m "v0.x.xx"
-        git push --tags
+To create a Python source package (`.tar.gz`) and the binary package (`.whl`) in the `dist/` directory, do:
+
+```bash
+python -m build
+```
+
+Make sure there are no old/oudated files in dist/
+Then to upload the package to PyPI, do:
+
+```bash
+twine upload dist/*
+```
+
+## Test if npm builds and publish npm pkg
+
+```bash
+npm run clean:all
+npm run build:all
+npm login
+npm publish
+```
+
+## Merge changes into master, tag and push
+
+```bash
+git push
+git tag -a v{version} -m "v{version}"
+git push --tags
+```

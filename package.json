@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "2.0.0-beta",
+  "version": "2.0.0-beta.0",
   "description": "PlantGL and L-Py Jupyter widgets",
   "keywords": [
     "jupyter",
@@ -40,8 +40,8 @@
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
     "clean:lintcache": "rimraf .eslintcache .stylelintcache",
     "clean:labextension": "rimraf pgljupyter/labextension",
-    "clean:nbextension": "rimraf  ts-widget-extension/nbextension/static/index.js",
-    "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:nbextension && jlpm clean:lintcache",
+    "clean:nbextension": "rimraf ts-widget-extension/nbextension/static/index.js",
+    "clean:all": "rimraf dist && jlpm clean:lib && jlpm clean:labextension && jlpm clean:nbextension && jlpm clean:lintcache",
     "install:extension": "jlpm build"
   },
   "dependencies": {
