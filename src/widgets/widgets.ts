@@ -162,6 +162,8 @@ export class PGLWidgetView extends DOMWidgetView {
 
         this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControl.enableZoom = true;
+        this.orbitControl.touches.ONE = THREE.TOUCH.PAN;
+		this.orbitControl.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
         this.orbitControl.addEventListener('change', () => {
             this.renderer.render(this.scene, this.camera)
         });
