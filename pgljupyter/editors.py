@@ -35,8 +35,8 @@ def make_scalar_editor(scalar, no_name=False, advanced=False):
         editor = IntEditor(
             scalar.value,
             name=scalar.name,
-            min=scalar.minvalue,
-            max=scalar.maxvalue,
+            minvalue=scalar.minvalue,
+            maxvalue=scalar.maxvalue,
             step=1,
             no_name=no_name,
             advanced=advanced
@@ -45,8 +45,8 @@ def make_scalar_editor(scalar, no_name=False, advanced=False):
         editor = FloatEditor(
             scalar.value,
             name=scalar.name,
-            min=scalar.minvalue,
-            max=scalar.maxvalue,
+            minvalue=scalar.minvalue,
+            maxvalue=scalar.maxvalue,
             step=1 / 10**scalar.precision,
             precision=scalar.precision,
             no_name=no_name,
@@ -226,28 +226,28 @@ class FloatEditor(_Editor):
     __type = ''
 
     value = Float(0).tag(sync=False)
-    min = Float(0).tag(sync=False)
-    max = Float(0).tag(sync=False)
+    minvalue = Float(0).tag(sync=False)
+    maxvalue = Float(0).tag(sync=False)
     step = Float(0).tag(sync=False)
     precision = Int(2).tag(sync=False)
 
-    def __init__(self, value, type='Float', min=1, max=10, step=1, precision=2, **kwargs):
+    def __init__(self, value, type='Float', minvalue=1, maxvalue=10, step=1, precision=2, **kwargs):
 
         self.value = float(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
         show_advanced_controls = 'advanced' in kwargs and kwargs['advanced']
         self.__slider = FloatSlider(
             value,
-            min=min,
-            max=max,
+            min=minvalue,
+            max=maxvalue,
             step=step,
             description=description,
             readout_format=f'.{precision}f',
             continuous_update=False
         )
-        self.__min_ipt = FloatText(min, step=step, description='min')
+        self.__min_ipt = FloatText(minvalue, step=step, description='min')
         if show_advanced_controls:
-            self.__max_ipt = FloatText(max, step=step, description='max')
+            self.__max_ipt = FloatText(maxvalue, step=step, description='max')
             self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
             self.__precision_ipt = BoundedIntText(precision, description='precision', min=0, max=10, step=1)
 
@@ -277,14 +277,14 @@ class FloatEditor(_Editor):
             self.__slider.min = self.__min_ipt.value
         else:
             self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-        self.min = self.__min_ipt.value
+        self.minvalue = self.__min_ipt.value
 
     def __on_max_changed(self, change):
         if self.__max_ipt.value > self.__slider.min:
             self.__slider.max = self.__max_ipt.value
         else:
             self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-        self.max = self.__max_ipt.value
+        self.maxvalue = self.__max_ipt.value
 
     def __on_step_changed(self, change):
         self.__slider.step = self.__step_ipt.value
@@ -315,15 +315,15 @@ class IntEditor(_Editor):
     maxvalue = Int(0).tag(sync=False)
     step = Int(0).tag(sync=False)
 
-    def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
+    def __init__(self, value, type='Int', minvalue=1, maxvalue=10, step=1, **kwargs):
 
         self.value = int(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
         show_advanced_controls = 'advanced' in kwargs and kwargs['advanced']
-        self.__slider = IntSlider(value, min, max, description=description, continuous_update=False)
+        self.__slider = IntSlider(value, minvalue, maxvalue, description=description, continuous_update=False)
         if show_advanced_controls:
-            self.__min_ipt = IntText(min, description='min')
-            self.__max_ipt = IntText(max, description='max')
+            self.__min_ipt = IntText(minvalue, description='min')
+            self.__max_ipt = IntText(maxvalue, description='max')
             self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
 
         self.__slider.observe(self.__on_slider_changed, names='value')

@@ -10,7 +10,7 @@ import openalea.plantgl.all as pgl
 
 from .widgets import SceneWidget, LsystemWidget
 from .editors import (
-    FloatEditor, IntEditor, make_color_editor, make_scalar_editor, make_curve_editor
+    make_color_editor, make_scalar_editor, make_curve_editor
 )
 
 
@@ -83,16 +83,7 @@ class PGLMagics(Magics):
             for scalar in lp.get_category_scalars():
                 editor = make_scalar_editor(scalar, True, advanced=advanced)
                 if editor:
-                    if type(editor) == IntEditor:
-                        editor.observe(on_value_changed(scalar), 'minvalue')
-                        editor.observe(on_value_changed(scalar), 'maxvalue')
-                    elif type(editor) == FloatEditor:
-                        editor.observe(on_value_changed(scalar), 'minvalue')
-                        editor.observe(on_value_changed(scalar), 'maxvalue')
-                        editor.observe(on_value_changed(scalar), 'precision')
-                        editor.observe(on_value_changed(scalar), 'step')
-
-                    editor.observe(on_value_changed(scalar), 'value')
+                    editor.observe(on_value_changed(scalar))
                     editors.append(editor)
 
             for index, color in lp.get_colors().items():
