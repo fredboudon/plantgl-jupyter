@@ -213,16 +213,7 @@ class LsystemWidget(PGLWidget):
         self.__lsystem = lpy.Lsystem()
         self.__extra_context = context
         self.__lp = lp
-        code_ = ''
-        if self.__filename and Path(self.__filename).is_file():
-            with io.open(self.__filename, 'r') as file:
-                code_ = file.read()
-        else:
-            self.is_magic = True
-            code_ = code
-
-        self.__codes = code_.split(lpy.LpyParsing.InitialisationBeginTag)
-        self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
+        self.__read_code(code)
 
         self.unit = unit
         self.animate = animate
@@ -244,6 +235,17 @@ class LsystemWidget(PGLWidget):
             return self.__editor
         else:
             return None
+
+    def __read_code(self, code=None):
+        if self.__filename and Path(self.__filename).is_file():
+            with io.open(self.__filename, 'r') as file:
+                code = file.read()
+        else:
+            self.is_magic = True
+            code = code or ''
+
+        self.__codes = code.split(lpy.LpyParsing.InitialisationBeginTag)
+        self.__codes.insert(1, f'\n{lpy.LpyParsing.InitialisationBeginTag}\n')
 
     def __initialize_parameters(self):
         self.__lp = LsystemParameters()
@@ -319,7 +321,7 @@ class LsystemWidget(PGLWidget):
 
     def __on_custom_msg(self, widget, content, buffers):
         if 'derive' in content:
-            print(content)
+            # print(content)
             step = content['derive']
             if step < self.derivationLength:
                 if step < len(self.__trees):
@@ -330,6 +332,7 @@ class LsystemWidget(PGLWidget):
             self.__rewind()
 
     def __rewind(self):
+        self.__read_code()
         self.__initialize_lsystem()
         self.__set_scene(0)
 
