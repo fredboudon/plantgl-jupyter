@@ -51,6 +51,8 @@ twine upload dist/pgljupyter-*
 
 ## Test if npm builds and publish npm pkg
 
+Mainly for tools like nbviewer or vscode that load widgets from the npm package.
+
 ```bash
 npm run clean:all
 npm run build:all
