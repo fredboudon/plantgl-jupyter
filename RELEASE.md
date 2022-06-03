@@ -22,12 +22,6 @@ pip install build twine
 
 ## Commit all changes in branch develop
 
-## Clean-up everything
-
-```bash
-npm run clean:all
-```
-
 ## Build python pkgs and publish them
 
 Activate conda dev env and emsdk e.g.
@@ -39,6 +33,7 @@ source ~/emsdk/emsdk_env.sh
 You need build and twine installed. To create a Python source package (`.tar.gz`) and the binary package (`.whl`) in the `dist/` directory, do:
 
 ```bash
+npm run build:prod
 python -m build
 ```
 
@@ -54,8 +49,6 @@ twine upload dist/pgljupyter-*
 Mainly for tools like nbviewer or vscode that load widgets from the npm package.
 
 ```bash
-npm run clean:all
-npm run build:all
 npm login
 npm publish
 ```

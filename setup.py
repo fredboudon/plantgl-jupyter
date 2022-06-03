@@ -12,19 +12,24 @@ pkg_json = json.loads((HERE / "package.json").read_bytes())
 # The name of the project
 name = "pgljupyter"
 
+nb_path = (HERE / name / 'nbextension' / 'static')
 lab_path = (HERE / pkg_json["jupyterlab"]["outputDir"])
 
 # Representative files that should exist after a successful build
 ensured_targets = [
+    str(nb_path / "index.js"),
     str(lab_path / "package.json"),
     str(lab_path / "static/style.js")
 ]
 
-labext_name = pkg_json["name"]
+ext_name = pkg_json["name"]
 
 data_files_spec = [
-    ("share/jupyter/labextensions/%s" % labext_name, str(lab_path.relative_to(HERE)), "**"),
-    ("share/jupyter/labextensions/%s" % labext_name, str("."), "install.json"),
+    ("share/jupyter/labextensions/%s" % ext_name, str(lab_path.relative_to(HERE)), "**"),
+    ("share/jupyter/labextensions/%s" % ext_name, str("."), "install.json"),
+    # classic notebook extension
+    ("share/jupyter/nbextensions/%s" % ext_name, str(nb_path.relative_to(HERE)), "**"),
+    ('etc/jupyter/nbconfig/notebook.d', '.', f"{ext_name}.json"),
 ]
 
 long_description = (HERE / "README.md").read_text()

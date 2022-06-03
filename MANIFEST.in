@@ -8,6 +8,7 @@ include ts*.json
 include yarn.lock
 
 # Javascript files
+graft pgljupyter/nbextension
 graft src
 graft css
 prune src/pgljs/node_modules

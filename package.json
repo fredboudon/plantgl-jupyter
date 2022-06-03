@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "description": "PlantGL and L-Py Jupyter widgets",
   "keywords": [
     "jupyter",
@@ -28,8 +28,8 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "build": "jlpm build:lib && jlpm build:labextension:dev",
-    "build:prod": "jlpm clean && npm run build:pgljs && jlpm build:lib && jlpm build:nbextension && jlpm build:labextension",
+    "build": "jlpm build:lib && jlpm build:labextension:dev && jlpm build:nbextension",
+    "build:prod": "jlpm clean:all && npm run build:pgljs && jlpm build:lib && jlpm build:nbextension && jlpm build:labextension",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:nbextension": "webpack",
@@ -40,7 +40,7 @@
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
     "clean:lintcache": "rimraf .eslintcache .stylelintcache",
     "clean:labextension": "rimraf pgljupyter/labextension",
-    "clean:nbextension": "rimraf ts-widget-extension/nbextension/static/index.js",
+    "clean:nbextension": "rimraf pgljupyter/nbextension/static/index.js",
     "clean:all": "rimraf dist && jlpm clean:lib && jlpm clean:labextension && jlpm clean:nbextension && jlpm clean:lintcache",
     "install:extension": "jlpm build"
   },
