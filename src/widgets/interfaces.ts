@@ -63,7 +63,7 @@ export interface IPGLControlsHandlers {
 
 export interface ILsystemControlsState {
     animate: boolean;
-    derivationStep: number;
+    derivationNumber: number | null;
     derivationLength: number;
     isMagic: boolean;
     showControls: boolean;
@@ -74,7 +74,7 @@ export interface ILsystemControlsState {
 
 export interface ILsystemControlsHandlers {
     onAnimateToggled: Function;
-    onDeriveClicked: Function;
+    onStepClicked: Function;
     onRewindClicked: Function;
 }
 

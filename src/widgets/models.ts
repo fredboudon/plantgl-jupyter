@@ -82,6 +82,7 @@ export class LsystemWidgetModel extends DOMWidgetModel {
             _view_module: LsystemWidgetModel.view_module,
             _view_module_version: LsystemWidgetModel.view_module_version,
             derivationLength: 0,
+            derivationNumber: null,
             scene: null,
             unit: LsystemUnit.NONE,
             animate: false,

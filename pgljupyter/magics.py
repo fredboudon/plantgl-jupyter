@@ -56,13 +56,17 @@ class PGLMagics(Magics):
                         setattr(param, name, value)
                         if name == 'value':
                             lsw.set_parameters(lp.dumps())
+                    elif isinstance(param, tuple) and isinstance(param[1], (pgl.NurbsCurve2D, pgl.BezierCurve2D, pgl.Polyline2D)):
+                        new_len = len(value)
 
-                    elif isinstance(param, tuple):
                         if isinstance(param[1], (pgl.NurbsCurve2D, pgl.BezierCurve2D)):
+                            prev_len = len(param[1].ctrlPointList)
                             param[1].ctrlPointList = pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in value])
-                            param[1].setKnotListToDefault()
                         elif isinstance(param[1], pgl.Polyline2D):
+                            prev_len = len(param[1].pointList)
                             param[1].pointList = pgl.Point2Array([pgl.Vector2(p[0], p[1]) for p in value])
+
+                        if prev_len != new_len:
                             param[1].setKnotListToDefault()
                         lsw.set_parameters(lp.dumps())
 

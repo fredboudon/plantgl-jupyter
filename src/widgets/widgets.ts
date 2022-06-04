@@ -12,7 +12,7 @@ import {
     ITaskResult, IPGLProgressState
 } from './interfaces';
 import { THREE, OrbitControls, disposeScene, meshify } from './utilities';
-import { SCALES, LsystemUnit } from './consts';
+import { SCALES, LsystemUnit, Step } from './consts';
 
 export class PGLWidgetView extends DOMWidgetView {
 
@@ -535,7 +535,7 @@ export class LsystemWidgetView extends PGLWidgetView {
 
         const initialState: ILsystemControlsState = {
             animate: this.model.get('animate'),
-            derivationStep: this.model.get('scene').derivationStep,
+            derivationNumber: this.model.get('derivationNumber'),
             derivationLength: this.model.get('derivationLength'),
             isMagic: this.model.get('is_magic'),
             showControls: false,
@@ -559,7 +559,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                         if (this.controls.state.animate) {
                             this.controls.state.busy++;
                             this.controls.state.pyFeed++;
-                            this.send({ derive: step });
+                            this.send({ step });
                             if (step + 1 < this.controls.state.derivationLength) {
                                 const next = (step) => {
                                     if (this.controls.state.pyFeed > pyFeedMax) {
@@ -580,7 +580,7 @@ export class LsystemWidgetView extends PGLWidgetView {
                             }
                         }
                     }
-                    const next = this.controls.state.derivationStep + 1;
+                    const next = this.controls.state.derivationNumber + 1;
                     animation(next >= this.controls.state.derivationLength ? 0 : next);
                 } else {
                     this.controls.state.busy -= Object.keys(this.queue).length;
@@ -588,15 +588,15 @@ export class LsystemWidgetView extends PGLWidgetView {
                     decoder.abort(this.model.model_id);
                 }
             },
-            onDeriveClicked: (step: number) => {
+            onStepClicked: (step: Step) => {
                 this.controls.state.busy++;
                 this.controls.state.pyFeed++;
-                this.send({ derive: step });
+                this.send({ step });
             },
             onRewindClicked: () => {
                 this.controls.state.busy = 1;
                 this.controls.state.pyFeed = 0;
-                this.controls.state.derivationStep = 0;
+                this.controls.state.derivationNumber = null;
                 this.send({ rewind: true });
                 this.removeScenes();
                 this.renderer.render(this.scene, this.camera);
@@ -625,6 +625,9 @@ export class LsystemWidgetView extends PGLWidgetView {
         this.listenTo(this.model, 'change:derivationLength', () => {
             this.controls.state.derivationLength = this.model.get('derivationLength');
         });
+        this.listenTo(this.model, 'change:derivationNumber', () => {
+            this.controls.state.derivationNumber = this.model.get('derivationNumber');
+        });
         this.listenTo(this.model, 'comm_live_update', () => {
             this.controls.state.comm_live = this.model.comm_live;
         });
@@ -646,11 +649,11 @@ export class LsystemWidgetView extends PGLWidgetView {
                     flatShading: this.pglControlsState.flatShading,
                     wireframe: this.pglControlsState.wireframe,
                 }), decoded.bbox);
-                this.controls.state.derivationStep = decoded.userData.step;
+                this.controls.state.derivationNumber = decoded.userData.step;
                 if (this.controls.state.busy > 0) {
                     this.controls.state.busy--;
                 }
-                if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                if (this.controls.state.animate && this.controls.state.derivationNumber === this.controls.state.derivationLength - 1) {
                     this.controls.state.animate = false;
                     this.model.set('animate', false);
                     this.touch();
@@ -668,18 +671,18 @@ export class LsystemWidgetView extends PGLWidgetView {
             .then(res => {
                 // TODO: use increasing number for a seq. of tasks and not step
                 const { geoms, bbox, userData: { step, no } } = res;
-                if (this.controls.state.animate && step - this.controls.state.derivationStep > 1) {
+                if (this.controls.state.animate && step - this.controls.state.derivationNumber > 1) {
                     this.queue[no] = res;
                 } else {
                     this.setScene(step, meshify(geoms, {
                         flatShading: this.pglControlsState.flatShading,
                         wireframe: this.pglControlsState.wireframe,
                     }), bbox);
-                    this.controls.state.derivationStep = step;
+                    this.controls.state.derivationNumber = step;
                     if (this.controls.state.busy > 0) {
                         this.controls.state.busy--;
                     }
-                    if (this.controls.state.animate && this.controls.state.derivationStep === this.controls.state.derivationLength - 1) {
+                    if (this.controls.state.animate && this.controls.state.derivationNumber === this.controls.state.derivationLength - 1) {
                         this.controls.state.animate = false;
                         this.model.set('animate', false);
                         this.touch();
@@ -692,7 +695,7 @@ export class LsystemWidgetView extends PGLWidgetView {
             .catch(err => {
                 this.controls.state.busy--;
                 if (err.abort) {
-                    this.controls.state.derivationStep = err.userData.step;
+                    this.controls.state.derivationNumber = err.userData.step;
                 } else {
                     console.log(err)
                 }

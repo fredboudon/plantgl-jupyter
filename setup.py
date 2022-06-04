@@ -8,11 +8,9 @@ HERE = Path(__file__).parent.resolve()
 
 # Get the package info from package.json
 pkg_json = json.loads((HERE / "package.json").read_bytes())
+ext_name = pkg_json["name"]
 
-# The name of the project
-name = "pgljupyter"
-
-nb_path = (HERE / name / 'nbextension' / 'static')
+nb_path = (HERE / ext_name / 'nbextension' / 'static')
 lab_path = (HERE / pkg_json["jupyterlab"]["outputDir"])
 
 # Representative files that should exist after a successful build
@@ -22,7 +20,6 @@ ensured_targets = [
     str(lab_path / "static/style.js")
 ]
 
-ext_name = pkg_json["name"]
 
 data_files_spec = [
     ("share/jupyter/labextensions/%s" % ext_name, str(lab_path.relative_to(HERE)), "**"),
@@ -42,7 +39,7 @@ version = (
 )
 
 setup_args = dict(
-    name=name,
+    name=ext_name,
     version=version,
     url=pkg_json["homepage"],
     description=pkg_json["description"],
