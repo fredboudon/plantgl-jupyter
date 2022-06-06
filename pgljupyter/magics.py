@@ -25,7 +25,7 @@ class PGLMagics(Magics):
     @argument('--unit', '-u', default='m', type=str, help='Unit of the model - m, dm, cm, mm')
     @argument('--params', '-p', default='', type=str, help='Name of LsystemParameters instance with a "default" category')
     @argument('--animate', '-a', help='Animate Lsystem')
-    @argument('--advanced-editor', '-e', help='Show all parameter controls')
+    @argument('--extended-editor', '-e', help='Show all parameter controls')
     def lpy(self, line, cell, local_ns):
 
         args = parse_argstring(self.lpy, line)
@@ -34,7 +34,7 @@ class PGLMagics(Magics):
         unit = args.unit
         lp = local_ns[args.params] if args.params and args.params in local_ns and isinstance(local_ns[args.params], LsystemParameters) else None
         animate = args.animate == 'True'
-        advanced = args.advanced_editor == 'True'
+        extended_editor = args.extended_editor == 'True'
         context = local_ns
 
         size_display = (int(sizes[0]), int(sizes[1])) if len(sizes) > 1 else (int(sizes[0]), int(sizes[0]))
@@ -85,7 +85,7 @@ class PGLMagics(Magics):
 
         if lp:
             for scalar in lp.get_category_scalars():
-                editor = make_scalar_editor(scalar, True, advanced=advanced)
+                editor = make_scalar_editor(scalar, True, extended_editor=extended_editor)
                 if editor:
                     editor.observe(on_value_changed(scalar))
                     editors.append(editor)

@@ -27,7 +27,7 @@ from ._frontend import module_name, module_version
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
 
 
-def make_scalar_editor(scalar, no_name=False, advanced=False):
+def make_scalar_editor(scalar, no_name=False, extended_editor=False):
 
     editor = None
 
@@ -39,7 +39,7 @@ def make_scalar_editor(scalar, no_name=False, advanced=False):
             maxvalue=scalar.maxvalue,
             step=1,
             no_name=no_name,
-            advanced=advanced
+            extended_editor=extended_editor
         )
     elif isinstance(scalar, FloatScalar):
         editor = FloatEditor(
@@ -50,7 +50,7 @@ def make_scalar_editor(scalar, no_name=False, advanced=False):
             step=1 / 10**scalar.precision,
             precision=scalar.precision,
             no_name=no_name,
-            advanced=advanced
+            extended_editor=extended_editor
         )
     elif isinstance(scalar, BoolScalar):
         editor = BoolEditor(
@@ -235,7 +235,7 @@ class FloatEditor(_Editor):
 
         self.value = float(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
-        show_advanced_controls = 'advanced' in kwargs and kwargs['advanced']
+        extended_editor = 'extended_editor' in kwargs and kwargs['extended_editor']
         self.__slider = FloatSlider(
             value,
             min=minvalue,
@@ -246,19 +246,19 @@ class FloatEditor(_Editor):
             continuous_update=False
         )
         self.__min_ipt = FloatText(minvalue, step=step, description='min')
-        if show_advanced_controls:
+        if extended_editor:
             self.__max_ipt = FloatText(maxvalue, step=step, description='max')
             self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
             self.__precision_ipt = BoundedIntText(precision, description='precision', min=0, max=10, step=1)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        if show_advanced_controls:
+        if extended_editor:
             self.__min_ipt.observe(self.__on_min_changed, names='value')
             self.__max_ipt.observe(self.__on_max_changed, names='value')
             self.__step_ipt.observe(self.__on_step_changed, names='value')
             self.__precision_ipt.observe(self.__on_precision_changed, names='value')
 
-        if show_advanced_controls:
+        if extended_editor:
             kwargs['children'] = [
                 self.__slider,
                 self.__min_ipt,
@@ -319,20 +319,20 @@ class IntEditor(_Editor):
 
         self.value = int(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
-        show_advanced_controls = 'advanced' in kwargs and kwargs['advanced']
+        extended_editor = 'extended_editor' in kwargs and kwargs['extended_editor']
         self.__slider = IntSlider(value, minvalue, maxvalue, description=description, continuous_update=False)
-        if show_advanced_controls:
+        if extended_editor:
             self.__min_ipt = IntText(minvalue, description='min')
             self.__max_ipt = IntText(maxvalue, description='max')
             self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        if show_advanced_controls:
+        if extended_editor:
             self.__min_ipt.observe(self.__on_min_changed, names='value')
             self.__max_ipt.observe(self.__on_max_changed, names='value')
             self.__step_ipt.observe(self.__on_step_changed, names='value')
 
-        if show_advanced_controls:
+        if extended_editor:
             kwargs['children'] = [
                 self.__slider,
                 self.__min_ipt,
@@ -527,9 +527,9 @@ class ParameterEditor(VBox):
     __add_category_txt = None
 
     __lp: LsystemParameters = None
-    __advanced = True
+    __extended_editor = True
 
-    def __init__(self, lp: LsystemParameters, filename='', advanced=True, **kwargs):
+    def __init__(self, lp: LsystemParameters, filename='', extended_editor=True, **kwargs):
 
         self.__lp = lp
         self.filename = filename
@@ -540,7 +540,7 @@ class ParameterEditor(VBox):
         self.__save_btn = Button(description='Save changes')
         self.__add_category_btn = Button(description='Add category')
         self.__add_category_txt = Text(placeholder='category name')
-        self.__advanced = advanced
+        self.__extended_editor = extended_editor
         self.__initialize()
 
         super().__init__([VBox([
@@ -625,7 +625,7 @@ class ParameterEditor(VBox):
 
                 for scalar in self.__lp.get_category_scalars(category_name):
 
-                    editor = make_scalar_editor(scalar, False, advanced=self.__advanced)
+                    editor = make_scalar_editor(scalar, False, extended_editor=self.__extended_editor)
                     if editor:
                         editor.observe(self.__on_editor_changed(scalar))
                         box_scalars.children = (*box_scalars.children, editor)

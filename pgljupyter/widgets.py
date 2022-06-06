@@ -185,16 +185,12 @@ class LsystemWidget(PGLWidget):
     animate = Bool(False).tag(sync=True)
     dump = Unicode('').tag(sync=False)
     is_magic = Bool(False).tag(sync=True)
-    progress = Float(0.0).tag(sync=True)
 
     __trees = {}
     __filename = None
-    __do_abort = False
     __editor = None
     __lp = None
     __codes = []
-    __in_queue = 0
-    __out_queue = 0
     __lsystem = None
     __extra_context = {}
 
@@ -283,9 +279,6 @@ class LsystemWidget(PGLWidget):
                 lp.loads(parameters)
             except AssertionError:
                 return False
-            self.__in_queue = self.__in_queue + 1
-            self.progress = self.__out_queue / self.__in_queue
-            self.send_state('progress')
 
             self.__lsystem.clear()
             self.__lsystem.set(''.join([
@@ -312,11 +305,6 @@ class LsystemWidget(PGLWidget):
             if scene is None:
                 scene = self.__lsystem.sceneInterpretation(tree)
             self.__set_scene(scene)
-
-            self.__out_queue = self.__out_queue + 1
-            self.progress = self.__out_queue / self.__in_queue
-            if self.progress == 1:
-                self.__out_queue = self.__in_queue = 0
 
             return True
 
@@ -351,20 +339,21 @@ class LsystemWidget(PGLWidget):
                     scene = self.__lsystem.sceneInterpretation(self.__trees[self.derivationNumber])
                 self.__set_scene(scene)
             elif step == 'FORWARD':
-                derivations = list(self.__trees.keys())
-                if len(derivations) and derivations[-1] != self.derivationNumber:
-                    # already derived
-                    index = 0 if self.derivationNumber is None else derivations.index(self.derivationNumber) + 1
-                    derivationNumber = derivations[index]
-                    scene = self.__lsystem.sceneInterpretation(self.__trees[derivationNumber])
-                    self.derivationNumber = derivationNumber
-                    self.__set_scene(scene)
-                else:
-                    tree, scene = self.__derive_till_next_scene()
-                    self.__trees[self.derivationNumber] = tree
-                    if scene is None:
-                        scene = self.__lsystem.sceneInterpretation(tree)
-                    self.__set_scene(scene)
+                if self.derivationNumber is None or self.derivationNumber < self.__lsystem.derivationLength - 1:
+                    derivations = list(self.__trees.keys())
+                    if len(derivations) and derivations[-1] != self.derivationNumber:
+                        # already derived
+                        index = 0 if self.derivationNumber is None else derivations.index(self.derivationNumber) + 1
+                        derivationNumber = derivations[index]
+                        scene = self.__lsystem.sceneInterpretation(self.__trees[derivationNumber])
+                        self.derivationNumber = derivationNumber
+                        self.__set_scene(scene)
+                    else:
+                        tree, scene = self.__derive_till_next_scene()
+                        self.__trees[self.derivationNumber] = tree
+                        if scene is None:
+                            scene = self.__lsystem.sceneInterpretation(tree)
+                        self.__set_scene(scene)
 
             elif step == 'END':
                 derivationNumber = self.__lsystem.derivationLength - 1
@@ -403,19 +392,6 @@ class LsystemWidget(PGLWidget):
             os.makedirs(self.dump, exist_ok=True)
             with io.open(os.path.join(self.dump, f'{self.__filename}_{self.derivationNumber}.bgeom'), 'wb') as file:
                 file.write(zlib.decompress(serialized))
-
-    # def __derive(self, step):
-    #     if step < self.derivationLength:
-    #         while True:
-    #             # print('__derive', step)
-    #             if step == len(self.__trees) - 1:
-    #                 self.__set_scene(step)
-    #                 break
-    #             else:
-    #                 # do derive len(self.__trees) - 1 because we are one step ahead since the axiom is step 0
-    #                 self.__trees.append(self.__lsystem.derive(self.__trees[-1], len(self.__trees) - 1, 1))
-    #     else:
-    #         raise ValueError(f'derivation step {step} out of Lsystem bounds')
 
     def __derive_till_next_scene(self):
 

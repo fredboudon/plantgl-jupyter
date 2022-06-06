@@ -183,11 +183,12 @@ export class LsystemControls {
                     @click=${(evt) => evt.target.disabled || handlers.onRewindClicked()}>
                 </mwc-icon-button>
             </div>
-            <div style=${styleMap((state.derivationNumber < state.derivationLength - 1 && (state.showControls || state.animate || state.busy)) ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
+            <div class='pgl-jupyter-lsystem-widget-controls-progress' style=${styleMap((state.derivationNumber < state.derivationLength - 1 && (state.showControls || state.animate || state.busy)) ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
                 <mwc-linear-progress
-                    progress=${(state.derivationNumber == null ? 0 : state.derivationNumber + 1) / state.derivationLength}
+                    progress=${(state.sceneDerivationNumber == null ? 0 : state.sceneDerivationNumber + 1) / state.derivationLength}
                     buffer=${state.pyFeed ? (state.derivationLength - state.pyFeed) / state.derivationLength : 1}>
                 </mwc-linear-progress>
+                <span id="sceneDerivationNumber">${state.sceneDerivationNumber}</span>
             </div>
         </div>`;
     };

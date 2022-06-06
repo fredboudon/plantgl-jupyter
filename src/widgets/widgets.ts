@@ -538,8 +538,9 @@ export class LsystemWidgetView extends PGLWidgetView {
             derivationNumber: this.model.get('derivationNumber'),
             derivationLength: this.model.get('derivationLength'),
             isMagic: this.model.get('is_magic'),
+            sceneDerivationNumber: null,
             showControls: false,
-            busy: 1,
+            busy: true,
             pyFeed: 0,
             comm_live: this.model.comm_live
         };
@@ -554,49 +555,44 @@ export class LsystemWidgetView extends PGLWidgetView {
                 this.model.set('animate', animate);
                 this.touch();
                 if (animate) {
-                    const pyFeedMax = Math.ceil(this.controls.state.derivationLength / 10);
-                    const animation = (step) => {
+                    const pyFeedMax = Math.min(this.controls.state.derivationLength - 1, 5);
+                    const doAnimate = () => {
                         if (this.controls.state.animate) {
-                            this.controls.state.busy++;
-                            this.controls.state.pyFeed++;
-                            this.send({ step });
-                            if (step + 1 < this.controls.state.derivationLength) {
-                                const next = (step) => {
-                                    if (this.controls.state.pyFeed > pyFeedMax) {
-                                        setTimeout(() => {
-                                            next(step);
-                                        }, 100);
-                                    } else {
-                                        animation(step)
-                                    }
-                                }
-                                setTimeout(() => {
-                                    next(step + 1);
-                                    /*  work around: animation for reseting
-                                        the progress bar to 0 might take
-                                        longer than the computation of the
-                                        next step which gives strange effects */
-                                }, step === 0 ? 500 : 10);
+                            if (this.controls.state.pyFeed < pyFeedMax) {
+                                this.controls.state.pyFeed++;
+                                this.send({ step: Step.FORWARD });
                             }
+                            setTimeout(doAnimate, 10);
                         }
                     }
-                    const next = this.controls.state.derivationNumber + 1;
-                    animation(next >= this.controls.state.derivationLength ? 0 : next);
+                    if (this.controls.state.derivationNumber == this.controls.state.derivationLength - 1) {
+                        this.controls.state.derivationNumber == null;
+                        this.send({ step: Step.AXIOM });
+                        if (Object.keys(this.queue).length > 0) {
+                            throw new Error(`Expected queued scenes empty, actual length: ${Object.keys(this.queue).length}`)
+                        }
+                        /*  animation for reseting the progress bar to 0 might take
+                            longer than the computation of the next steps which gives
+                            strange effects. Therefor delay animation */
+                        setTimeout(doAnimate, 500);
+                    } else {
+                        doAnimate();
+                    }
                 } else {
-                    this.controls.state.busy -= Object.keys(this.queue).length;
-                    this.queue = {};
+                    console.log('abort', this.controls.state.pyFeed, Object.keys(this.queue).length)
                     decoder.abort(this.model.model_id);
                 }
             },
             onStepClicked: (step: Step) => {
-                this.controls.state.busy++;
+                this.controls.state.busy = true;
                 this.controls.state.pyFeed++;
                 this.send({ step });
             },
             onRewindClicked: () => {
-                this.controls.state.busy = 1;
+                this.controls.state.busy = true;
                 this.controls.state.pyFeed = 0;
                 this.controls.state.derivationNumber = null;
+                this.controls.state.sceneDerivationNumber = null;
                 this.send({ rewind: true });
                 this.removeScenes();
                 this.renderer.render(this.scene, this.camera);
@@ -627,6 +623,12 @@ export class LsystemWidgetView extends PGLWidgetView {
         });
         this.listenTo(this.model, 'change:derivationNumber', () => {
             this.controls.state.derivationNumber = this.model.get('derivationNumber');
+            if (this.controls.state.derivationNumber == this.controls.state.derivationLength - 1) {
+                this.controls.state.animate = false;
+                this.model.set('animate', false);
+                this.touch();
+                this.controls.state.pyFeed = 0;
+            }
         });
         this.listenTo(this.model, 'comm_live_update', () => {
             this.controls.state.comm_live = this.model.comm_live;
@@ -641,72 +643,59 @@ export class LsystemWidgetView extends PGLWidgetView {
     }
 
     getFromQueue(no) {
-        setTimeout((no) => {
+        setTimeout(no => {
             const decoded = this.queue[no];
             if (decoded) {
-                delete this.queue[no];
                 this.setScene(decoded.userData.step, meshify(decoded.geoms, {
                     flatShading: this.pglControlsState.flatShading,
                     wireframe: this.pglControlsState.wireframe,
                 }), decoded.bbox);
-                this.controls.state.derivationNumber = decoded.userData.step;
-                if (this.controls.state.busy > 0) {
-                    this.controls.state.busy--;
+
+                this.controls.state.sceneDerivationNumber = decoded.userData.step;
+                this.pglProgressState.busy = 1 - (++this.out / this.in);
+                this.controls.state.busy = this.pglProgressState.busy > 0;
+                if (this.in === this.out) {
+                    this.in = this.out = 0;
                 }
-                if (this.controls.state.animate && this.controls.state.derivationNumber === this.controls.state.derivationLength - 1) {
+
+                if (this.controls.state.animate && decoded.userData.step === this.controls.state.derivationLength - 1) {
                     this.controls.state.animate = false;
                     this.model.set('animate', false);
                     this.touch();
                 }
-                if (this.queue[no + 1]) {
-                    this.getFromQueue(no + 1);
+                const nos = Object.keys(this.queue);
+                const next_no = nos[nos.indexOf(no) + 1];
+                delete this.queue[no];
+                if (next_no !== undefined && this.queue[next_no]) {
+                    this.getFromQueue(next_no);
                 }
             }
-        }, 10, no);
+        }, 1, no);
     }
 
     decode(scene: ILsystemScene) {
+        // TODO: we are done (progress = 1) if queue is empty and sceneDerivationNumber === derivationLength - 1
         this.pglProgressState.busy = 1 - (this.out / ++this.in);
-        decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no++ } }, this.model.model_id)
+        this.no++;
+        this.controls.state.busy = this.pglProgressState.busy > 0;
+        this.queue[this.no] = null;
+        decoder.decode({ data: scene.data.buffer, userData: { step: scene.derivationStep, no: this.no } }, this.model.model_id)
             .then(res => {
-                // TODO: use increasing number for a seq. of tasks and not step
-                const { geoms, bbox, userData: { step, no } } = res;
-                if (this.controls.state.animate && step - this.controls.state.derivationNumber > 1) {
-                    this.queue[no] = res;
-                } else {
-                    this.setScene(step, meshify(geoms, {
-                        flatShading: this.pglControlsState.flatShading,
-                        wireframe: this.pglControlsState.wireframe,
-                    }), bbox);
-                    this.controls.state.derivationNumber = step;
-                    if (this.controls.state.busy > 0) {
-                        this.controls.state.busy--;
-                    }
-                    if (this.controls.state.animate && this.controls.state.derivationNumber === this.controls.state.derivationLength - 1) {
-                        this.controls.state.animate = false;
-                        this.model.set('animate', false);
-                        this.touch();
-                    }
-                    if (this.queue[no + 1]) {
-                        this.getFromQueue(no + 1);
-                    }
-                }
+                const { userData: { no } } = res;
+                this.queue[no] = res;
+                this.getFromQueue(Object.keys(this.queue)[0]);
             })
             .catch(err => {
-                this.controls.state.busy--;
-                if (err.abort) {
-                    this.controls.state.derivationNumber = err.userData.step;
-                } else {
+                this.pglProgressState.busy = 1 - (++this.out / this.in);
+                this.controls.state.busy = this.pglProgressState.busy > 0;
+                delete this.queue[err.userData.no];
+                if (!err.abort) {
                     console.log(err)
                 }
             });
     }
 
     setScene(step: number, meshs: Array<THREE.Mesh | THREE.InstancedMesh>, bbox=null, position=[0, 0, 0]) {
-        this.pglProgressState.busy = 1 - (++this.out / this.in);
-        if (this.in === this.out) {
-            this.in = this.out = 0;
-        }
         const currentScene = new THREE.Scene();
         const [x, y, z] = position;
         const scale = SCALES[this.unit];

@@ -1,6 +1,6 @@
 {
   "name": "pgljupyter",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "PlantGL and L-Py Jupyter widgets",
   "keywords": [
     "jupyter",
@@ -31,7 +31,7 @@
     "build": "jlpm build:lib && jlpm build:labextension:dev && jlpm build:nbextension",
     "build:prod": "jlpm clean:all && npm run build:pgljs && jlpm build:lib && jlpm build:nbextension && jlpm build:labextension",
     "build:labextension": "jupyter labextension build .",
-    "build:labextension:dev": "jupyter labextension build --development True .",
+    "build:labextension:dev": "jlpm build:lib && jupyter labextension build --development True .",
     "build:nbextension": "webpack",
     "build:lib": "tsc",
     "build:pgljs": "cd src/pgljs && npm run build && mkdir -p ../../lib/pgljs && cp -a dist ../../lib/pgljs",

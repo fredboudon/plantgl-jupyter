@@ -107,7 +107,7 @@
     bottom: 0px;
     left: 0px;
     width: 100%;
-    height: 80px; /* FIXME: there is an odd height overshoot in jupyter */
+    height: 95px; /* FIXME: there is an odd height overshoot in jupyter */
     pointer-events: none;
 }
 
@@ -124,6 +124,14 @@
     --mdc-icon-size: 30px;
     --mdc-button-size: 35px;
 }
+
+#sceneDerivationNumber {
+    color: rgb(75, 75, 75);
+}
+
+/* .pgl-jupyter-lsystem-widget-controls-progress {
+    float: left;
+} */
 
 .pgl-jupyter-lsystem-widget-controls-container * {
     display: inline;

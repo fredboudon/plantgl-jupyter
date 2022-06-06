@@ -107,7 +107,7 @@ Arguments:
 - `--unit`, `-u` enum: same as `unit`
 - `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
-- `--advanced-editor`, `-e` False: show/hide advanced parameter controls
+- `--extended-editor`, `-e` False: show/hide all parameter controls
 
 Example:
 
