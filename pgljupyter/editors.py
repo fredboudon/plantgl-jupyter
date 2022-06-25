@@ -684,7 +684,7 @@ class ParameterEditor(VBox):
                 self.__lp.add_scalar(name, value, category=category_name)
                 for scalar in self.__lp.get_category_scalars(category_name):
                     if scalar.name == name:
-                        editor = make_scalar_editor(scalar)
+                        editor = make_scalar_editor(scalar, False, extended_editor=self.__extended_editor)
                         editor.observe(self.__on_editor_changed(scalar))
                         box.children = (*box.children, editor)
                         if self.__auto_save:
