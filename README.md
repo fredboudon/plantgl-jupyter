@@ -179,7 +179,7 @@ Tutorial:
 
 ## Installation
 
-### Install with pip - inside conda env
+### Install with pip - inside conda environment
 
 Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
 
