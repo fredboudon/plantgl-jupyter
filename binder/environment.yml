@@ -1,0 +1,13 @@
+name: pgljupyter
+channels:
+  - fredboudon
+  - conda-forge
+dependencies:
+  - python=3.9
+  - jupyterlab=3.4
+  - ipywidgets=7.6
+  - openalea.lpy=3.9
+  - openalea.plantgl=3.14
+  - pip
+  - pip:
+    - pgljupyter

@@ -1,36 +1,19 @@
-include LICENSE.txt
-include README.md
+include LICENSE
+include *.md
+include pyproject.toml
 
-include setupbase.py
-include pytest.ini
-include .coverage.rc
-
-include tsconfig.json
 include package.json
-include webpack.config.js
-include pgljupyter/labextension/*.tgz
-
-# Documentation
-#graft docs
-exclude docs/\#*
-prune docs/build
-prune docs/gh-pages
-prune docs/dist
-
-# Examples
-#graft examples
-
-# Tests
-prune tests
+include install.json
+include ts*.json
+include yarn.lock
 
 # Javascript files
 graft pgljupyter/nbextension
 graft src
+graft css
 prune src/pgljs/node_modules
 prune src/pgljs/plantgl
 prune src/pgljs/debug
-prune src/pgljs/build
-prune src/pgljs/dist
 prune **/node_modules
 prune *.js.map
 prune examples

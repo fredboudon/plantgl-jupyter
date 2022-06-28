@@ -1,0 +1,19 @@
+name: pgljupyter-dev
+channels:
+  - fredboudon
+  - conda-forge
+dependencies:
+  - python=3.9
+  - jupyterlab=3.4
+  - jupyter-packaging
+  - ipywidgets=7.6
+  - openalea.lpy=3.9
+  - openalea.plantgl=3.14
+  - xarray-simlab=0.5.*
+  - matplotlib
+  - toml
+  - flake8
+  - pip
+  - pip:
+    # for build & release: see https://github.com/jupyterlab/extension-cookiecutter-ts
+    - build

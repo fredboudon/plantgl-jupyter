@@ -1,115 +1,95 @@
-#!/usr/bin/env python
-# coding: utf-8
+import json
+import sys
+from pathlib import Path
 
-# Copyright (c) Jupyter Development Team.
-# Distributed under the terms of the Modified BSD License.
+import setuptools
 
-from __future__ import print_function
-from glob import glob
-from os.path import join as pjoin
+HERE = Path(__file__).parent.resolve()
 
+# Get the package info from package.json
+pkg_json = json.loads((HERE / "package.json").read_bytes())
+ext_name = pkg_json["name"]
 
-from setupbase import (
-    create_cmdclass, install_npm, ensure_targets,
-    find_packages, combine_commands, ensure_python,
-    get_version, HERE
-)
-
-from setuptools import setup
-
-
-# The name of the project
-name = 'pgljupyter'
-
-# Ensure a valid python version
-ensure_python('>=3.7')
-
-# Get our version
-version = get_version(pjoin(name, '_version.py'))
-
-nb_path = pjoin(HERE, name, 'nbextension', 'static')
-lab_path = pjoin(HERE, name, 'labextension')
+nb_path = (HERE / ext_name / 'nbextension' / 'static')
+lab_path = (HERE / pkg_json["jupyterlab"]["outputDir"])
 
 # Representative files that should exist after a successful build
-jstargets = [
-    pjoin(nb_path, 'index.js'),
-    pjoin(HERE, 'lib', 'labplugin.js'),
+ensured_targets = [
+    str(nb_path / "index.js"),
+    str(lab_path / "package.json"),
+    str(lab_path / "static/style.js")
 ]
 
-package_data_spec = {
-    name: [
-        'nbextension/static/*.*js*',
-        'labextension/*.tgz'
-    ]
-}
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/pgljupyter',
-        nb_path, '*.js*'),
-    ('share/jupyter/lab/extensions', lab_path, '*.tgz'),
-    ('etc/jupyter/nbconfig/notebook.d', HERE, 'pgljupyter.json')
+    ("share/jupyter/labextensions/%s" % ext_name, str(lab_path.relative_to(HERE)), "**"),
+    ("share/jupyter/labextensions/%s" % ext_name, str("."), "install.json"),
+    # classic notebook extension
+    ("share/jupyter/nbextensions/%s" % ext_name, str(nb_path.relative_to(HERE)), "**"),
+    ('etc/jupyter/nbconfig/notebook.d', '.', f"{ext_name}.json"),
 ]
 
-cmdclass = create_cmdclass(
-    'jsdeps',
-    package_data_spec=package_data_spec,
-    data_files_spec=data_files_spec
-)
+long_description = (HERE / "README.md").read_text()
 
-cmdclass['jsdeps'] = combine_commands(
-    install_npm(HERE, build_cmd='build:all'),
-    ensure_targets(jstargets),
+version = (
+    pkg_json["version"]
+    .replace("-alpha.", "a")
+    .replace("-beta.", "b")
+    .replace("-rc.", "rc")
 )
 
 setup_args = dict(
-    name=name,
-    description='PlantGL jupyter widget',
+    name=ext_name,
     version=version,
-    scripts=glob(pjoin('scripts', '*')),
-    cmdclass=cmdclass,
-    packages=find_packages(),
-    author='Jan Vaillant',
-    author_email='jan.vaillant@cirad.fr',
-    url='https://github.com/jvail/plantgl-jupyter',
-    license='Cecill',
-    platforms="Linux, Mac OS X, Windows",
-    keywords=['Jupyter', 'Widgets', 'IPython', 'L-Py', 'PlantGL'],
-    classifiers=[
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Framework :: Jupyter',
-    ],
-    include_package_data=True,
+    url=pkg_json["homepage"],
+    description=pkg_json["description"],
+    license=pkg_json["license"],
+    license_file="LICENSE",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    packages=setuptools.find_packages(),
     install_requires=[
-        'ipython>=7.0.0',
-        'jupyterlab>=3.0.0',
-        'ipywidgets>=7.5.0',
-        'openalea.lpy>=3.8.0,<4.0.0',
-        'openalea.plantgl>=3.10.0,<4.0.0'
+        'openalea.lpy>=3.9.0,<4.0.0',
+        'openalea.plantgl>=3.14.0,<4.0.0'
     ],
-    python_requires='>=3.7',
-    extras_require={
-        'test': [],
-        'examples': [
-            # Any requirements for the examples to run
-        ],
-        'docs': [
-            'sphinx>=1.5',
-            'recommonmark',
-            'sphinx_rtd_theme',
-            'nbsphinx>=0.2.13,<0.4.0',
-            'jupyter_sphinx',
-            'nbsphinx-link',
-            'pytest_check_links',
-            'pypandoc',
-        ],
-    },
-    entry_points={}
+    zip_safe=False,
+    include_package_data=True,
+    python_requires=">=3.7",
+    platforms="Linux, Mac OS X, Windows",
+    keywords=["Jupyter", "JupyterLab", "JupyterLab3"],
+    classifiers=[
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Framework :: Jupyter",
+        "Framework :: Jupyter :: JupyterLab",
+        "Framework :: Jupyter :: JupyterLab :: 3",
+        "Framework :: Jupyter :: JupyterLab :: Extensions",
+        "Framework :: Jupyter :: JupyterLab :: Extensions :: Prebuilt",
+    ],
 )
 
-if __name__ == '__main__':
-    setup(**setup_args)
+try:
+    from jupyter_packaging import (
+        wrap_installers,
+        npm_builder,
+        get_data_files
+    )
+    post_develop = npm_builder(
+        build_cmd="install:extension", source_dir="src", build_dir=lab_path
+    )
+    setup_args["cmdclass"] = wrap_installers(post_develop=post_develop, ensured_targets=ensured_targets)
+    setup_args["data_files"] = get_data_files(data_files_spec)
+except ImportError as e:
+    import logging
+    logging.basicConfig(format="%(levelname)s: %(message)s")
+    logging.warning("Build tool `jupyter-packaging` is missing. Install it with pip or conda.")
+    if not ("--name" in sys.argv or "--version" in sys.argv):
+        raise e
+
+if __name__ == "__main__":
+    setuptools.setup(**setup_args)

@@ -3,6 +3,16 @@ const version = require('./package.json').version;
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const TerserPlugin = require('terser-webpack-plugin');
 
+const optimization = {
+  minimizer: [
+    new TerserPlugin({
+      parallel: true,
+      cache: true,
+      sourceMap: false
+    })
+  ]
+}
+
 // Custom webpack rules
 const rules = [
   { test: /\.ts$/, loader: 'ts-loader' },
@@ -53,8 +63,8 @@ module.exports = [
     performance: {
       hints: false
     },
+    optimization: optimization,
     plugins: [
-      new TerserPlugin(),
       // new BundleAnalyzerPlugin()
     ]
   },
@@ -82,8 +92,8 @@ module.exports = [
     module: {
         rules: rules
     },
+    optimization: optimization,
     plugins: [
-      new TerserPlugin(),
       // new BundleAnalyzerPlugin()
     ],
     externals: [
@@ -122,6 +132,7 @@ module.exports = [
     // devtool: '',
     externals,
     resolve,
+    optimization: optimization,
     performance: {
       hints: false
     }

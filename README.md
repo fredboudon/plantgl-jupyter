@@ -2,6 +2,10 @@
 
 [PlantGL](https://github.com/fredboudon/plantgl) & [L-Py](https://github.com/fredboudon/lpy) jupyter widgets
 
+Currently supports openalea.lpy>=3.9.0 and openalea.plantgl>=3.14.0 from conda channel ['fredboudon'](https://anaconda.org/fredboudon/openalea.lpy).
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/fredboudon/plantgl-jupyter/HEAD?labpath=%2Fexamples%2Fbroccoli.ipynb)
+
 
 ![Leuvenberg](docs/lpy_leuwenberg.gif)
 
@@ -103,6 +107,7 @@ Arguments:
 - `--unit`, `-u` enum: same as `unit`
 - `--params`, `-p` LsystemParameters: name of LsystemParameters instance
 - `--animate`, `-a` True: runs animation automatically
+- `--extended-editor`, `-e` False: show/hide all parameter controls
 
 Example:
 
@@ -157,6 +162,7 @@ Arguments:
 - `arg0`, string: L-Py file
 - `--size`, `-s` int,int: width and hight of the canvas
 - `--cell`, `-c` float: size of cell for a single derivation step
+- `--derive`, `-d` int[,int[,int]]: start, stop, step derivation
 
 Example:
 
@@ -173,30 +179,27 @@ Tutorial:
 
 ## Installation
 
-### Install with pip - inside conda env
+### Install with pip - inside conda environment
 
-Building JupyterLab extensions requires nodejs. In case it is not available on your system add `nodejs` to the
-`conda create` command. Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
+Some examples also require `matplotlib`, `xarray-simlab` and `rpy2`.
 
 ```bash
 conda create -y -n pgl -c fredboudon -c conda-forge \
-    openalea.lpy jupyterlab ipywidgets ipython=7 pip
+    openalea.lpy jupyterlab ipywidgets pip
 ```
 
 ```bash
 conda activate pgl
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
 pip install pgljupyter
 ```
 
-### Build, install and run from source
+### Development install
 
  - install lpy, plantgl, jupyterlab, widgets and widgetsextension
 
 ```bash
-conda create -y -n pgl -c fredboudon -c conda-forge openalea.lpy jupyterlab ipywidgets
-conda activate pgl
-jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
+mamba env create -f environment-dev.yml
+conda activate pgljupyter-dev
 ```
 
  - install emsdk: https://emscripten.org/docs/getting_started/downloads.html
@@ -204,8 +207,8 @@ jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 ```bash
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install 2.0.20
-./emsdk activate 2.0.20
+./emsdk install 2.0.29
+./emsdk activate 2.0.29
 source ./emsdk_env.sh
 cd ..
 ```
@@ -226,38 +229,26 @@ npm install
 cd ../..
 ```
 
- - install pgljupyter deps and build (requires activation of emsdk i.e. source ./emsdk_env.sh)
+ - install pgljupyter deps and build (requires activated emsdk i.e. source ./emsdk_env.sh)
 
 ```bash
 npm install
 npm run build:all
-```
-
- - install python modules and jupyter extensions
-
-```bash
 pip install -e .
-jupyter nbextension install --sys-prefix --overwrite --py pgljupyter
-jupyter nbextension enable --sys-prefix --py pgljupyter
-jupyter labextension install .
-jupyter lab clean
+jupyter labextension develop . --overwrite
 ```
-
- - run the lab
+ - run lab
 
 ```bash
 jupyter lab --notebook-dir=./examples
 ```
 
-## Docker
+### Development uninstall
 
-Run jupyter as docker container locally. Replace `/examples` with the path to your notebooks.
-Tag `latest` might not always be up-to-date since docker is primarily used for binder
+```bash
+pip uninstall pgljupyter
+```
 
-```
-docker pull jvail/plantgl-jupyter:1.1.0
-docker run --rm \
-    -p 8888:8888 \
-    -v $PWD/examples:/home/jovyan/work jvail/plantgl-jupyter:1.1.0 \
-    jupyter lab
-```
+In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
+command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
+folder is located. Then you can remove the symlink named `pgljupyter` within that folder.

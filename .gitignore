@@ -158,3 +158,5 @@ pgljupyter/labextension/*.tgz
 pgljupyter/labextension
 
 .vscode
+
+examples/test

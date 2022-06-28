@@ -1,5 +1,5 @@
 import { render, html } from 'lit-html';
-import { styleMap } from 'lit-html/directives/style-map'
+import { styleMap } from 'lit-html/directives/style-map.js';
 import '@material/mwc-switch';
 import '@material/mwc-formfield';
 import '@material/mwc-icon-button-toggle';
@@ -12,6 +12,7 @@ import {
     ILsystemControlsState,
     ILsystemControlsHandlers, IPGLProgressState
 } from './interfaces';
+import { Step } from './consts';
 
 // TODO refactor handlers
 
@@ -52,12 +53,13 @@ export class PGLControls {
                 </mwc-icon-button>
                 <mwc-icon-button-toggle
                     title=${state.capturingVideo ? 'Stop Capturing..' : 'Capture Video'}
-                    offIcon='&#9974;'
+                    offIcon='&#128253;'
                     onIcon='&#9889;'
                     @click=${(evt) => handlers.onCaptureVideoClicked(evt.target.on)}
                     style=${styleMap(('MediaRecorder' in window) && (state.capturingVideo || (state.showHeader && !state.showControls)) ? { 'display': 'inline', 'float': 'left' } : { 'display': 'none' })}>
                 </mwc-icon-button-toggle>
                 <mwc-icon-button
+                    title=${state.showControls ? 'Close Controls' : 'Open Controls'}
                     icon="&#9881;"
                     @click=${() => state.showControls = !state.showControls}
                     style=${styleMap(state.showControls || state.showHeader ? { 'display': 'inline' } : { 'display': 'none' })}>
@@ -65,22 +67,22 @@ export class PGLControls {
             </div>
             <div class='pgl-jupyter-pgl-widget-controls-body unselectable' style=${styleMap(state.showControls ? { 'display': 'block' } : { 'display': 'none' })}'>
                 <mwc-formfield label='fullscreen'>
-                    <mwc-switch @change=${(evt) => handlers.onFullscreenToggled(evt.target.checked)} ?checked=${state.fullscreen}></mwc-switch>
+                    <mwc-switch @click=${(evt) => handlers.onFullscreenToggled()} ?selected=${state.fullscreen}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='auto rotate'>
-                    <mwc-switch @change=${(evt) => handlers.onAutoRotateToggled(evt.target.checked)} ?checked=${state.autoRotate}></mwc-switch>
+                    <mwc-switch @click=${(evt) => handlers.onAutoRotateToggled(evt.target.selected)} ?selected=${state.autoRotate}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='plane'>
-                    <mwc-switch @change=${(evt) => handlers.onPlaneToggled(evt.target.checked)} ?checked=${state.plane}></mwc-switch>
+                    <mwc-switch @click=${(evt) => handlers.onPlaneToggled(evt.target.selected)} ?selected=${state.plane}></mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='flat shading'>
                     <mwc-switch
-                        @change=${(evt) => handlers.onFlatShadingToggled(evt.target.checked)} ?checked=${state.flatShading}>
+                        @click=${(evt) => handlers.onFlatShadingToggled(evt.target.selected)} ?selected=${state.flatShading}>
                     </mwc-switch>
                 </mwc-formfield>
                 <mwc-formfield label='wireframe'>
                     <mwc-switch
-                        @change=${(evt) => handlers.onWireframeToggled(evt.target.checked)} ?checked=${state.wireframe}>
+                        @click=${(evt) => handlers.onWireframeToggled(evt.target.selected)} ?selected=${state.wireframe}>
                     </mwc-switch>
                 </mwc-formfield>
             </div></div>`;
@@ -153,20 +155,20 @@ export class LsystemControls {
         return html`<div class='pgl-jupyter-lsystem-widget-controls-container unselectable' ?hidden=${!this.state.comm_live}>
             <div style=${styleMap(state.showControls ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
                 <mwc-icon-button icon="&#8676"
-                    ?disabled=${state.animate || state.derivationStep === 0 || state.busy}
-                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(0)}>
+                    ?disabled=${state.animate || state.derivationNumber === null || state.busy}
+                    @click=${(evt) => evt.target.disabled || handlers.onStepClicked(Step.AXIOM)}>
                 </mwc-icon-button>
                 <mwc-icon-button icon="&#8612"
-                    ?disabled=${state.animate || state.derivationStep === 0 || state.busy}
-                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(Math.max(0, state.derivationStep - 1))}>
+                    ?disabled=${state.animate || state.derivationNumber === null || state.busy}
+                    @click=${(evt) => evt.target.disabled || handlers.onStepClicked(Step.BACK)}>
                 </mwc-icon-button>
                 <mwc-icon-button icon="&#8614"
-                    ?disabled=${state.animate || state.derivationStep === state.derivationLength - 1 || state.busy}
-                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(Math.min(state.derivationLength - 1, state.derivationStep + 1))}>
+                    ?disabled=${state.animate || state.derivationNumber === state.derivationLength - 1 || state.busy}
+                    @click=${(evt) => evt.target.disabled || handlers.onStepClicked(Step.FORWARD)}>
                 </mwc-icon-button>
                 <mwc-icon-button icon="&#8677"
-                    ?disabled=${state.animate || state.derivationStep === state.derivationLength - 1 || state.busy}
-                    @click=${(evt) => evt.target.disabled || handlers.onDeriveClicked(state.derivationLength - 1)}>
+                    ?disabled=${state.animate || state.derivationNumber === state.derivationLength - 1 || state.busy}
+                    @click=${(evt) => evt.target.disabled || handlers.onStepClicked(Step.END)}>
                 </mwc-icon-button>
                 <mwc-icon-button-toggle
                     ?disabled=${!state.animate && state.busy}
@@ -181,11 +183,12 @@ export class LsystemControls {
                     @click=${(evt) => evt.target.disabled || handlers.onRewindClicked()}>
                 </mwc-icon-button>
             </div>
-            <div style=${styleMap((state.derivationStep < state.derivationLength - 1 && (state.showControls || state.animate || state.busy)) ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
+            <div class='pgl-jupyter-lsystem-widget-controls-progress' style=${styleMap((state.sceneDerivationNumber < state.derivationLength - 1 && (state.showControls || state.animate || state.busy)) ? { 'display': 'block' } : { 'visibility': 'hidden' })}>
                 <mwc-linear-progress
-                    progress=${state.derivationStep / (state.derivationLength - 1)}
+                    progress=${(state.sceneDerivationNumber == null ? 0 : state.sceneDerivationNumber + 1) / state.derivationLength}
                     buffer=${state.pyFeed ? (state.derivationLength - state.pyFeed) / state.derivationLength : 1}>
                 </mwc-linear-progress>
+                <span id="sceneDerivationNumber">${state.sceneDerivationNumber === null ? 'Axiom' : `${state.sceneDerivationNumber}/${state.derivationLength - 1}`}</span>
             </div>
         </div>`;
     };

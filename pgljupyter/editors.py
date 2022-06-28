@@ -8,12 +8,17 @@ import re
 from enum import Enum
 
 from ipywidgets.widgets import (
-    register, DOMWidget,  VBox, HBox, Layout, Accordion, Dropdown, Button,
-    Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText
+    register, DOMWidget, VBox, HBox, Layout, Accordion, Dropdown, Button,
+    Text, ColorPicker, Checkbox, IntSlider, FloatSlider, BoundedIntText,
+    FloatText, BoundedFloatText, IntText
 )
 from traitlets import Unicode, List, Float, Bool, Int
 from openalea.lpy.lsysparameters import (
-    IntegerScalar, FloatScalar, BoolScalar, BaseScalar
+    LsystemParameters,
+    IntegerScalar,
+    FloatScalar,
+    BoolScalar,
+    BaseScalar
 )
 import openalea.plantgl.all as pgl
 
@@ -22,7 +27,7 @@ from ._frontend import module_name, module_version
 _property_name_regex = re.compile('^[^\\d\\W]\\w*\\Z')
 
 
-def make_scalar_editor(scalar, no_name=False):
+def make_scalar_editor(scalar, no_name=False, extended_editor=False):
 
     editor = None
 
@@ -30,19 +35,22 @@ def make_scalar_editor(scalar, no_name=False):
         editor = IntEditor(
             scalar.value,
             name=scalar.name,
-            min=scalar.minvalue,
-            max=scalar.maxvalue,
+            minvalue=scalar.minvalue,
+            maxvalue=scalar.maxvalue,
             step=1,
-            no_name=no_name
+            no_name=no_name,
+            extended_editor=extended_editor
         )
     elif isinstance(scalar, FloatScalar):
         editor = FloatEditor(
             scalar.value,
             name=scalar.name,
-            min=scalar.minvalue,
-            max=scalar.maxvalue,
-            step=1/10**scalar.precision,
-            no_name=no_name
+            minvalue=scalar.minvalue,
+            maxvalue=scalar.maxvalue,
+            step=1 / 10**scalar.precision,
+            precision=scalar.precision,
+            no_name=no_name,
+            extended_editor=extended_editor
         )
     elif isinstance(scalar, BoolScalar):
         editor = BoolEditor(
@@ -214,52 +222,77 @@ class FloatEditor(_Editor):
     __min_ipt = None
     __max_ipt = None
     __step_ipt = None
+    __precision_ipt = None
     __type = ''
 
     value = Float(0).tag(sync=False)
-    min = Float(0).tag(sync=False)
-    max = Float(0).tag(sync=False)
+    minvalue = Float(0).tag(sync=False)
+    maxvalue = Float(0).tag(sync=False)
     step = Float(0).tag(sync=False)
+    precision = Int(2).tag(sync=False)
 
-    def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
+    def __init__(self, value, type='Float', minvalue=1, maxvalue=10, step=1, precision=2, **kwargs):
 
         self.value = float(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
-        self.__slider = FloatSlider(value, min=min, max=max, step=step, description=description, continuous_update=False)
-        # self.__min_ipt = FloatText(min, description='min')
-        # self.__max_ipt = FloatText(max, description='max')
-        # self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
+        extended_editor = 'extended_editor' in kwargs and kwargs['extended_editor']
+        self.__slider = FloatSlider(
+            value,
+            min=minvalue,
+            max=maxvalue,
+            step=step,
+            description=description,
+            readout_format=f'.{precision}f',
+            continuous_update=False
+        )
+        self.__min_ipt = FloatText(minvalue, step=step, description='min')
+        if extended_editor:
+            self.__max_ipt = FloatText(maxvalue, step=step, description='max')
+            self.__step_ipt = BoundedFloatText(step, description='step', min=0.01, max=1, step=step)
+            self.__precision_ipt = BoundedIntText(precision, description='precision', min=0, max=10, step=1)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        # self.__min_ipt.observe(self.__on_min_changed, names='value')
-        # self.__max_ipt.observe(self.__on_max_changed, names='value')
-        # self.__step_ipt.observe(self.__on_step_changed, names='value')
+        if extended_editor:
+            self.__min_ipt.observe(self.__on_min_changed, names='value')
+            self.__max_ipt.observe(self.__on_max_changed, names='value')
+            self.__step_ipt.observe(self.__on_step_changed, names='value')
+            self.__precision_ipt.observe(self.__on_precision_changed, names='value')
 
-        kwargs['children'] = [
-            self.__slider,
-            # self.__min_ipt,
-            # self.__max_ipt,
-            # self.__step_ipt
-        ]
+        if extended_editor:
+            kwargs['children'] = [
+                self.__slider,
+                self.__min_ipt,
+                self.__max_ipt,
+                self.__step_ipt,
+                self.__precision_ipt
+            ]
+        else:
+            kwargs['children'] = [
+                self.__slider
+            ]
         super().__init__(**kwargs)
 
-    # def __on_min_changed(self, change):
-    #     if self.__min_ipt.value < self.__slider.max:
-    #         self.__slider.min = self.__min_ipt.value
-    #     else:
-    #         self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-    #     self.min = self.__min_ipt.value
+    def __on_min_changed(self, change):
+        if self.__min_ipt.value < self.__slider.max:
+            self.__slider.min = self.__min_ipt.value
+        else:
+            self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
+        self.minvalue = self.__min_ipt.value
 
-    # def __on_max_changed(self, change):
-    #     if self.__max_ipt.value > self.__slider.min:
-    #         self.__slider.max = self.__max_ipt.value
-    #     else:
-    #         self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-    #     self.max = self.__max_ipt.value
+    def __on_max_changed(self, change):
+        if self.__max_ipt.value > self.__slider.min:
+            self.__slider.max = self.__max_ipt.value
+        else:
+            self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
+        self.maxvalue = self.__max_ipt.value
 
-    # def __on_step_changed(self, change):
-    #     self.__slider.step = self.__step_ipt.value
-    #     self.step = self.__step_ipt.value
+    def __on_step_changed(self, change):
+        self.__slider.step = self.__step_ipt.value
+        self.step = self.__step_ipt.value
+
+    def __on_precision_changed(self, change):
+        self.__slider.readout_format = f'.{self.__precision_ipt.value}f'
+        self.precision = self.__precision_ipt.value
 
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
@@ -278,49 +311,58 @@ class IntEditor(_Editor):
     __step_ipt = None
 
     value = Int(0).tag(sync=False)
-    min = Int(0).tag(sync=False)
-    max = Int(0).tag(sync=False)
+    minvalue = Int(0).tag(sync=False)
+    maxvalue = Int(0).tag(sync=False)
     step = Int(0).tag(sync=False)
 
-    def __init__(self, value, type='Float', min=1, max=10, step=1, **kwargs):
+    def __init__(self, value, type='Int', minvalue=1, maxvalue=10, step=1, **kwargs):
 
         self.value = int(value)
         description = kwargs['name'] if 'no_name' in kwargs and kwargs['no_name'] else 'value'
-        self.__slider = IntSlider(value, min, max, description=description, continuous_update=False)
-        # self.__min_ipt = IntText(min, description='min')
-        # self.__max_ipt = IntText(max, description='max')
-        # self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
+        extended_editor = 'extended_editor' in kwargs and kwargs['extended_editor']
+        self.__slider = IntSlider(value, minvalue, maxvalue, description=description, continuous_update=False)
+        if extended_editor:
+            self.__min_ipt = IntText(minvalue, description='min')
+            self.__max_ipt = IntText(maxvalue, description='max')
+            self.__step_ipt = BoundedIntText(step, description='step', min=1, step=step)
 
         self.__slider.observe(self.__on_slider_changed, names='value')
-        # self.__min_ipt.observe(self.__on_min_changed, names='value')
-        # self.__max_ipt.observe(self.__on_max_changed, names='value')
-        # self.__step_ipt.observe(self.__on_step_changed, names='value')
+        if extended_editor:
+            self.__min_ipt.observe(self.__on_min_changed, names='value')
+            self.__max_ipt.observe(self.__on_max_changed, names='value')
+            self.__step_ipt.observe(self.__on_step_changed, names='value')
 
-        kwargs['children'] = [
-            self.__slider,
-            # self.__min_ipt,
-            # self.__max_ipt,
-            # self.__step_ipt
-        ]
+        if extended_editor:
+            kwargs['children'] = [
+                self.__slider,
+                self.__min_ipt,
+                self.__max_ipt,
+                self.__step_ipt
+            ]
+        else:
+            kwargs['children'] = [
+                self.__slider
+            ]
+
         super().__init__(**kwargs)
 
-    # def __on_min_changed(self, change):
-    #     if self.__min_ipt.value < self.__slider.max:
-    #         self.__slider.min = self.__min_ipt.value
-    #     else:
-    #         self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
-    #     self.min = self.__min_ipt.value
+    def __on_min_changed(self, change):
+        if self.__min_ipt.value < self.__slider.max:
+            self.__slider.min = self.__min_ipt.value
+        else:
+            self.__min_ipt.value = self.__slider.max - self.__step_ipt.value
+        self.minvalue = self.__min_ipt.value
 
-    # def __on_max_changed(self, change):
-    #     if self.__max_ipt.value > self.__slider.min:
-    #         self.__slider.max = self.__max_ipt.value
-    #     else:
-    #         self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
-    #     self.max = self.__max_ipt.value
+    def __on_max_changed(self, change):
+        if self.__max_ipt.value > self.__slider.min:
+            self.__slider.max = self.__max_ipt.value
+        else:
+            self.__max_ipt.value = self.__slider.min + self.__step_ipt.value
+        self.maxvalue = self.__max_ipt.value
 
-    # def __on_step_changed(self, change):
-    #     self.__slider.step = self.__step_ipt.value
-    #     self.step = self.__step_ipt.value
+    def __on_step_changed(self, change):
+        self.__slider.step = self.__step_ipt.value
+        self.step = self.__step_ipt.value
 
     def __on_slider_changed(self, change):
         self.value = self.__slider.value
@@ -437,7 +479,7 @@ class MaterialEditor(_Editor):
         super().__init__(**kwargs)
 
     def __rgb_to_list(self, rgb):
-        return [255, 0, 0] if len(rgb) != 7 else [int(v, 16) for v in [rgb[1:][i:i+2] for i in range(0, 6, 2)]]
+        return [255, 0, 0] if len(rgb) != 7 else [int(v, 16) for v in [rgb[1:][i:i + 2] for i in range(0, 6, 2)]]
 
     def __on_index_changed(self, change):
         self.index = self.__index.value
@@ -484,9 +526,10 @@ class ParameterEditor(VBox):
     __add_category_btn = None
     __add_category_txt = None
 
-    __lp = None
+    __lp: LsystemParameters = None
+    __extended_editor = True
 
-    def __init__(self, lp, filename='', **kwargs):
+    def __init__(self, lp: LsystemParameters, filename='', extended_editor=True, **kwargs):
 
         self.__lp = lp
         self.filename = filename
@@ -497,6 +540,7 @@ class ParameterEditor(VBox):
         self.__save_btn = Button(description='Save changes')
         self.__add_category_btn = Button(description='Add category')
         self.__add_category_txt = Text(placeholder='category name')
+        self.__extended_editor = extended_editor
         self.__initialize()
 
         super().__init__([VBox([
@@ -566,28 +610,13 @@ class ParameterEditor(VBox):
     def __build_gui(self):
 
         children = []
-        titles = ['materials']
+        titles = []
         item_layout = Layout(
             margin='20px',
             flex_flow='row wrap'
         )
 
         if self.__lp:
-
-            box_materials = HBox(layout=item_layout)
-
-            for index, color in self.__lp.get_colors().items():
-                editor = make_color_editor(color, index, no_name=True)
-                if editor:
-                    editor.observe(self.__on_editor_changed(color))
-                    box_materials.children = (*box_materials.children, editor)
-
-            children.append(
-                VBox([
-                    self.__menu('materials', box_materials),
-                    box_materials
-                ])
-            )
 
             for category_name in self.__lp.get_category_names():
 
@@ -596,7 +625,7 @@ class ParameterEditor(VBox):
 
                 for scalar in self.__lp.get_category_scalars(category_name):
 
-                    editor = make_scalar_editor(scalar, False)
+                    editor = make_scalar_editor(scalar, False, extended_editor=self.__extended_editor)
                     if editor:
                         editor.observe(self.__on_editor_changed(scalar))
                         box_scalars.children = (*box_scalars.children, editor)
@@ -616,6 +645,21 @@ class ParameterEditor(VBox):
                 ]))
                 titles.append(category_name)
 
+            box_materials = HBox(layout=item_layout)
+
+            for index, color in self.__lp.get_colors().items():
+                editor = make_color_editor(color, index, no_name=True)
+                if editor:
+                    editor.observe(self.__on_editor_changed(color))
+                    box_materials.children = (*box_materials.children, editor)
+            titles.append('materials')
+            children.append(
+                VBox([
+                    self.__menu('materials', box_materials),
+                    box_materials
+                ])
+            )
+
         return (children, titles)
 
     def __menu(self, parameter_type, box, category_name=None):
@@ -625,7 +669,7 @@ class ParameterEditor(VBox):
 
         if parameter_type == 'scalars':
 
-            def fn_add(self):
+            def fn_add(self: ParameterEditor):
 
                 value = None
 
@@ -637,15 +681,17 @@ class ParameterEditor(VBox):
                     value = True
 
                 name = f'{ddn_add.value}_{len(box.children)}'
-                scalar = self.__lp.add_scalar(name, value, category=category_name)
-                editor = make_scalar_editor(scalar)
-                editor.observe(self.__on_editor_changed(scalar))
-                box.children = (*box.children, editor)
-
-                if self.__auto_save:
-                    self.__save()
-                if self.__auto_apply:
-                    self.on_lpy_context_change(self.__lp.dumps())
+                self.__lp.add_scalar(name, value, category=category_name)
+                for scalar in self.__lp.get_category_scalars(category_name):
+                    if scalar.name == name:
+                        editor = make_scalar_editor(scalar, False, extended_editor=self.__extended_editor)
+                        editor.observe(self.__on_editor_changed(scalar))
+                        box.children = (*box.children, editor)
+                        if self.__auto_save:
+                            self.__save()
+                        if self.__auto_apply:
+                            self.on_lpy_context_change(self.__lp.dumps())
+                        break
 
             ddn_add.options = ['Integer', 'Float', 'Bool']
 
@@ -669,13 +715,10 @@ class ParameterEditor(VBox):
 
         elif parameter_type == 'curves':
 
-            def fn_add(self):
+            def fn_add(self: ParameterEditor):
 
                 name = f'{ddn_add.value}_{len(box.children)}'
-                if ddn_add.value == 'Function':
-                    curve = self.__lp.add_function(name, category=category_name)
-                else:
-                    curve = self.__lp.add_curve(name, category=category_name)
+                curve = self.__lp.add_graphicalparameter(name, value=None, ptype=ddn_add.value, category=category_name)
                 editor = make_curve_editor(curve)
                 editor.observe(self.__on_editor_changed(curve))
                 box.children = (*box.children, editor)
@@ -685,7 +728,7 @@ class ParameterEditor(VBox):
                 if self.__auto_apply:
                     self.on_lpy_context_change(self.__lp.dumps())
 
-            ddn_add.options = ['Curve', 'Function']
+            ddn_add.options = ['Curve2D', 'Function']
 
         btn_add.on_click(lambda x: fn_add(self))
 
@@ -713,20 +756,19 @@ class ParameterEditor(VBox):
             if 'new' in change:
                 value = change['new']
                 name = change['name']
-                if isinstance(param, BaseScalar):
-                    if name == 'name':
-                        param.name = value
-                    else:
-                        param.value = value
+                if isinstance(param, BaseScalar) and hasattr(param, name):
+                    setattr(param, name, value)
                 elif isinstance(param, tuple):
                     if name == 'value':
                         if isinstance(param[1], (pgl.NurbsCurve2D, pgl.BezierCurve2D)):
                             param[1].ctrlPointList = pgl.Point3Array([pgl.Vector3(p[0], p[1], 1) for p in value])
+                            param[1].setKnotListToDefault()
                         elif isinstance(param[1], pgl.Polyline2D):
                             param[1].pointList = pgl.Point2Array([pgl.Vector2(p[0], p[1]) for p in value])
+                            param[1].setKnotListToDefault()
                     else:
                         param[1].name = value
-                if self.__auto_apply:
+                if self.__auto_apply and name == 'value':
                     self.on_lpy_context_change(self.__lp.dumps())
                 if self.__auto_save:
                     self.__save()

@@ -210,21 +210,23 @@ export class _CurveEditorView extends DOMWidgetView {
 
 
         const drag = () => {
+            const editor = this;
             circles.on('.drag', null);
-            circles.call( // @ts-ignore
-                d3.drag().on('drag', (d, i) => {
-                    const tx = d3.event.x + dx;
-                    const ty = d3.event.y + dy;
+            circles.call(
+                d3.drag().on('drag', function (event: any, d) {
+                    const i = circles.nodes().indexOf(this);
+                    const tx = event.x + dx;
+                    const ty = event.y + dy;
 
                     if (tx > width - margin || tx < margin || ty > height - margin || ty < margin) {
                         return;
                     }
-                    const x = isFunction && (i === 0 || i === this.controlPoints.length - 1) ? this.controlPoints[i][0] : xScale.invert(d3.event.x);
-                    const y = yScale.invert(d3.event.y);
-                    this.controlPoints[i] = [x, y];
+                    const x = isFunction && (i === 0 || i === editor.controlPoints.length - 1) ? editor.controlPoints[i][0] : xScale.invert(event.x);
+                    const y = yScale.invert(event.y);
+                    editor.controlPoints[i] = [x, y];
 
                     draw();
-                    updateModel(this.controlPoints = this.controlPoints.slice());
+                    updateModel(editor.controlPoints = editor.controlPoints.slice());
                 })
             );
         };
@@ -232,30 +234,33 @@ export class _CurveEditorView extends DOMWidgetView {
         drag();
 
         const click = () => {
+            const editor = this;
             circles.on('.dblclick', null);
-            circles.on('dblclick', (d, i) => {
-                d3.event.stopPropagation();
-                d3.event.preventDefault();
-                if (isFunction && (i === 0 || i === this.controlPoints.length - 1)) {
+            circles.on('dblclick', function (event: any, d) {
+                 // @ts-ignore
+                const i = circles.nodes().indexOf(this);
+                event.stopPropagation();
+                event.preventDefault();
+                if (isFunction && (i === 0 || i === editor.controlPoints.length - 1)) {
                     return;
                 }
-                if (this.controlPoints.length > (this.curveType === CurveType.POLY_LINE ? 2 : 4)) {
-                    this.controlPoints.splice(i, 1);
-                    circles.data(this.controlPoints).exit().remove();
+                if (editor.controlPoints.length > (editor.curveType === CurveType.POLY_LINE ? 2 : 4)) {
+                    editor.controlPoints.splice(i, 1);
+                    circles.data(editor.controlPoints).exit().remove();
                     draw();
                     drag();
-                    this.model.unset('points');
-                    this.model.set('points', this.controlPoints = this.controlPoints.slice());
-                    this.touch();
+                    editor.model.unset('points');
+                    editor.model.set('points', editor.controlPoints = editor.controlPoints.slice());
+                    editor.touch();
                 }
             });
         };
 
         click();
 
-        svg.on('dblclick', () => {
-            d3.event.stopPropagation();
-            d3.event.preventDefault();
+        svg.on('dblclick', (event: any) => {
+            event.stopPropagation();
+            event.preventDefault();
             const add = (i, p) => {
                 this.controlPoints.splice(i, 0, p);
                 circles.remove();
@@ -274,8 +279,8 @@ export class _CurveEditorView extends DOMWidgetView {
                 this.model.set('points', this.controlPoints = this.controlPoints.slice());
                 this.touch();
             };
-            let x = xScale.invert(d3.event.offsetX - dx);
-            const y = yScale.invert(d3.event.offsetY - dy);
+            let x = xScale.invert(event.offsetX - dx);
+            const y = yScale.invert(event.offsetY - dy);
             let pi = 0;
             for (let i = this.controlPoints.length - 1; i >= 0; i--) {
                 if (this.controlPoints[i][0] < x) {

@@ -63,18 +63,23 @@ export interface IPGLControlsHandlers {
 
 export interface ILsystemControlsState {
     animate: boolean;
-    derivationStep: number;
+    // from python
+    derivationNumber: number | null;
+    // the actual derivation step of the current scene
+    // there may be less steps here if frameDisplay(False)
+    // is used in L-Py
+    sceneDerivationNumber: number | null;
     derivationLength: number;
     isMagic: boolean;
     showControls: boolean;
-    busy: number;
+    busy: boolean;
     pyFeed: number;
     comm_live: boolean;
 }
 
 export interface ILsystemControlsHandlers {
     onAnimateToggled: Function;
-    onDeriveClicked: Function;
+    onStepClicked: Function;
     onRewindClicked: Function;
 }
 

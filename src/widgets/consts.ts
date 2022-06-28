@@ -19,3 +19,10 @@ export const enum CurveType {
     BEZIER = 'BezierCurve2D',
     POLY_LINE = 'Polyline2D'
 }
+
+export const enum Step {
+    AXIOM = 'AXIOM',
+    BACK = 'BACK',
+    FORWARD = 'FORWARD',
+    END = 'END'
+}
